@@ -1,0 +1,141 @@
+{{ define "template/medicamentos.tmpl" }} {{ template "template/menu.tmpl" }}
+<link rel="stylesheet" href="/public/static/css/medicamentos.css">
+<script src="/public/static/js/medicamentos.js"></script>
+
+<div class="container">
+
+    <div class="container-top">
+
+        <nav class="level">
+            <div class="level-left">
+                <div class="level-item">
+                    <div class="field">
+                        <p class="control has-icons-right">
+                            <input id="busqueda-medicamento" class="input" type="text" placeholder="Buscar medicamento"
+                                   onkeyup="busquedaMedicamentos()">
+                            <span class="icon is-small is-right">
+                                <i class="fas fa-search"></i>
+                            </span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="level-right">
+                <div class="level-item">
+                    <div class="field">
+                        <a class="button is-success" onclick="openModalMedicamento('new', 0)">
+                            <span class="icon is-small">
+                                <i class="fas fa-plus"></i>
+                            </span>
+                            <span>Nuevo medicamento</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+    </div>
+
+    <table class="table is-bordered is-striped is-hoverable is-fullwidth">
+        <thead>
+        <tr>
+            <th>Id</th>
+            <th>Código Ean</th>
+            <th>Descripción Articulo</th>
+            <th>Laboratorio</th>
+            <th>Clave SAT</th>
+            <th>Opciones</th>
+        </tr>
+        </thead>
+        <tbody id="tabla-medicamentos"></tbody>
+    </table>
+</div>
+
+<!-- --- MODALES --- -->
+
+<div id="modal-medicamentos-form" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p id="modal-title" class="modal-card-title"></p>
+            <button class="delete" aria-label="close" onclick="closeModalMedicamento('form')"></button>
+        </header>
+        <section class="modal-card-body">
+            <div class="container">
+
+                <div class="field">
+                    <p class="control has-icons-left">
+                        <input id="codigo-ean" class="input" type="text" placeholder="Código Ean" aria-label="codigo-ean" required>
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-hashtag"></i>
+                        </span>
+                    </p>
+                </div>
+
+                <div class="field">
+                    <p class="control has-icons-left">
+                        <input id="descripcion-articulo" class="input" type="text" placeholder="Descripción Articulo" aria-label="descripcion-articulo" required>
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-pills"></i>
+                        </span>
+                    </p>
+                </div>
+
+                <div class="field">
+                    <p class="control has-icons-left">
+                        <input id="laboratorio" class="input" type="text" placeholder="Laboratorio" aria-label="laboratorio" required>
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-flask"></i>
+                        </span>
+                    </p>
+                </div>
+
+                <div class="field">
+                    <p class="control has-icons-left">
+                        <input id="clave-sat" class="input" type="text" placeholder="Clave SAT" aria-label="clave-sat" required>
+                        <span class="icon is-small is-left">
+                            <i class="fas fa-star-of-life"></i>
+                        </span>
+                    </p>
+                </div>
+
+                <div class="field">
+                    <div class="notificacion" id="notificacion"></div>
+                </div>
+
+            </div>
+        </section>
+        <footer class="modal-card-foot">
+            <button id="modal-btn-success" class="button is-success">Guardar</button>
+            <button class="button" onclick="closeModalMedicamento('form')">Cancelar</button>
+        </footer>
+    </div>
+</div>
+
+<div id="modal-medicamentos-remove" class="modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title"></p>
+            <button class="delete" aria-label="close" onclick="closeModalMedicamento('remove')"></button>
+        </header>
+        <section class="modal-card-body">
+            <div class="container">
+
+                ¿Desea eliminar permanentemente el medicamento?
+
+                <div class="field">
+                    <div class="notificacion" id="notificacion-remove"></div>
+                </div>
+
+            </div>
+        </section>
+        <footer class="modal-card-foot">
+            <button id="btn-remove-medicamento" class="button is-danger">Eliminar</button>
+            <button class="button" onclick="closeModalMedicamento('remove')">Cancelar</button>
+        </footer>
+    </div>
+</div>
+
+{{ end }}
