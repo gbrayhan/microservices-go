@@ -1,2 +1,4 @@
-# microservice_golang
-Project empty of microservices with golang
+# Golang Microservices Example
+Example structure to start a microservices project with golang. Using a MySQL database.
+
+

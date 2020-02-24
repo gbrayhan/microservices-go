@@ -1,17 +1,24 @@
 package controllers
 
 import (
-	"github.com/banwire/microservice_golang/models"
+	"github.com/gbrayhan/microservices-go/models"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
+
+type GeneralRequest struct {
+	ID       int    `json:"id"`
+	UserName string `json:"user_name"`
+}
 
 /*
  * Section to validate input data
  */
 
-func validateExample(order *models.ExampleElement, response *models.ResponseBase) {
+func (request *GeneralRequest) validateExample() (err error, messages []string) {
 	// Rules to validate
-	response.AppendSuccessMessage("successful validation")
+
+	return
 }
 
 /*
@@ -19,35 +26,26 @@ func validateExample(order *models.ExampleElement, response *models.ResponseBase
  */
 
 func ExampleAction(c *gin.Context) {
-	// Custom Request Client
-	type requestClient struct {
-		ID       int    `json:"id"`
-		UserName string `json:"user_name"`
-	}
-	type responseClient struct {
-		Messages  []string `json:"messages"`
-		Merchant  string   `json:"merchant"`
-		Reference string   `json:"reference"`
-	}
-
 	var (
-		reqClient      requestClient
-		responseGlobal models.ResponseBase
-		element        models.ExampleElement
-		respClient     responseClient
+		request GeneralRequest
+		element models.ExampleElement
 	)
 
-	defer responseGlobal.ShowResponseJSON(c, &respClient)
-
-	if err := c.ShouldBindJSON(&reqClient); err != nil {
-		responseGlobal.AppendErrorRequest(err.Error())
+	if err := c.ShouldBindJSON(&request); err != nil {
+		BadRequest(c, []string{err.Error()})
 		return
 	}
 
-	element.ID = reqClient.ID
-
-	if element.CompleteDataID(&responseGlobal); !responseGlobal.Success {
+	if err, messages := request.validateExample(); err != nil {
+		BadRequest(c, messages)
 		return
 	}
 
+	element.ID = request.ID
+	if err := element.CompleteDataID(); err != nil {
+		// TODO: Action log to internal server
+		ServerError(c)
+		return
+	}
+	c.JSON(http.StatusOK, element)
 }

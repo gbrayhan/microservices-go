@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/aviddiviner/gin-limit"
-	"github.com/banwire/microservice_golang/routes"
+	limit "github.com/aviddiviner/gin-limit"
+	"github.com/gbrayhan/microservices-go/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -12,22 +12,27 @@ import (
 )
 
 func main() {
-
-	viper.SetConfigFile("config.json")
-
-	if err := viper.ReadInConfig(); err != nil {
-		panic(fmt.Errorf("Fatal Error in config file: %s \n", err))
-		return
-	}
-
 	router := gin.Default()
+
+	initialGinConfig(router)
+	routes.ApplicationV1Router(router)
+	startServer(router)
+
+}
+
+func initialGinConfig(router *gin.Engine) {
 	router.Use(limit.MaxAllowed(200))
 	router.Use(cors.Default())
-
 	router.Static("/public/static", "public/static")
 	router.LoadHTMLGlob("views/**/*")
+}
 
-	routes.ApplicationV1Router(router)
+func startServer(router *gin.Engine) {
+	viper.SetConfigFile("config.json")
+	if err := viper.ReadInConfig(); err != nil {
+		panic(fmt.Errorf("Fatal error in config file: %s \n", err))
+		return
+	}
 
 	serverPort := fmt.Sprintf(":%s", viper.GetString("ServerPort"))
 	s := &http.Server{
@@ -37,7 +42,6 @@ func main() {
 		WriteTimeout:   18000 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-
 	if err := s.ListenAndServe(); err != nil {
 		panic(fmt.Errorf("Fatal Error Description: %s \n", err))
 		return
