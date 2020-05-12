@@ -11,5 +11,10 @@ func GetMD5Hash(text string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-
-
+func ShortString(s string, i int) string {
+	runes := []rune( s )
+	if len(runes) > i {
+		return string(runes[:i])
+	}
+	return s
+}

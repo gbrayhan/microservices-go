@@ -1,21 +1,19 @@
 package tools
 
 import (
-	"bytes"
 	"context"
 	"net/http"
+	"strings"
 	"time"
 )
 
-func SendRequestJson(url string, jsonData []byte, timeOutMs float64) (response *http.Response, err error) {
-	request, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+func SendRequest(method string, url string, headers map[string]string, body string) (response *http.Response, err error) {
+	request, _ := http.NewRequest(method, url, strings.NewReader(body))
 
-	if err != nil {
-		return
+	for key, value := range headers {
+		request.Header.Set(key, value)
 	}
-	request.Header.Set("Content-Type", "application/json")
-	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeOutMs))
-
+	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*1000000)
 	request = request.WithContext(ctx)
 	client := &http.Client{}
 
