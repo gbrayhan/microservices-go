@@ -7,13 +7,13 @@ import (
 	"time"
 )
 
-func SendRequest(method string, url string, headers map[string]string, body string) (response *http.Response, err error) {
+func SendRequest(method string, url string, headers map[string]string, body string, timeOutMs float64) (response *http.Response, err error) {
 	request, _ := http.NewRequest(method, url, strings.NewReader(body))
 
 	for key, value := range headers {
 		request.Header.Set(key, value)
 	}
-	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*1000000)
+	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeOutMs))
 	request = request.WithContext(ctx)
 	client := &http.Client{}
 
