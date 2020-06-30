@@ -11,12 +11,12 @@ type GeneralRequest struct {
 	UserName string `json:"user_name"`
 }
 
-/*
- * Section to validate input data
- */
-
-func (request *GeneralRequest) validateExample() (err error, messages []string) {
+// Validate input data
+func ValidateExample(request *GeneralRequest) (messages []string) {
 	// Rules to validate
+	if request.ID == 0 {
+		messages = append(messages, "Field (id) is required.")
+	}
 
 	return
 }
@@ -24,28 +24,23 @@ func (request *GeneralRequest) validateExample() (err error, messages []string) 
 /*
  * Actions Controllers
  */
-
 func ExampleAction(c *gin.Context) {
 	var (
 		request GeneralRequest
 		element models.ExampleElement
 	)
 
-	if err := c.ShouldBindJSON(&request); err != nil {
-		BadRequest(c, []string{err.Error()})
-		return
-	}
-
-	if err, messages := request.validateExample(); err != nil {
-		BadRequest(c, messages)
+	BindJSON(c, &request)
+	if messagesError := ValidateExample(&request); messagesError != nil {
+		BadRequest(c, messagesError)
 		return
 	}
 
 	element.ID = request.ID
 	if err := element.CompleteDataID(); err != nil {
-		// TODO: Action log to internal server
-		ServerError(c)
+		ServerError(c, err)
 		return
 	}
+
 	c.JSON(http.StatusOK, element)
 }

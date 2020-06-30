@@ -15,8 +15,8 @@ func SendRequest(method string, url string, headers map[string]string, body stri
 	}
 	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeOutMs))
 	request = request.WithContext(ctx)
+	defer request.Body.Close()
 	client := &http.Client{}
 
 	return client.Do(request)
 }
-

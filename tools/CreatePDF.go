@@ -2,62 +2,58 @@ package tools
 
 import (
 	"bytes"
-	"github.com/SebastiaanKlippert/go-wkhtmltopdf"
-	"io"
+	"fmt"
+	"github.com/spf13/viper"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"os"
+	"os/exec"
 	"strconv"
-	"strings"
 	"text/template"
 )
 
-func GeneratePDF(data interface{}, templateName string) (pdfContent string) {
-	_ = os.Setenv("WKHTMLTOPDF_PATH", "/usr/bin/")
+func RouteTemplateToPDF(routeTemplate string, data interface{}) (pdfContent string, err error) {
+	viper.SetConfigFile("config.json")
+	if err = viper.ReadInConfig(); err != nil {
+		return
+	}
+	wkhtmltopdfBin := fmt.Sprintf("%s", viper.GetString("Tools.WkhtmltopdfBin"))
+	filenamePDF := "archives/tmp/" + strconv.Itoa(rand.Int()) + "_file.pdf"
+	filenameHtml := "archives/tmp/" + strconv.Itoa(rand.Int()) + "_file.html"
 
-	// Create new PDF generator
-	pdfg, err := wkhtmltopdf.NewPDFGenerator()
+	file, err := os.Create(filenameHtml)
 	if err != nil {
-		log.Fatal(err)
+		return
+	}
+	htmlTemplate := ProcessFile(routeTemplate, data)
+	if _, err = file.WriteString(htmlTemplate); err != nil {
+		return
 	}
 
-	// Set global options
-	pdfg.Dpi.Set(300)
-	pdfg.MarginTop.Set(0)
-	pdfg.MarginRight.Set(0)
-	pdfg.MarginLeft.Set(0)
-	pdfg.MarginBottom.Set(0)
-	pdfg.Orientation.Set(wkhtmltopdf.OrientationPortrait)
-
-	resultB := ProcessFile(templateName, data)
-	page := wkhtmltopdf.NewPageReader(strings.NewReader(resultB))
-
-	pdfg.AddPage(page)
-	err = pdfg.Create()
-	if err != nil {
-		log.Fatal(err)
+	if err = file.Close(); err != nil {
+		return
 	}
 
-	// Write buffer contents to file on disk
-	filename := "archives/tmp/" + strconv.Itoa(rand.Int()) + "_file.pdf"
-	err = pdfg.WriteFile(filename)
-	var w io.Writer
-	pdfg.SetOutput(w)
-
+	args := []string{"-s", "Letter", "-O", "Portrait", filenameHtml, filenamePDF}
+	cmd := exec.Command(wkhtmltopdfBin, args...)
+	// vars outString, err
+	_, err = cmd.CombinedOutput()
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 
-	content, err := ioutil.ReadFile(filename)
+	content, err := ioutil.ReadFile(filenamePDF)
 	if err != nil {
-		log.Fatal(err)
+		return
 	}
 
-	err = os.Remove(filename)
-	if err != nil {
-		log.Fatal(err)
+	if err = os.Remove(filenamePDF); err != nil {
+		return
 	}
+	if err = os.Remove(filenameHtml); err != nil {
+		return
+	}
+
 	pdfContent = string(content)
 	return
 }
@@ -72,8 +68,8 @@ func process(t *template.Template, vars interface{}) string {
 	return tmplBytes.String()
 }
 
-func ProcessFile(fileName string, vars interface{}) string {
-	tmpl, err := template.ParseFiles(fileName)
+func ProcessFile(rutaFileName string, vars interface{}) string {
+	tmpl, err := template.ParseFiles(rutaFileName)
 
 	if err != nil {
 		panic(err)

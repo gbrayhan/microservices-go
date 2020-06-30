@@ -4,47 +4,68 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 	"time"
 )
 
-var database Database
+type infoDatabase struct {
+	Read struct {
+		Hostname  string
+		Name      string
+		Username  string
+		Password  string
+		Port      string
+		Parameter string
+	}
+	Write struct {
+		Hostname  string
+		Name      string
+		Username  string
+		Password  string
+		Port      string
+		Parameter string
+	}
+}
 
+// Host databases to work
+var (
+	dbCompanyIT Database
+	dbCompanyOp Database
+)
+
+// Nodes read and write in database
 type Database struct {
-	DBRead  *sql.DB
-	DBWrite *sql.DB
+	Read  *sql.DB
+	Write *sql.DB
 }
 
 func init() {
-	var err interface{}
-
+	var infoDB infoDatabase
 	viper.SetConfigFile("config.json")
-	if err = viper.ReadInConfig(); err != nil {
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
-		return
-	}
+	viper.ReadInConfig()
 
-	dbUser := viper.GetString("Database.MySQL.Read.Username")
-	dbPassword := viper.GetString("Database.MySQL.Read.Password")
-	dbHost := viper.GetString("Database.MySQL.Read.Hostname")
-	dbPort := viper.GetString("Database.MySQL.Read.Port")
-	dbDataBase := viper.GetString("Database.MySQL.Read.Name")
-	if database.DBRead, err =
-		sql.Open("mysql", dbUser+":"+dbPassword+"@tcp("+dbHost+":"+dbPort+")/"+dbDataBase); err != nil {
-		panic(fmt.Errorf("Description: %s \n", err))
-		return
-	}
-	database.DBRead.SetConnMaxLifetime(time.Second * 10)
+	mapaInfo := viper.GetStringMap("Databases.MySQL.CompanyIT")
+	mapstructure.Decode(mapaInfo, &infoDB)
+	dbCompanyIT, _ = infoDB.upConnectionMysql()
 
-	dbUser = viper.GetString("Database.MySQL.Write.Username")
-	dbPassword = viper.GetString("Database.MySQL.Write.Password")
-	dbHost = viper.GetString("Database.MySQL.Write.Hostname")
-	dbPort = viper.GetString("Database.MySQL.Write.Port")
-	dbDataBase = viper.GetString("Database.MySQL.Write.Name")
-	if database.DBWrite, err = sql.Open("mysql", dbUser+":"+dbPassword+"@tcp("+dbHost+":"+dbPort+")/"+dbDataBase); err != nil {
-		panic(fmt.Errorf("Description: %s \n", err))
-		return
-	}
-	database.DBWrite.SetConnMaxLifetime(time.Second * 10)
+	mapstructure.Decode(viper.GetStringMap("Databases.MySQL.CompanyOp"), &infoDB)
+	dbCompanyOp, _ = infoDB.upConnectionMysql()
 
+	// If you need another database host, use this code HERE:
+	// mapstructure.Decode(viper.GetStringMap("Databases.MySQL.NAME"), &infoCompanyOp)
+	// dbCompanyOp, _ = infoCompanyOp.upConnectionMysql()
+
+}
+
+// Up new mysql database connection
+func (info *infoDatabase) upConnectionMysql() (db Database, err error) {
+	driverRead := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", info.Read.Username, info.Read.Password, info.Read.Hostname, info.Read.Port, info.Read.Name)
+	db.Read, err = sql.Open("mysql", driverRead)
+	db.Read.SetConnMaxLifetime(time.Second * 10)
+
+	driverWrite := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", info.Write.Username, info.Write.Password, info.Write.Hostname, info.Write.Port, info.Write.Name)
+	db.Read, err = sql.Open("mysql", driverWrite)
+	db.Write.SetConnMaxLifetime(time.Second * 10)
+	return
 }

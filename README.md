@@ -1,4 +1,4 @@
-# Golang Microservices Example
+# Golang Microservices Boilerplate
 [![issues](https://img.shields.io/github/issues/gbrayhan/microservices-go)](https://github.com/gbrayhan/microservices-go/tree/master/.github/ISSUE_TEMPLATE)
 [![forks](https://img.shields.io/github/forks/gbrayhan/microservices-go)](https://github.com/gbrayhan/microservices-go/network/members)
 [![stars](https://img.shields.io/github/stars/gbrayhan/microservices-go)](https://github.com/gbrayhan/microservices-go/stargazers)
@@ -11,7 +11,7 @@ Example structure to start a microservices project with golang. Using a MySQL da
 
 docker build -t ${name_image} --force-rm .
 
-# run container development
+# Run container development
 
 docker run --name microservice \
 -v "$(pwd)":/app/microservices \
