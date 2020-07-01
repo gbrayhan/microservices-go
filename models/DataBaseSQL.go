@@ -45,12 +45,11 @@ func init() {
 	viper.SetConfigFile("config.json")
 	viper.ReadInConfig()
 
-	mapaInfo := viper.GetStringMap("Databases.MySQL.CompanyIT")
-	mapstructure.Decode(mapaInfo, &infoDB)
-	dbCompanyIT, _ = infoDB.upConnectionMysql()
+	mapstructure.Decode(viper.GetStringMap("Databases.MySQL.CompanyIT"), &infoDB)
+	dbCompanyIT.upConnectionMysql(&infoDB)
 
 	mapstructure.Decode(viper.GetStringMap("Databases.MySQL.CompanyOp"), &infoDB)
-	dbCompanyOp, _ = infoDB.upConnectionMysql()
+	dbCompanyOp.upConnectionMysql(&infoDB)
 
 	// If you need another database host, use this code HERE:
 	// mapstructure.Decode(viper.GetStringMap("Databases.MySQL.NAME"), &infoCompanyOp)
@@ -59,13 +58,13 @@ func init() {
 }
 
 // Up new mysql database connection
-func (info *infoDatabase) upConnectionMysql() (db Database, err error) {
+func (db *Database) upConnectionMysql(info *infoDatabase) (err error) {
 	driverRead := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", info.Read.Username, info.Read.Password, info.Read.Hostname, info.Read.Port, info.Read.Name)
 	db.Read, err = sql.Open("mysql", driverRead)
 	db.Read.SetConnMaxLifetime(time.Second * 10)
 
 	driverWrite := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", info.Write.Username, info.Write.Password, info.Write.Hostname, info.Write.Port, info.Write.Name)
-	db.Read, err = sql.Open("mysql", driverWrite)
+	db.Write, err = sql.Open("mysql", driverWrite)
 	db.Write.SetConnMaxLifetime(time.Second * 10)
 	return
 }
