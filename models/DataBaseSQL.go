@@ -52,8 +52,7 @@ func init() {
 	dbCompanyOp.upConnectionMysql(&infoDB)
 
 	// If you need another database host, use this code HERE:
-	// mapstructure.Decode(viper.GetStringMap("Databases.MySQL.NAME"), &infoCompanyOp)
-	// dbCompanyOp, _ = infoCompanyOp.upConnectionMysql()
+
 
 }
 
