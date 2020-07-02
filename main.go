@@ -31,7 +31,6 @@ func startServer(router *gin.Engine) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("Fatal error in config file: %s \n", err))
-		return
 	}
 
 	serverPort := fmt.Sprintf(":%s", viper.GetString("ServerPort"))
@@ -44,7 +43,6 @@ func startServer(router *gin.Engine) {
 	}
 	if err := s.ListenAndServe(); err != nil {
 		panic(fmt.Errorf("Fatal Error Description: %s \n", err))
-		return
 	}
 
 }

@@ -13,7 +13,8 @@ func SendRequest(method string, url string, headers map[string]string, body stri
 	for key, value := range headers {
 		request.Header.Set(key, value)
 	}
-	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeOutMs))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond*time.Duration(timeOutMs))
+	defer cancel()
 	request = request.WithContext(ctx)
 	defer request.Body.Close()
 	client := &http.Client{}

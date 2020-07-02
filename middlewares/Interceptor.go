@@ -28,7 +28,6 @@ func GinBodyLogMiddleware(c *gin.Context) {
 	num, err := c.Request.Body.Read(buf)
 	if err != nil {
 		panic(err)
-		return
 	}
 	reqBody := string(buf[0:num])
 	c.Request.Body = ioutil.NopCloser(bytes.NewBuffer([]byte(reqBody)))
@@ -44,7 +43,7 @@ func GinBodyLogMiddleware(c *gin.Context) {
 		"errors":        c.Errors.Errors(),
 		"created_at":    time.Now().In(loc).Format("2006-01-02T15:04:05"),
 	}
-	fmt.Sprintf("%v", allDataIO)
+	_ = fmt.Sprintf("%v", allDataIO)
 
 	//array to define which routes will be monitored in all status code
 	allLogs := []string{
