@@ -13,19 +13,5 @@ Example structure to start a microservices project with golang. Using a MySQL da
 docker build -t ${name_image} --force-rm .
 ```
 
-# Run container development
 
-```bash
-docker run --name microservice \
--v "$(pwd)":/app/microservices \
--e HOST_MONGO=mongo_host \
--e DATABASE_MONGO=database_mongo \ 
--e USER_DB=user_database_mysql \
--e PASSWORD_DB=password_mysql \
--e NAME_DB=name_db_mysql \
--e HOST_DB=host_mysql \
--e PORT_DB=port_mysql \
--d -p 8000:8080 \
-${name_image}
-```
 
