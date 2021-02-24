@@ -1,0 +1,16 @@
+basePath: /v1
+host: domain.com
+info:
+  contact:
+    email: gbrayhan@gmail.com
+    name: Alejandro Gabriel Guerrero
+    url: http://github.com/gbrayhan
+  description: Documentation's Boilerplate Golang
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Boilerplate Golang
+  version: "1.0"
+paths: {}
+swagger: "2.0"

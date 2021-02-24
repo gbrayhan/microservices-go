@@ -12,7 +12,7 @@ type GeneralRequest struct {
 }
 
 // Validate input data
-func ValidateExample(request *GeneralRequest) (messages []string) {
+func validateExample(request *GeneralRequest) (messages []string) {
 	// Rules to validate
 	if request.ID == 0 {
 		messages = append(messages, "Field (id) is required.")
@@ -29,9 +29,10 @@ func ExampleAction(c *gin.Context) {
 		request GeneralRequest
 		element models.ExampleElement
 	)
+	_ = bindJSON(c, &request)
 
-	BindJSON(c, &request)
-	if messagesError := ValidateExample(&request); messagesError != nil {
+
+	if messagesError := validateExample(&request); messagesError != nil {
 		BadRequest(c, messagesError)
 		return
 	}

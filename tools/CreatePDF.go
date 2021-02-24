@@ -2,14 +2,14 @@ package tools
 
 import (
 	"bytes"
-	"fmt"
-	"github.com/spf13/viper"
+	"crypto/rand"
 	"io/ioutil"
-	"math/rand"
+	"math/big"
 	"os"
 	"os/exec"
-	"strconv"
 	"text/template"
+
+	"github.com/spf13/viper"
 )
 
 func RouteTemplateToPDF(routeTemplate string, data interface{}) (pdfContent string, err error) {
@@ -17,15 +17,21 @@ func RouteTemplateToPDF(routeTemplate string, data interface{}) (pdfContent stri
 	if err = viper.ReadInConfig(); err != nil {
 		return
 	}
-	wkhtmltopdfBin := fmt.Sprintf("%s", viper.GetString("Tools.WkhtmltopdfBin"))
-	filenamePDF := "archives/tmp/" + strconv.Itoa(rand.Int()) + "_file.pdf"
-	filenameHtml := "archives/tmp/" + strconv.Itoa(rand.Int()) + "_file.html"
+	wkhtmltopdfBin := viper.GetString("Tools.WkhtmltopdfBin")
+	randCryp, err := rand.Int(rand.Reader, big.NewInt(100))
+	if err != nil {
+		return
+	}
+
+	filenamePDF := "archives/tmp/" + randCryp.String() + "_file.pdf"
+	filenameHtml := "archives/tmp/" + randCryp.String() + "_file.html"
 
 	file, err := os.Create(filenameHtml)
 	if err != nil {
 		return
 	}
-	htmlTemplate := ProcessFile(routeTemplate, data)
+
+	htmlTemplate := processFile(routeTemplate, data)
 	if _, err = file.WriteString(htmlTemplate); err != nil {
 		return
 	}
@@ -68,7 +74,7 @@ func process(t *template.Template, vars interface{}) string {
 	return tmplBytes.String()
 }
 
-func ProcessFile(rutaFileName string, vars interface{}) string {
+func processFile(rutaFileName string, vars interface{}) string {
 	tmpl, err := template.ParseFiles(rutaFileName)
 
 	if err != nil {

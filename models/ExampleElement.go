@@ -15,7 +15,7 @@ func (element *ExampleElement) CompleteDataID() (err error) {
 		FROM name_database.name_table 
 	WHERE id = ?; `
 
-	row := dbCompanyIT.Read.QueryRow(querySelect, element.ID)
+	row := dbBoilerplateGo.Read.QueryRow(querySelect, element.ID)
 	err = row.Scan(&element.FullName, &element.Email, &element.Phone, &element.JobPosition)
 
 	return

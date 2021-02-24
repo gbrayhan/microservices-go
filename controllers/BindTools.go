@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 )
 
-func BindJSON(c *gin.Context, request interface{}) (err error) {
+func bindJSON(c *gin.Context, request interface{}) (err error) {
 	buf := make([]byte, 5120)
 	num, _ := c.Request.Body.Read(buf)
 	reqBody := string(buf[0:num])

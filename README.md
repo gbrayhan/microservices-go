@@ -13,5 +13,19 @@ Example structure to start a microservices project with golang. Using a MySQL da
 docker build -t ${name_image} --force-rm .
 ```
 
+# Swagger Implementation
+```bash
+swag init -g routes/ApplicationV1.go
+```
+
+
+# Unit test command
+```bash
+# run recursive test
+go test  ./test/unitgo/...
+# clean go test results in cache
+go clean -testcache
+```
+
 
 

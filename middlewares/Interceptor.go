@@ -3,10 +3,12 @@ package middlewares
 import (
 	"bytes"
 	"fmt"
-	"github.com/gbrayhan/microservices-go/tools"
-	"github.com/gin-gonic/gin"
 	"io/ioutil"
 	"time"
+
+	"github.com/gin-gonic/gin"
+
+	"github.com/gbrayhan/microservices-go/tools"
 )
 
 type bodyLogWriter struct {
@@ -26,7 +28,7 @@ func GinBodyLogMiddleware(c *gin.Context) {
 
 	buf := make([]byte, 4096)
 	num, err := c.Request.Body.Read(buf)
-	if err != nil {
+	if err != nil && err.Error() != "EOF" {
 		panic(err)
 	}
 	reqBody := string(buf[0:num])
@@ -53,7 +55,6 @@ func GinBodyLogMiddleware(c *gin.Context) {
 	}
 
 	if existAll, _ := tools.InArray(c.FullPath(), allLogs); existAll {
-
 		if c.Writer.Status() == 500 {
 			// go SendMailLog(allDataIO)
 		}
