@@ -1,21 +1,25 @@
 package controllers
 
 import (
-	"github.com/gin-gonic/gin"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func BadRequest(c *gin.Context, messages []string) {
-	c.JSON(http.StatusBadRequest, struct {
-		Messages []string `json:"messages"`
-	}{Messages: messages})
+type JSONSwagger struct {
 }
 
-func ServerError(c *gin.Context, err error) {
-	c.Error(err)
-	c.JSON(http.StatusInternalServerError, struct {
-		Messages []string `json:"messages"`
-	}{
-		Messages: []string{"We are working to improve the flow of this request."},
-	})
+type GeneralResponse struct {
+	Messages []string `json:"messages" example:"error description,other error description"`
+}
+
+func badRequest(c *gin.Context, messages []string) {
+	c.JSON(http.StatusBadRequest,
+		GeneralResponse{Messages: messages})
+}
+
+func serverError(c *gin.Context, err error) {
+	_ = c.Error(err)
+	c.JSON(http.StatusInternalServerError,
+		GeneralResponse{Messages: []string{"We are working to improve the flow of this request."}})
 }

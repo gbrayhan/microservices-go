@@ -22,7 +22,7 @@ import (
 // @license.name Apache 2.0
 // @license.url http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host domain.com
+// @host localhost:8080
 // @BasePath /v1
 func ApplicationV1Router(router *gin.Engine) {
 	v1 := router.Group("/v1")
@@ -31,7 +31,13 @@ func ApplicationV1Router(router *gin.Engine) {
 		{
 			v1.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 		}
-
-		v1.POST("/example", controllers.ExampleAction)
+		// Medicines
+		v1Medicines := v1.Group("/medicine")
+		{
+			v1Medicines.POST("/new", controllers.NewMedicine)
+			v1Medicines.GET("/get-all", controllers.GetAllMedicines)
+			v1Medicines.GET("/get-by-id/:medicine-id", controllers.GetMedicineByID)
+			v1Medicines.PUT("/update", controllers.NewMedicine)
+		}
 	}
 }

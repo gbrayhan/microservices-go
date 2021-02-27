@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"bytes"
-	"github.com/gin-gonic/gin"
 	"io/ioutil"
+
+	"github.com/gin-gonic/gin"
 )
 
 func bindJSON(c *gin.Context, request interface{}) (err error) {

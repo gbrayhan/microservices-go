@@ -1,4 +1,5 @@
 # Golang Microservices Boilerplate
+
 [![issues](https://img.shields.io/github/issues/gbrayhan/microservices-go)](https://github.com/gbrayhan/microservices-go/tree/master/.github/ISSUE_TEMPLATE)
 [![forks](https://img.shields.io/github/forks/gbrayhan/microservices-go)](https://github.com/gbrayhan/microservices-go/network/members)
 [![stars](https://img.shields.io/github/stars/gbrayhan/microservices-go)](https://github.com/gbrayhan/microservices-go/stargazers)
@@ -7,24 +8,76 @@
 
 Example structure to start a microservices project with golang. Using a MySQL database.
 
+## Manual Installation
 
-# Build image docker development
+If you would still prefer to do the installation manually, follow these steps:
+
+Clone the repo:
+
 ```bash
-docker build -t ${name_image} --force-rm .
+git clone https://github.com/gbrayhan/microservices-go
 ```
 
-# Swagger Implementation
+If you need, configure the environment variables in file config.json, if you use docker-compose leave the variables set
+in the file config.json.example
+
+```bash 
+cp config.json.example config.json
+```
+
+## Table of Contents
+
+- [Features](#features)
+- [Commands](#commands)
+- [Environment Variables](#environment-variables)
+- [Project Structure](#project-structure)
+- [API Documentation](#api-documentation)
+- [Error Handling](#error-handling)
+- [Validation](#validation)
+- [Linting](#linting)
+
+## Features
+
+- **Golang v1.14**: Stable version of go
+- **Framework**: A stable version of [gin-go](https://github.com/gin-gonic/gin)
+- **SQL database**: [MariaDB](https://mariadb.org/) using internal sql package of
+  go [sql](https://golang.org/pkg/database/sql/)
+- **Testing**: unit and integration tests using package of go [testing](https://golang.org/pkg/testing/)
+- **API documentation**: with [swaggo](https://github.com/swaggo/swag) a go implementation
+  of [swagger](https://swagger.io/)
+- **Dependency management**: with [go modules](https://golang.org/ref/mod)
+- **Environment variables**: using [viper](https://github.com/spf13/viper)
+- **Docker support**
+- **Code quality**: with [CodeFactor](https://www.codefactor.io/)
+- **Linting**: with [ESLint](https://eslint.org)
+
+## Commands
+
+### Build and run image of docker
+
+```bash
+docker-compose up  --build  -d
+```
+
+### Swagger Implementation
+
 ```bash
 swag init -g routes/ApplicationV1.go
 ```
 
+### Unit test command
 
-# Unit test command
 ```bash
 # run recursive test
 go test  ./test/unitgo/...
 # clean go test results in cache
 go clean -testcache
+```
+
+### Lint inspection of go
+
+```bash
+golangci-lint run ./...
 ```
 
 

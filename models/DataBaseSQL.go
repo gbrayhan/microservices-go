@@ -53,7 +53,6 @@ func init() {
 	// _ = dbOtherDB.upConnectionMysql(&infoDB)
 
 	// If you need another database host, use this code HERE:
-
 }
 
 // Up new mysql database connection

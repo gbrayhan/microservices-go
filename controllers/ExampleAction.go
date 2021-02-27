@@ -33,13 +33,13 @@ func ExampleAction(c *gin.Context) {
 
 
 	if messagesError := validateExample(&request); messagesError != nil {
-		BadRequest(c, messagesError)
+		badRequest(c, messagesError)
 		return
 	}
 
 	element.ID = request.ID
 	if err := element.CompleteDataID(); err != nil {
-		ServerError(c, err)
+		serverError(c, err)
 		return
 	}
 

@@ -8,7 +8,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/gbrayhan/microservices-go/tools"
+	"github.com/gbrayhan/microservices-go/services"
+	"github.com/gbrayhan/microservices-go/utils"
 )
 
 type bodyLogWriter struct {
@@ -54,9 +55,9 @@ func GinBodyLogMiddleware(c *gin.Context) {
 		"/other-route",
 	}
 
-	if existAll, _ := tools.InArray(c.FullPath(), allLogs); existAll {
+	if existAll, _ := utils.InArray(c.FullPath(), allLogs); existAll {
 		if c.Writer.Status() == 500 {
-			// go SendMailLog(allDataIO)
+			go func() { err = services.SendSimpleMail() }()
 		}
 		// go SaveLogs(allDataIO)
 	}

@@ -27,11 +27,9 @@ func main() {
 func initialGinConfig(router *gin.Engine) {
 	router.Use(limit.MaxAllowed(200))
 	router.Use(cors.Default())
-	router.Static("/public/static", "public/static")
-	router.LoadHTMLGlob("views/**/*")
 }
 
-func startServer(router *gin.Engine) {
+func startServer(router http.Handler) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("fatal error in config file: %s \n", err))

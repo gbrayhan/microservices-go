@@ -5,13 +5,13 @@ services:
     image: go-microservice
     environment:
       - MYSQL_URL=sql://user:pass
-      - MONGODB_URL=mongodb://mongodb:27017/node-boilerplate
+      - MONGODB_URL=mongodb://mongodb:27017/go-boilerplate
     ports:
       - '8080:8080'
     depends_on:
       - mysqldb
-    volumes:
-      - .:/usr/src/node-app
+    #volumes:
+    #  - .:/srv/go-app
     networks:
       - go-network
   mysqldb:

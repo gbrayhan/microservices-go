@@ -1,15 +1,15 @@
 FROM golang:1.14 AS builder
-WORKDIR /srv
+WORKDIR /srv/go-app
 ADD . .
 RUN go build -o microservice
 
 
 FROM debian:buster
-WORKDIR /srv
-COPY --from=builder /srv/config.json .
-COPY --from=builder /srv/views ./views/
-COPY --from=builder /srv/archives ./archives/
-COPY --from=builder /srv/public ./public/
-COPY --from=builder /srv/microservice .
+WORKDIR /srv/go-app
+COPY --from=builder /srv/go-app/config.json .
+COPY --from=builder /srv/go-app/views ./views/
+COPY --from=builder /srv/go-app/archives ./archives/
+COPY --from=builder /srv/go-app/public ./public/
+COPY --from=builder /srv/go-app/microservice .
 
 CMD ["./microservice"]
