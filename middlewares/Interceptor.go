@@ -48,7 +48,7 @@ func GinBodyLogMiddleware(c *gin.Context) {
 	}
 	_ = fmt.Sprintf("%v", allDataIO)
 
-	//array to define which routes will be monitored in all status code
+	// array to define which routes will be monitored in all status code
 	allLogs := []string{
 		"/payment-with-recurrence",
 		"/buy-console",

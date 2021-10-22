@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"github.com/gbrayhan/microservices-go/config"
+	errorsController "github.com/gbrayhan/microservices-go/controllers/errors"
 	"net/http"
+	"strings"
 	"time"
 
 	limit "github.com/aviddiviner/gin-limit"
@@ -16,9 +19,9 @@ import (
 
 func main() {
 	router := gin.Default()
-
 	initialGinConfig(router)
 	router.Use(middlewares.GinBodyLogMiddleware)
+	router.Use(errorsController.Handler)
 	routes.ApplicationV1Router(router)
 	startServer(router)
 
@@ -27,6 +30,14 @@ func main() {
 func initialGinConfig(router *gin.Engine) {
 	router.Use(limit.MaxAllowed(200))
 	router.Use(cors.Default())
+	var err error
+	config.DB, err = config.GormOpen()
+
+	if err != nil {
+		panic(fmt.Errorf("fatal error in database file: %s \n", err))
+	}
+
+
 }
 
 func startServer(router http.Handler) {
@@ -43,6 +54,6 @@ func startServer(router http.Handler) {
 		MaxHeaderBytes: 1 << 20,
 	}
 	if err := s.ListenAndServe(); err != nil {
-		panic(fmt.Errorf("fatal error description: %s \n", err))
+		panic(fmt.Errorf("fatal error description: %s \n", strings.ToLower(err.Error())))
 	}
 }

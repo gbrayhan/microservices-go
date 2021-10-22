@@ -36,7 +36,7 @@ func ApplicationV1Router(router *gin.Engine) {
 		{
 			v1Medicines.POST("/new", controllers.NewMedicine)
 			v1Medicines.GET("/get-all", controllers.GetAllMedicines)
-			v1Medicines.GET("/get-by-id/:medicine-id", controllers.GetMedicineByID)
+			v1Medicines.GET("/get-by-id/:medicine-id", controllers.GetMedicinesByID)
 			v1Medicines.PUT("/update", controllers.NewMedicine)
 		}
 	}

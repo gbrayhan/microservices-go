@@ -6,7 +6,7 @@
 [![license](https://img.shields.io/github/license/gbrayhan/microservices-go)](https://github.com/gbrayhan/microservices-go/tree/master/LICENSE)
 [![CodeFactor](https://www.codefactor.io/repository/github/gbrayhan/microservices-go/badge/master)](https://www.codefactor.io/repository/github/gbrayhan/microservices-go/overview/master)
 
-Example structure to start a microservices project with golang. Using a MySQL database.
+Example structure to start a microservices project with golang. Using a MySQL databaseSQL.
 
 ## Manual Installation
 
@@ -40,8 +40,8 @@ cp config.json.example config.json
 
 - **Golang v1.14**: Stable version of go
 - **Framework**: A stable version of [gin-go](https://github.com/gin-gonic/gin)
-- **SQL database**: [MariaDB](https://mariadb.org/) using internal sql package of
-  go [sql](https://golang.org/pkg/database/sql/)
+- **SQL databaseSQL**: [MariaDB](https://mariadb.org/) using internal sql package of
+  go [sql](https://golang.org/pkg/databaseSQL/sql/)
 - **Testing**: unit and integration tests using package of go [testing](https://golang.org/pkg/testing/)
 - **API documentation**: with [swaggo](https://github.com/swaggo/swag) a go implementation
   of [swagger](https://swagger.io/)
@@ -62,7 +62,7 @@ docker-compose up  --build  -d
 ### Swagger Implementation
 
 ```bash
-swag init -g routes/ApplicationV1.go
+swag connectSQL -g routes/ApplicationV1.go
 ```
 
 ### Unit test command

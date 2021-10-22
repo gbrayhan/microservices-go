@@ -7,81 +7,89 @@ import (
   "github.com/gin-gonic/gin"
 
   "github.com/gbrayhan/microservices-go/models"
-  "github.com/gbrayhan/microservices-go/validator"
 )
 
-type MedicineController struct {
+type medicineController struct {
   Name        string `json:"name" example:"Paracetamol"`
   Description string `json:"description" example:"Something"`
   Laboratory  string `json:"laboratory" example:"Roche"`
   EanCode     string `json:"ean_code" example:"122000000021"`
 }
 
-//  NewMedicine godoc
+// NewMedicine godoc
 // @Tags medicine
 // @Summary Create New Medicine
 // @Description Create new medicine on the system
 // @Accept  json
 // @Produce  json
-// @Param data body MedicineController true "body data"
+// @Param data body medicineController true "body data"
 // @Success 200 {object} models.Medicine
-// @Failure 400 {object} GeneralResponse
-// @Failure 500 {object} GeneralResponse
+// @Failure 400 {object} generalResponse
+// @Failure 500 {object} generalResponse
 // @Router /medicine/new [post]
 func NewMedicine(c *gin.Context) {
-  var request MedicineController
+  request := struct {
+    Name        string `json:"name" example:"Paracetamol" gorm:"unique"`
+    Description string `json:"description" example:"Something"`
+    Laboratory  string `json:"laboratory" example:"Roche"`
+    EanCode     string `json:"ean_code" example:"122000000021" gorm:"unique"`
+  }{}
 
-  _ = bindJSON(c, &request)
+  if err := bindJSON(c, &request); err != nil {
+    badRequest(c, []string{err.Error()})
+    return
+  }
+  medicine := models.Medicine{
+    Name:        request.Name,
+    Description: request.Description,
+    Laboratory:  request.Laboratory,
+    EANCode:     request.EanCode,
+  }
 
-  if messagesError := validator.General(request, nil); messagesError != nil {
-    badRequest(c, messagesError)
+  err := models.CreateMedicine(&medicine)
+  if err != nil {
+    _ = c.Error(err)
     return
   }
 
-  medicineModel := models.Medicine{Name: request.Name, Description: request.Description, Laboratory: request.Laboratory, EANCode: request.EanCode}
-  if err := medicineModel.SaveMedicine(); err != nil {
-    serverError(c, err)
-    return
-  }
-  c.JSON(http.StatusOK, medicineModel)
+  c.JSON(http.StatusOK, medicine)
 }
 
-//  GetAllMedicine godoc
+// GetAllMedicines godoc
 // @Tags medicine
 // @Summary Get all Medicines
 // @Description Get all Medicines on the system
 // @Success 200 {object} []models.Medicine
-// @Failure 400 {object} GeneralResponse
-// @Failure 500 {object} GeneralResponse
+// @Failure 400 {object} generalResponse
+// @Failure 500 {object} generalResponse
 // @Router /medicine/get-all [get]
 func GetAllMedicines(c *gin.Context) {
-  medicines, err := models.GetAllMedicines()
+  var medicines []models.Medicine
+  err := models.GetAllMedicines(&medicines)
   if err != nil {
     serverError(c, err)
     return
   }
-
   c.JSON(http.StatusOK, medicines)
 }
 
-//  GetMedicinesByID godoc
+// GetMedicinesByID godoc
 // @Tags medicine
 // @Summary Get medicines by ID
 // @Description Get Medicines by ID on the system
-// @Param medicine_id path int true "Id of medicine"
+// @Param medicine_id path int true "id of medicine"
 // @Success 200 {object} models.Medicine
-// @Failure 400 {object} GeneralResponse
-// @Failure 500 {object} GeneralResponse
+// @Failure 400 {object} generalResponse
+// @Failure 500 {object} generalResponse
 // @Router /medicine/get-by-id/{medicine_id} [get]
-func GetMedicineByID(c *gin.Context) {
+func GetMedicinesByID(c *gin.Context) {
   var medicine models.Medicine
   medicineID, err := strconv.Atoi(c.Param("medicine-id"))
-  medicine.ID = medicineID
   if err != nil {
     badRequest(c, []string{"Medicine ID is invalid"})
     return
   }
-  err = medicine.GetMedicineByID()
+  err = models.GetMedicineByID(&medicine, medicineID)
   if err != nil {
     serverError(c, err)
     return
