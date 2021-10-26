@@ -1,13 +1,12 @@
 package routes
 
 import (
+	"github.com/gbrayhan/microservices-go/controllers/medicine"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
 	_ "github.com/gbrayhan/microservices-go/docs"
-
-	"github.com/gbrayhan/microservices-go/controllers"
 )
 
 // @title Boilerplate Golang
@@ -34,10 +33,10 @@ func ApplicationV1Router(router *gin.Engine) {
 		// Medicines
 		v1Medicines := v1.Group("/medicine")
 		{
-			v1Medicines.POST("/new", controllers.NewMedicine)
-			v1Medicines.GET("/get-all", controllers.GetAllMedicines)
-			v1Medicines.GET("/get-by-id/:medicine-id", controllers.GetMedicinesByID)
-			v1Medicines.PUT("/update", controllers.NewMedicine)
+			v1Medicines.POST("/", medicine.NewMedicine)
+			v1Medicines.GET("/:id", medicine.GetMedicinesByID)
+			v1Medicines.GET("/", medicine.GetAllMedicines)
+			v1Medicines.PUT("/:id", medicine.UpdateMedicine)
 		}
 	}
 }

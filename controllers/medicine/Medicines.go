@@ -1,20 +1,15 @@
-package controllers
+package medicine
 
 import (
+  "errors"
+  "github.com/gbrayhan/microservices-go/controllers"
+  "github.com/gin-gonic/gin"
   "net/http"
   "strconv"
 
-  "github.com/gin-gonic/gin"
-
   "github.com/gbrayhan/microservices-go/models"
+  errorModels "github.com/gbrayhan/microservices-go/models/errors"
 )
-
-type medicineController struct {
-  Name        string `json:"name" example:"Paracetamol"`
-  Description string `json:"description" example:"Something"`
-  Laboratory  string `json:"laboratory" example:"Roche"`
-  EanCode     string `json:"ean_code" example:"122000000021"`
-}
 
 // NewMedicine godoc
 // @Tags medicine
@@ -29,14 +24,16 @@ type medicineController struct {
 // @Router /medicine/new [post]
 func NewMedicine(c *gin.Context) {
   request := struct {
-    Name        string `json:"name" example:"Paracetamol" gorm:"unique"`
-    Description string `json:"description" example:"Something"`
-    Laboratory  string `json:"laboratory" example:"Roche"`
-    EanCode     string `json:"ean_code" example:"122000000021" gorm:"unique"`
+    Name        string `json:"name" example:"Paracetamol" gorm:"unique" binding:"required"`
+    Description string `json:"description" example:"Something" binding:"required"`
+    Laboratory  string `json:"laboratory" example:"Roche" binding:"required"`
+    EanCode     string `json:"ean_code" example:"122000000021" gorm:"unique" binding:"required"`
   }{}
 
-  if err := bindJSON(c, &request); err != nil {
-    badRequest(c, []string{err.Error()})
+  if err := controllers.BindJSON(c, &request); err != nil {
+    appError := errorModels.NewAppError(err, errorModels.ValidationError)
+    //appError := domainErrors.NewAppError(errors.New(strings.Join(messages, ", ")), domainErrors.ValidationError)
+    _ = c.Error(appError)
     return
   }
   medicine := models.Medicine{
@@ -67,7 +64,7 @@ func GetAllMedicines(c *gin.Context) {
   var medicines []models.Medicine
   err := models.GetAllMedicines(&medicines)
   if err != nil {
-    serverError(c, err)
+    controllers.ServerError(c, err)
     return
   }
   c.JSON(http.StatusOK, medicines)
@@ -84,21 +81,53 @@ func GetAllMedicines(c *gin.Context) {
 // @Router /medicine/get-by-id/{medicine_id} [get]
 func GetMedicinesByID(c *gin.Context) {
   var medicine models.Medicine
-  medicineID, err := strconv.Atoi(c.Param("medicine-id"))
+  medicineID, err := strconv.Atoi(c.Param("id"))
   if err != nil {
-    badRequest(c, []string{"Medicine ID is invalid"})
-    return
-  }
-  err = models.GetMedicineByID(&medicine, medicineID)
-  if err != nil {
-    serverError(c, err)
+    appError := errorModels.NewAppError(errors.New("medicine id is invalid"), errorModels.ValidationError)
+    _ = c.Error(appError)
     return
   }
 
-  if medicine.Name == "" {
-    badRequest(c, []string{"Medicine ID is not found"})
+  err = models.GetMedicineByID(&medicine, medicineID)
+  if err != nil {
+    appError := errorModels.NewAppError(err, errorModels.ValidationError)
+    _ = c.Error(appError)
     return
   }
 
   c.JSON(http.StatusOK, medicine)
+}
+
+func UpdateMedicine(c *gin.Context) {
+  medicineID, err := strconv.Atoi(c.Param("id"))
+  if err != nil {
+    appError := errorModels.NewAppError(errors.New("param id is necessary in the url"), errorModels.ValidationError)
+    _ = c.Error(appError)
+    return
+  }
+  var requestMap map[string]interface{}
+
+  err = controllers.BindJSONMap(c, &requestMap)
+  if err != nil {
+    appError := errorModels.NewAppError(err, errorModels.ValidationError)
+    _ = c.Error(appError)
+    return
+  }
+
+  err = updateValidation(requestMap)
+  if err != nil {
+    _ = c.Error(err)
+    return
+  }
+
+
+
+  medicine, err := models.UpdateMedicine(medicineID, requestMap)
+  if err != nil {
+    _ = c.Error(err)
+    return
+  }
+
+  c.JSON(http.StatusOK, medicine)
+
 }

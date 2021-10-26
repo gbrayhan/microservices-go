@@ -1,4 +1,3 @@
-//Config/Database.go
 package config
 
 import (
@@ -20,7 +19,6 @@ type DBConfig struct {
 }
 
 func GormOpen() (gormDB *gorm.DB, err error) {
-  //err = mapstructure.Decode(viper.GetStringMap("Databases.MySQL.BoilerplateGo"), &infoDB)
   var infoDatabase infoDatabaseSQL
   err = infoDatabase.getDiverConn("Databases.MySQL.BoilerplateGo")
   if err != nil {

@@ -2,9 +2,9 @@ package models
 
 import (
   "encoding/json"
-  "fmt"
   "github.com/gbrayhan/microservices-go/config"
   modelErrors "github.com/gbrayhan/microservices-go/models/errors"
+  "github.com/jinzhu/gorm"
   "time"
 )
 
@@ -14,8 +14,8 @@ type Medicine struct {
   Description string    `json:"description" example:"Some Description"`
   EANCode     string    `json:"ean_code" example:"9900000124" gorm:"unique"`
   Laboratory  string    `json:"laboratory" example:"Roche"`
-  CreatedAt   time.Time `json:"created_at,omitempty" example:"2021-02-24 20:19:39"`
-  UpdatedAt   time.Time `json:"updated_at,omitempty" example:"2021-02-24 20:19:39"`
+  CreatedAt   time.Time `json:"created_at,omitempty" example:"2021-02-24 20:19:39" gorm:"autoCreateTime:mili"`
+  UpdatedAt   time.Time `json:"updated_at,omitempty" example:"2021-02-24 20:19:39" gorm:"autoCreateTime:mili" gorm:"autoUpdateTime:mili"`
 }
 
 func (b *Medicine) TableName() string {
@@ -58,17 +58,43 @@ func CreateMedicine(medicine *Medicine) (err error) {
 // GetMedicineByID ... Fetch only one medicine by Id
 func GetMedicineByID(medicine *Medicine, id int) (err error) {
   err = config.DB.Where("id = ?", id).First(medicine).Error
-  if err != nil {
-    return err
+
+  switch err.Error() {
+  case gorm.ErrRecordNotFound.Error():
+    err = modelErrors.NewAppErrorWithType(modelErrors.NotFound)
+  default:
+    err = modelErrors.NewAppErrorWithType(modelErrors.UnknownError)
   }
-  return nil
+
+  return
 }
 
 // UpdateMedicine ... Update medicine
-func UpdateMedicine(medicine *Medicine, id int) (err error) {
-  fmt.Println(medicine)
-  config.DB.Save(medicine)
-  return nil
+func UpdateMedicine(id int, medicineMap map[string]interface{}) (medicine Medicine, err error) {
+  medicine.ID = id
+  err = config.DB.Model(&medicine).
+    Select("name", "description", "ean_code", "laboratory").
+    Updates(medicineMap).Error
+
+  // err = config.DB.Save(medicine).Error
+  if err != nil {
+    byteErr, _ := json.Marshal(err)
+    var newError modelErrors.GormErr
+    err = json.Unmarshal(byteErr, &newError)
+    if err != nil {
+      return
+    }
+    switch newError.Number {
+    case 1062:
+      err = modelErrors.NewAppErrorWithType(modelErrors.ResourceAlreadyExists)
+      return
+
+    default:
+      err = modelErrors.NewAppErrorWithType(modelErrors.UnknownError)
+    }
+  }
+
+  return
 }
 
 // DeleteMedicine ... Delete medicine
