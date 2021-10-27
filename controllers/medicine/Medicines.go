@@ -32,7 +32,6 @@ func NewMedicine(c *gin.Context) {
 
   if err := controllers.BindJSON(c, &request); err != nil {
     appError := errorModels.NewAppError(err, errorModels.ValidationError)
-    //appError := domainErrors.NewAppError(errors.New(strings.Join(messages, ", ")), domainErrors.ValidationError)
     _ = c.Error(appError)
     return
   }
@@ -64,7 +63,8 @@ func GetAllMedicines(c *gin.Context) {
   var medicines []models.Medicine
   err := models.GetAllMedicines(&medicines)
   if err != nil {
-    controllers.ServerError(c, err)
+    appError := errorModels.NewAppErrorWithType(errorModels.UnknownError)
+    _ = c.Error(appError)
     return
   }
   c.JSON(http.StatusOK, medicines)

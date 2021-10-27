@@ -59,12 +59,15 @@ func CreateMedicine(medicine *Medicine) (err error) {
 func GetMedicineByID(medicine *Medicine, id int) (err error) {
   err = config.DB.Where("id = ?", id).First(medicine).Error
 
-  switch err.Error() {
-  case gorm.ErrRecordNotFound.Error():
-    err = modelErrors.NewAppErrorWithType(modelErrors.NotFound)
-  default:
-    err = modelErrors.NewAppErrorWithType(modelErrors.UnknownError)
+  if err != nil {
+    switch err.Error() {
+    case gorm.ErrRecordNotFound.Error():
+      err = modelErrors.NewAppErrorWithType(modelErrors.NotFound)
+    default:
+      err = modelErrors.NewAppErrorWithType(modelErrors.UnknownError)
+    }
   }
+
 
   return
 }
@@ -73,8 +76,8 @@ func GetMedicineByID(medicine *Medicine, id int) (err error) {
 func UpdateMedicine(id int, medicineMap map[string]interface{}) (medicine Medicine, err error) {
   medicine.ID = id
   err = config.DB.Model(&medicine).
-    Select("name", "description", "ean_code", "laboratory").
-    Updates(medicineMap).Error
+      Select("name", "description", "ean_code", "laboratory").
+      Updates(medicineMap).Error
 
   // err = config.DB.Save(medicine).Error
   if err != nil {
@@ -93,6 +96,10 @@ func UpdateMedicine(id int, medicineMap map[string]interface{}) (medicine Medici
       err = modelErrors.NewAppErrorWithType(modelErrors.UnknownError)
     }
   }
+
+  err = config.DB.Where("id = ?", id).First(&medicine).Error
+
+
 
   return
 }
