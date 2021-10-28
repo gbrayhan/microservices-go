@@ -1,13 +1,10 @@
 package config
 
 import (
-  "database/sql"
   "fmt"
+  _ "github.com/go-sql-driver/mysql"
   "github.com/mitchellh/mapstructure"
   "github.com/spf13/viper"
-  "time"
-
-  _ "github.com/go-sql-driver/mysql"
 )
 
 type infoDatabaseSQL struct {
@@ -50,24 +47,3 @@ func (infoDB *infoDatabaseSQL) getDiverConn(nameMap string) (err error) {
   return
 }
 
-type databaseSQL struct {
-  Read  *sql.DB
-  Write *sql.DB
-}
-
-// Up new mysql databaseSQL connection
-func (db *databaseSQL) upConnectionMysql(info *infoDatabaseSQL) (err error) {
-  driverRead := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", info.Read.Username,
-    info.Read.Password, info.Read.Hostname, info.Read.Port, info.Read.Name)
-  db.Read, err = sql.Open("mysql", driverRead)
-  db.Read.SetConnMaxLifetime(time.Second * 10)
-  if err != nil {
-    return
-  }
-
-  driverWrite := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s",
-    info.Write.Username, info.Write.Password, info.Write.Hostname, info.Write.Port, info.Write.Name)
-  db.Write, err = sql.Open("mysql", driverWrite)
-  db.Write.SetConnMaxLifetime(time.Second * 10)
-  return
-}
