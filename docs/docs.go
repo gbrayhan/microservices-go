@@ -33,7 +33,7 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/medicine/get-all": {
+        "/medicine": {
             "get": {
                 "description": "Get all Medicines on the system",
                 "tags": [
@@ -53,57 +53,17 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/controllers.GeneralResponse"
+                            "$ref": "#/definitions/medicine.MessageResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controllers.GeneralResponse"
+                            "$ref": "#/definitions/medicine.MessageResponse"
                         }
                     }
                 }
-            }
-        },
-        "/medicine/get-by-id/{medicine_id}": {
-            "get": {
-                "description": "Get Medicines by ID on the system",
-                "tags": [
-                    "medicine"
-                ],
-                "summary": "Get medicines by ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "Id of medicine",
-                        "name": "medicine_id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/models.Medicine"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/controllers.GeneralResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/controllers.GeneralResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/medicine/new": {
+            },
             "post": {
                 "description": "Create new medicine on the system",
                 "consumes": [
@@ -123,7 +83,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/controllers.MedicineController"
+                            "$ref": "#/definitions/medicine.NewMedicineRequest"
                         }
                     }
                 ],
@@ -137,13 +97,51 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/controllers.GeneralResponse"
+                            "$ref": "#/definitions/medicine.MessageResponse"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controllers.GeneralResponse"
+                            "$ref": "#/definitions/medicine.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/medicine/{medicine_id}": {
+            "get": {
+                "description": "Get Medicines by ID on the system",
+                "tags": [
+                    "medicine"
+                ],
+                "summary": "Get medicines by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of medicine",
+                        "name": "medicine_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Medicine"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/medicine.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/medicine.MessageResponse"
                         }
                     }
                 }
@@ -151,23 +149,22 @@ var doc = `{
         }
     },
     "definitions": {
-        "controllers.GeneralResponse": {
+        "medicine.MessageResponse": {
             "type": "object",
             "properties": {
-                "messages": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "example": [
-                        "error description",
-                        "other error description"
-                    ]
+                "message": {
+                    "type": "string"
                 }
             }
         },
-        "controllers.MedicineController": {
+        "medicine.NewMedicineRequest": {
             "type": "object",
+            "required": [
+                "description",
+                "ean_code",
+                "laboratory",
+                "name"
+            ],
             "properties": {
                 "description": {
                     "type": "string",

@@ -105,7 +105,16 @@ func UpdateMedicine(id int, medicineMap map[string]interface{}) (medicine Medici
 }
 
 // DeleteMedicine ... Delete medicine
-func DeleteMedicine(medicine *Medicine, id string) (err error) {
-  config.DB.Where("id = ?", id).Delete(medicine)
+func DeleteMedicine(id int) (err error) {
+  tx := config.DB.Delete(&Medicine{}, id)
+  if tx.Error != nil {
+    err = modelErrors.NewAppErrorWithType(modelErrors.UnknownError)
+    return
+  }
+
+  if tx.RowsAffected ==  0 {
+    err = modelErrors.NewAppErrorWithType(modelErrors.NotFound)
+  }
+
   return
 }

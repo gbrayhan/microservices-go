@@ -1,16 +1,11 @@
 basePath: /v1
 definitions:
-  controllers.GeneralResponse:
+  medicine.MessageResponse:
     properties:
-      messages:
-        example:
-        - error description
-        - other error description
-        items:
-          type: string
-        type: array
+      message:
+        type: string
     type: object
-  controllers.MedicineController:
+  medicine.NewMedicineRequest:
     properties:
       description:
         example: Something
@@ -24,6 +19,11 @@ definitions:
       name:
         example: Paracetamol
         type: string
+    required:
+    - description
+    - ean_code
+    - laboratory
+    - name
     type: object
   models.Medicine:
     properties:
@@ -63,7 +63,7 @@ info:
   title: Boilerplate Golang
   version: "1.0"
 paths:
-  /medicine/get-all:
+  /medicine:
     get:
       description: Get all Medicines on the system
       responses:
@@ -76,19 +76,48 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/controllers.GeneralResponse'
+            $ref: '#/definitions/medicine.MessageResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/controllers.GeneralResponse'
+            $ref: '#/definitions/medicine.MessageResponse'
       summary: Get all Medicines
       tags:
       - medicine
-  /medicine/get-by-id/{medicine_id}:
+    post:
+      consumes:
+      - application/json
+      description: Create new medicine on the system
+      parameters:
+      - description: body data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/medicine.NewMedicineRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Medicine'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/medicine.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/medicine.MessageResponse'
+      summary: Create New Medicine
+      tags:
+      - medicine
+  /medicine/{medicine_id}:
     get:
       description: Get Medicines by ID on the system
       parameters:
-      - description: Id of medicine
+      - description: id of medicine
         in: path
         name: medicine_id
         required: true
@@ -101,42 +130,12 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/controllers.GeneralResponse'
+            $ref: '#/definitions/medicine.MessageResponse'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/controllers.GeneralResponse'
+            $ref: '#/definitions/medicine.MessageResponse'
       summary: Get medicines by ID
-      tags:
-      - medicine
-  /medicine/new:
-    post:
-      consumes:
-      - application/json
-      description: Create new medicine on the system
-      parameters:
-      - description: body data
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/controllers.MedicineController'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/models.Medicine'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/controllers.GeneralResponse'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/controllers.GeneralResponse'
-      summary: Create New Medicine
       tags:
       - medicine
 swagger: "2.0"

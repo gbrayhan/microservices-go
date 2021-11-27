@@ -62,8 +62,12 @@ docker-compose up  --build  -d
 ### Swagger Implementation
 
 ```bash
-swag connectSQL -g routes/ApplicationV1.go
+swag init -g routes/ApplicationV1.go
 ```
+To visualize the swagger documentation on local use 
+
+http://localhost:8080/v1/swagger/index.html
+
 
 ### Unit test command
 

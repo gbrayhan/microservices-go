@@ -7,6 +7,7 @@ import (
   "net/http"
   "strconv"
 
+  _ "github.com/gbrayhan/microservices-go/controllers/errors"
   "github.com/gbrayhan/microservices-go/models"
   errorModels "github.com/gbrayhan/microservices-go/models/errors"
 )
@@ -17,18 +18,13 @@ import (
 // @Description Create new medicine on the system
 // @Accept  json
 // @Produce  json
-// @Param data body medicineController true "body data"
+// @Param data body NewMedicineRequest true "body data"
 // @Success 200 {object} models.Medicine
-// @Failure 400 {object} generalResponse
-// @Failure 500 {object} generalResponse
-// @Router /medicine/new [post]
+// @Failure 400 {object} MessageResponse
+// @Failure 500 {object} MessageResponse
+// @Router /medicine [post]
 func NewMedicine(c *gin.Context) {
-  request := struct {
-    Name        string `json:"name" example:"Paracetamol" gorm:"unique" binding:"required"`
-    Description string `json:"description" example:"Something" binding:"required"`
-    Laboratory  string `json:"laboratory" example:"Roche" binding:"required"`
-    EanCode     string `json:"ean_code" example:"122000000021" gorm:"unique" binding:"required"`
-  }{}
+  var request NewMedicineRequest
 
   if err := controllers.BindJSON(c, &request); err != nil {
     appError := errorModels.NewAppError(err, errorModels.ValidationError)
@@ -56,9 +52,9 @@ func NewMedicine(c *gin.Context) {
 // @Summary Get all Medicines
 // @Description Get all Medicines on the system
 // @Success 200 {object} []models.Medicine
-// @Failure 400 {object} generalResponse
-// @Failure 500 {object} generalResponse
-// @Router /medicine/get-all [get]
+// @Failure 400 {object} MessageResponse
+// @Failure 500 {object} MessageResponse
+// @Router /medicine [get]
 func GetAllMedicines(c *gin.Context) {
   var medicines []models.Medicine
   err := models.GetAllMedicines(&medicines)
@@ -76,9 +72,9 @@ func GetAllMedicines(c *gin.Context) {
 // @Description Get Medicines by ID on the system
 // @Param medicine_id path int true "id of medicine"
 // @Success 200 {object} models.Medicine
-// @Failure 400 {object} generalResponse
-// @Failure 500 {object} generalResponse
-// @Router /medicine/get-by-id/{medicine_id} [get]
+// @Failure 400 {object} MessageResponse
+// @Failure 500 {object} MessageResponse
+// @Router /medicine/{medicine_id} [get]
 func GetMedicinesByID(c *gin.Context) {
   var medicine models.Medicine
   medicineID, err := strconv.Atoi(c.Param("id"))
@@ -129,5 +125,23 @@ func UpdateMedicine(c *gin.Context) {
   }
 
   c.JSON(http.StatusOK, medicine)
+
+}
+
+
+func DeleteMedicine(c *gin.Context) {
+  medicineID, err := strconv.Atoi(c.Param("id"))
+  if err != nil {
+    appError := errorModels.NewAppError(errors.New("param id is necessary in the url"), errorModels.ValidationError)
+    _ = c.Error(appError)
+    return
+  }
+
+   err = models.DeleteMedicine(medicineID)
+  if err != nil {
+    _ = c.Error(err)
+    return
+  }
+  c.JSON(http.StatusOK, gin.H{"message": "resource deleted successfully"})
 
 }

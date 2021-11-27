@@ -7,7 +7,7 @@ import (
   "github.com/gin-gonic/gin"
 )
 
-type messagesResponse struct {
+type MessagesResponse struct {
   Message string `json:"message"`
 }
 
@@ -21,7 +21,7 @@ func Handler(c *gin.Context) {
   if len(errs) > 0 {
     err, ok := errs[0].Err.(*models.AppError)
     if ok {
-      resp := messagesResponse{Message: err.Error()}
+      resp := MessagesResponse{Message: err.Error()}
       switch err.Type {
       case models.NotFound:
         c.JSON(http.StatusNotFound, resp)
@@ -39,10 +39,10 @@ func Handler(c *gin.Context) {
         c.JSON(http.StatusForbidden, resp)
         return
       case models.RepositoryError:
-        c.JSON(http.StatusInternalServerError, messagesResponse{Message: "We are working to improve the flow of this request."})
+        c.JSON(http.StatusInternalServerError, MessagesResponse{Message: "We are working to improve the flow of this request."})
         return
       default:
-        c.JSON(http.StatusInternalServerError, messagesResponse{Message: "We are working to improve the flow of this request."})
+        c.JSON(http.StatusInternalServerError, MessagesResponse{Message: "We are working to improve the flow of this request."})
         return
       }
     }

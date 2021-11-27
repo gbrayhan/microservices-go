@@ -37,6 +37,7 @@ func ApplicationV1Router(router *gin.Engine) {
 			v1Medicines.GET("/:id", medicine.GetMedicinesByID)
 			v1Medicines.GET("/", medicine.GetAllMedicines)
 			v1Medicines.PUT("/:id", medicine.UpdateMedicine)
+			v1Medicines.DELETE("/:id", medicine.DeleteMedicine)
 		}
 	}
 }
