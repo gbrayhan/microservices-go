@@ -25,6 +25,14 @@ in the file config.json.example
 cp config.json.example config.json
 ```
 
+**TL;DR command list**
+
+    git clone https://github.com/gbrayhan/microservices-go
+    cd microservices-go
+    cp config.json.example config.json
+    docker-compose up  --build  -d
+
+
 ## Table of Contents
 
 - [Features](#features)
