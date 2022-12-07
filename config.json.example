@@ -12,7 +12,8 @@
     "OtherService": "https://dominio.com/"
   },
   "Secure": {
-    "SaltPasswordDB": "SECURE_SALT"
+    "JWTSecure": "SECURE_SALT",
+    "SecExpiration": 300
   },
   "Endpoints": {
     "SiteExample": "http://localhost:8084/"

@@ -23,4 +23,5 @@ func GenerateJWTToken() (string, error) {
 
   fmt.Println(tokenString, err)
 
+  return tokenString, err
 }

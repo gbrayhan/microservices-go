@@ -8,8 +8,8 @@ import (
   "strconv"
 
   _ "github.com/gbrayhan/microservices-go/controllers/errors"
-  "github.com/gbrayhan/microservices-go/models"
   errorModels "github.com/gbrayhan/microservices-go/models/errors"
+  model "github.com/gbrayhan/microservices-go/models/medicine"
 )
 
 // NewMedicine godoc
@@ -19,7 +19,7 @@ import (
 // @Accept  json
 // @Produce  json
 // @Param data body NewMedicineRequest true "body data"
-// @Success 200 {object} models.Medicine
+// @Success 200 {object} model.Medicine
 // @Failure 400 {object} MessageResponse
 // @Failure 500 {object} MessageResponse
 // @Router /medicine [post]
@@ -31,14 +31,14 @@ func NewMedicine(c *gin.Context) {
     _ = c.Error(appError)
     return
   }
-  medicine := models.Medicine{
+  medicine := model.Medicine{
     Name:        request.Name,
     Description: request.Description,
     Laboratory:  request.Laboratory,
     EANCode:     request.EanCode,
   }
 
-  err := models.CreateMedicine(&medicine)
+  err := model.CreateMedicine(&medicine)
   if err != nil {
     _ = c.Error(err)
     return
@@ -51,13 +51,12 @@ func NewMedicine(c *gin.Context) {
 // @Tags medicine
 // @Summary Get all Medicines
 // @Description Get all Medicines on the system
-// @Success 200 {object} []models.Medicine
+// @Success 200 {object} []model.Medicine
 // @Failure 400 {object} MessageResponse
 // @Failure 500 {object} MessageResponse
 // @Router /medicine [get]
 func GetAllMedicines(c *gin.Context) {
-  var medicines []models.Medicine
-  err := models.GetAllMedicines(&medicines)
+  medicines, err := model.GetAllMedicines()
   if err != nil {
     appError := errorModels.NewAppErrorWithType(errorModels.UnknownError)
     _ = c.Error(appError)
@@ -71,12 +70,12 @@ func GetAllMedicines(c *gin.Context) {
 // @Summary Get medicines by ID
 // @Description Get Medicines by ID on the system
 // @Param medicine_id path int true "id of medicine"
-// @Success 200 {object} models.Medicine
+// @Success 200 {object} model.Medicine
 // @Failure 400 {object} MessageResponse
 // @Failure 500 {object} MessageResponse
 // @Router /medicine/{medicine_id} [get]
 func GetMedicinesByID(c *gin.Context) {
-  var medicine models.Medicine
+  var medicine model.Medicine
   medicineID, err := strconv.Atoi(c.Param("id"))
   if err != nil {
     appError := errorModels.NewAppError(errors.New("medicine id is invalid"), errorModels.ValidationError)
@@ -84,7 +83,7 @@ func GetMedicinesByID(c *gin.Context) {
     return
   }
 
-  err = models.GetMedicineByID(&medicine, medicineID)
+  err = model.GetMedicineByID(&medicine, medicineID)
   if err != nil {
     appError := errorModels.NewAppError(err, errorModels.ValidationError)
     _ = c.Error(appError)
@@ -116,9 +115,7 @@ func UpdateMedicine(c *gin.Context) {
     return
   }
 
-
-
-  medicine, err := models.UpdateMedicine(medicineID, requestMap)
+  medicine, err := model.UpdateMedicine(medicineID, requestMap)
   if err != nil {
     _ = c.Error(err)
     return
@@ -128,7 +125,6 @@ func UpdateMedicine(c *gin.Context) {
 
 }
 
-
 func DeleteMedicine(c *gin.Context) {
   medicineID, err := strconv.Atoi(c.Param("id"))
   if err != nil {
@@ -137,7 +133,7 @@ func DeleteMedicine(c *gin.Context) {
     return
   }
 
-   err = models.DeleteMedicine(medicineID)
+  err = model.DeleteMedicine(medicineID)
   if err != nil {
     _ = c.Error(err)
     return

@@ -1,4 +1,4 @@
-package models
+package medicine
 
 import (
   "encoding/json"
@@ -23,12 +23,12 @@ func (b *Medicine) TableName() string {
 }
 
 // GetAllMedicines Fetch all medicine data
-func GetAllMedicines(medicine *[]Medicine) (err error) {
-  err = config.DB.Find(medicine).Error
+func GetAllMedicines() (medicine []Medicine, err error) {
+  err = config.DB.Find(&medicine).Error
   if err != nil {
-    return err
+    err = modelErrors.NewAppErrorWithType(modelErrors.UnknownError)
   }
-  return nil
+  return
 }
 
 // CreateMedicine ... Insert New data
@@ -68,7 +68,6 @@ func GetMedicineByID(medicine *Medicine, id int) (err error) {
     }
   }
 
-
   return
 }
 
@@ -76,8 +75,8 @@ func GetMedicineByID(medicine *Medicine, id int) (err error) {
 func UpdateMedicine(id int, medicineMap map[string]interface{}) (medicine Medicine, err error) {
   medicine.ID = id
   err = config.DB.Model(&medicine).
-      Select("name", "description", "ean_code", "laboratory").
-      Updates(medicineMap).Error
+    Select("name", "description", "ean_code", "laboratory").
+    Updates(medicineMap).Error
 
   // err = config.DB.Save(medicine).Error
   if err != nil {
@@ -99,8 +98,6 @@ func UpdateMedicine(id int, medicineMap map[string]interface{}) (medicine Medici
 
   err = config.DB.Where("id = ?", id).First(&medicine).Error
 
-
-
   return
 }
 
@@ -112,7 +109,7 @@ func DeleteMedicine(id int) (err error) {
     return
   }
 
-  if tx.RowsAffected ==  0 {
+  if tx.RowsAffected == 0 {
     err = modelErrors.NewAppErrorWithType(modelErrors.NotFound)
   }
 

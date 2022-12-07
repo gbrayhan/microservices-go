@@ -3,7 +3,7 @@ package errors
 import (
   "net/http"
 
-  models "github.com/gbrayhan/microservices-go/models/errors"
+  appError "github.com/gbrayhan/microservices-go/models/errors"
   "github.com/gin-gonic/gin"
 )
 
@@ -19,26 +19,26 @@ func Handler(c *gin.Context) {
   errs := c.Errors
 
   if len(errs) > 0 {
-    err, ok := errs[0].Err.(*models.AppError)
+    err, ok := errs[0].Err.(*appError.AppError)
     if ok {
       resp := MessagesResponse{Message: err.Error()}
       switch err.Type {
-      case models.NotFound:
+      case appError.NotFound:
         c.JSON(http.StatusNotFound, resp)
         return
-      case models.ValidationError:
+      case appError.ValidationError:
         c.JSON(http.StatusBadRequest, resp)
         return
-      case models.ResourceAlreadyExists:
+      case appError.ResourceAlreadyExists:
         c.JSON(http.StatusConflict, resp)
         return
-      case models.NotAuthenticated:
+      case appError.NotAuthenticated:
         c.JSON(http.StatusUnauthorized, resp)
         return
-      case models.NotAuthorized:
+      case appError.NotAuthorized:
         c.JSON(http.StatusForbidden, resp)
         return
-      case models.RepositoryError:
+      case appError.RepositoryError:
         c.JSON(http.StatusInternalServerError, MessagesResponse{Message: "We are working to improve the flow of this request."})
         return
       default:
