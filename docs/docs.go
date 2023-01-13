@@ -38,7 +38,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Medicine"
+                                "$ref": "#/definitions/medicine.Medicine"
                             }
                         }
                     },
@@ -83,7 +83,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Medicine"
+                            "$ref": "#/definitions/medicine.Medicine"
                         }
                     },
                     "400": {
@@ -121,7 +121,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Medicine"
+                            "$ref": "#/definitions/medicine.Medicine"
                         }
                     },
                     "400": {
@@ -138,9 +138,156 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/user": {
+            "get": {
+                "description": "Get all Users on the system",
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get all Users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/user.User"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create new user on the system",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Create New User",
+                "parameters": [
+                    {
+                        "description": "body data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.NewUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{user_id}": {
+            "get": {
+                "description": "Get Users by ID on the system",
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get users by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of user",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "medicine.Medicine": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string",
+                    "example": "2021-02-24 20:19:39"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Some Description"
+                },
+                "ean_code": {
+                    "type": "string",
+                    "example": "9900000124"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "laboratory": {
+                    "type": "string",
+                    "example": "Roche"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Paracetamol"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2021-02-24 20:19:39"
+                }
+            }
+        },
         "medicine.MessageResponse": {
             "type": "object",
             "properties": {
@@ -176,36 +323,84 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Medicine": {
+        "user.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.NewUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "firstName",
+                "lastName",
+                "password",
+                "user"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "mail@mail.com"
+                },
+                "firstName": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "lastName": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "Password123"
+                },
+                "user": {
+                    "type": "string",
+                    "example": "someUser"
+                }
+            }
+        },
+        "user.User": {
             "type": "object",
             "properties": {
                 "created_at": {
                     "type": "string",
                     "example": "2021-02-24 20:19:39"
                 },
-                "description": {
+                "email": {
                     "type": "string",
-                    "example": "Some Description"
+                    "example": "some@mail.com"
                 },
-                "ean_code": {
+                "first_name": {
                     "type": "string",
-                    "example": "9900000124"
+                    "example": "John"
+                },
+                "hash_password": {
+                    "type": "string",
+                    "example": "SomeHashPass"
                 },
                 "id": {
                     "type": "integer",
-                    "example": 123
+                    "example": 1099
                 },
-                "laboratory": {
+                "last_name": {
                     "type": "string",
-                    "example": "Roche"
+                    "example": "Doe"
                 },
-                "name": {
-                    "type": "string",
-                    "example": "Paracetamol"
+                "status": {
+                    "type": "boolean",
+                    "example": false
                 },
                 "updated_at": {
                     "type": "string",
                     "example": "2021-02-24 20:19:39"
+                },
+                "user": {
+                    "type": "string",
+                    "example": "User"
                 }
             }
         }

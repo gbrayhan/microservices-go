@@ -66,7 +66,7 @@ func GetUserByMap(userMap map[string]interface{}) (user User, err error) {
   return
 }
 
-// GetUserByID ... Fetch only one user by Id
+// GetUserByID ... Fetch only one user by ID
 func GetUserByID(id int) (user User, err error) {
   err = config.DB.Where("id = ?", id).First(&user).Error
 

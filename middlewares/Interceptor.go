@@ -3,7 +3,7 @@ package middlewares
 import (
   "bytes"
   "fmt"
-  "io/ioutil"
+  "io"
   "time"
 
   "github.com/gin-gonic/gin"
@@ -31,12 +31,11 @@ func GinBodyLogMiddleware(c *gin.Context) {
   num, err := c.Request.Body.Read(buf)
   if err != nil && err.Error() != "EOF" {
 
-    _ = fmt.Errorf("error reading buffer: ", err.Error())
+    _ = fmt.Errorf("error reading buffer: %s", err.Error())
   }
   reqBody := string(buf[0:num])
-  c.Request.Body = ioutil.NopCloser(bytes.NewBuffer([]byte(reqBody)))
+  c.Request.Body = io.NopCloser(bytes.NewBuffer([]byte(reqBody)))
 
-  // TODO: Viper time_zone in config.json
   loc, _ := time.LoadLocation("America/Mexico_City")
   allDataIO := map[string]interface{}{
     "ruta":          c.FullPath(),
@@ -49,7 +48,6 @@ func GinBodyLogMiddleware(c *gin.Context) {
   }
   _ = fmt.Sprintf("%v", allDataIO)
 
-  // array to define which routes will be monitored in all status code
   allLogs := []string{
     "/payment-with-recurrence",
     "/buy-console",

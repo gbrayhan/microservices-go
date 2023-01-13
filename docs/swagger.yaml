@@ -1,5 +1,29 @@
 basePath: /v1
 definitions:
+  medicine.Medicine:
+    properties:
+      created_at:
+        example: "2021-02-24 20:19:39"
+        type: string
+      description:
+        example: Some Description
+        type: string
+      ean_code:
+        example: "9900000124"
+        type: string
+      id:
+        example: 123
+        type: integer
+      laboratory:
+        example: Roche
+        type: string
+      name:
+        example: Paracetamol
+        type: string
+      updated_at:
+        example: "2021-02-24 20:19:39"
+        type: string
+    type: object
   medicine.MessageResponse:
     properties:
       message:
@@ -25,28 +49,63 @@ definitions:
     - laboratory
     - name
     type: object
-  models.Medicine:
+  user.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  user.NewUserRequest:
+    properties:
+      email:
+        example: mail@mail.com
+        type: string
+      firstName:
+        example: John
+        type: string
+      lastName:
+        example: Doe
+        type: string
+      password:
+        example: Password123
+        type: string
+      user:
+        example: someUser
+        type: string
+    required:
+    - email
+    - firstName
+    - lastName
+    - password
+    - user
+    type: object
+  user.User:
     properties:
       created_at:
         example: "2021-02-24 20:19:39"
         type: string
-      description:
-        example: Some Description
+      email:
+        example: some@mail.com
         type: string
-      ean_code:
-        example: "9900000124"
+      first_name:
+        example: John
+        type: string
+      hash_password:
+        example: SomeHashPass
         type: string
       id:
-        example: 123
+        example: 1099
         type: integer
-      laboratory:
-        example: Roche
+      last_name:
+        example: Doe
         type: string
-      name:
-        example: Paracetamol
-        type: string
+      status:
+        example: false
+        type: boolean
       updated_at:
         example: "2021-02-24 20:19:39"
+        type: string
+      user:
+        example: User
         type: string
     type: object
 host: localhost:8080
@@ -71,7 +130,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.Medicine'
+              $ref: '#/definitions/medicine.Medicine'
             type: array
         "400":
           description: Bad Request
@@ -101,7 +160,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Medicine'
+            $ref: '#/definitions/medicine.Medicine'
         "400":
           description: Bad Request
           schema:
@@ -126,7 +185,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Medicine'
+            $ref: '#/definitions/medicine.Medicine'
         "400":
           description: Bad Request
           schema:
@@ -138,4 +197,79 @@ paths:
       summary: Get medicines by ID
       tags:
       - medicine
+  /user:
+    get:
+      description: Get all Users on the system
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/user.User'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.MessageResponse'
+      summary: Get all Users
+      tags:
+      - user
+    post:
+      consumes:
+      - application/json
+      description: Create new user on the system
+      parameters:
+      - description: body data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/user.NewUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.MessageResponse'
+      summary: Create New User
+      tags:
+      - user
+  /user/{user_id}:
+    get:
+      description: Get Users by ID on the system
+      parameters:
+      - description: id of user
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/user.User'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/user.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/user.MessageResponse'
+      summary: Get users by ID
+      tags:
+      - user
 swagger: "2.0"
