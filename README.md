@@ -1,4 +1,4 @@
-# Golang Microservices Boilerplate
+# Golang Microservices Boilerplate - Clean Architecture
 
 [![issues](https://img.shields.io/github/issues/gbrayhan/microservices-go)](https://github.com/gbrayhan/microservices-go/tree/master/.github/ISSUE_TEMPLATE)
 [![forks](https://img.shields.io/github/forks/gbrayhan/microservices-go)](https://github.com/gbrayhan/microservices-go/network/members)
@@ -6,7 +6,7 @@
 [![license](https://img.shields.io/github/license/gbrayhan/microservices-go)](https://github.com/gbrayhan/microservices-go/tree/master/LICENSE)
 [![CodeFactor](https://www.codefactor.io/repository/github/gbrayhan/microservices-go/badge/master)](https://www.codefactor.io/repository/github/gbrayhan/microservices-go/overview/master)
 
-Example structure to start a microservices project with golang. Using a MySQL databaseSQL.
+Example structure to start a microservices project with golang. Using a MySQL databaseSQL. Using a Hexagonal Architecture tha is a Clean Architecture.
 
 ## Manual Installation
 
@@ -46,12 +46,13 @@ cp config.json.example config.json
 
 ## Features
 
-- **Golang v1.14**: Stable version of go
+- **Golang v1.20**: Stable version of go
 - **Framework**: A stable version of [gin-go](https://github.com/gin-gonic/gin)
+- - **Token Security**: with [JWT](https://jwt.io)
 - **SQL databaseSQL**: [MariaDB](https://mariadb.org/) using internal sql package of
   go [sql](https://golang.org/pkg/databaseSQL/sql/)
 - **Testing**: unit and integration tests using package of go [testing](https://golang.org/pkg/testing/)
-- **API documentation**: with [swaggo](https://github.com/swaggo/swag) a go implementation
+- **API documentation**: with [swaggo](https://github.com/swaggo/swag) @latest version that is a go implementation
   of [swagger](https://swagger.io/)
 - **Dependency management**: with [go modules](https://golang.org/ref/mod)
 - **Environment variables**: using [viper](https://github.com/spf13/viper)
