@@ -7,7 +7,7 @@ services:
       - MYSQL_URL=sql://user:pass
       - MONGODB_URL=mongodb://mongodb:27017/go-boilerplate
     ports:
-      - '8090:8090'
+      - '8080:8080'
     restart: on-failure
     depends_on:
       - mysqldb
@@ -17,7 +17,7 @@ services:
       - go-network
   mysqldb:
     platform: linux/x86_64
-    image: mysql:5.7
+    image: mysql:latest
     restart: always
     environment:
       MYSQL_DATABASE: 'boilerplate_go'

@@ -1,9 +1,68 @@
 basePath: /v1
 definitions:
-  medicine.Medicine:
+  auth.DataUserAuthenticated:
+    properties:
+      email:
+        example: some@mail.com
+        type: string
+      firstName:
+        example: John
+        type: string
+      id:
+        example: 123
+        type: integer
+      lastName:
+        example: Doe
+        type: string
+      role:
+        example: admin
+        type: string
+      status:
+        example: true
+        type: boolean
+      userName:
+        example: UserName
+        type: string
+    type: object
+  auth.LoginRequest:
+    properties:
+      email:
+        example: mail@mail.com
+        type: string
+      password:
+        example: Password123
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  controllers.MessageResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  github_com_gbrayhan_microservices-go_application_usecases_medicine.PaginationResultMedicine:
+    properties:
+      current:
+        type: integer
+      data:
+        items:
+          $ref: '#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine'
+        type: array
+      limit:
+        type: integer
+      nextCursor:
+        type: integer
+      numPages:
+        type: integer
+      prevCursor:
+        type: integer
+      total:
+        type: integer
+    type: object
+  github_com_gbrayhan_microservices-go_domain_medicine.Medicine:
     properties:
       created_at:
-        example: "2021-02-24 20:19:39"
         type: string
       description:
         example: Some Description
@@ -68,6 +127,9 @@ definitions:
       password:
         example: Password123
         type: string
+      role:
+        example: admin
+        type: string
       user:
         example: someUser
         type: string
@@ -76,36 +138,34 @@ definitions:
     - firstName
     - lastName
     - password
+    - role
     - user
     type: object
-  user.User:
+  user.ResponseUser:
     properties:
-      created_at:
+      createdAt:
         example: "2021-02-24 20:19:39"
         type: string
       email:
         example: some@mail.com
         type: string
-      first_name:
+      firstName:
         example: John
-        type: string
-      hash_password:
-        example: SomeHashPass
         type: string
       id:
         example: 1099
         type: integer
-      last_name:
+      lastName:
         example: Doe
         type: string
       status:
         example: false
         type: boolean
-      updated_at:
+      updatedAt:
         example: "2021-02-24 20:19:39"
         type: string
       user:
-        example: User
+        example: BossonH
         type: string
     type: object
 host: localhost:8080
@@ -122,15 +182,52 @@ info:
   title: Boilerplate Golang
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      description: Auth user by user and password
+      parameters:
+      - description: body data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/auth.LoginRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.DataUserAuthenticated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controllers.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controllers.MessageResponse'
+      summary: Login UserName
+      tags:
+      - auth
   /medicine:
     get:
       description: Get all Medicines on the system
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        required: true
+        type: string
+      - description: page
+        in: query
+        name: page
+        required: true
+        type: string
       responses:
         "200":
           description: OK
           schema:
             items:
-              $ref: '#/definitions/medicine.Medicine'
+              $ref: '#/definitions/github_com_gbrayhan_microservices-go_application_usecases_medicine.PaginationResultMedicine'
             type: array
         "400":
           description: Bad Request
@@ -160,7 +257,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/medicine.Medicine'
+            $ref: '#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine'
         "400":
           description: Bad Request
           schema:
@@ -185,7 +282,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/medicine.Medicine'
+            $ref: '#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine'
         "400":
           description: Bad Request
           schema:
@@ -205,7 +302,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/user.User'
+              $ref: '#/definitions/user.ResponseUser'
             type: array
         "400":
           description: Bad Request
@@ -215,6 +312,8 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/user.MessageResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get all Users
       tags:
       - user
@@ -235,7 +334,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/user.User'
+            $ref: '#/definitions/user.ResponseUser'
         "400":
           description: Bad Request
           schema:
@@ -244,7 +343,9 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/user.MessageResponse'
-      summary: Create New User
+      security:
+      - ApiKeyAuth: []
+      summary: Create New UserName
       tags:
       - user
   /user/{user_id}:
@@ -260,7 +361,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/user.User'
+            $ref: '#/definitions/user.MessageResponse'
         "400":
           description: Bad Request
           schema:
@@ -269,7 +370,14 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/user.MessageResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Get users by ID
       tags:
       - user
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

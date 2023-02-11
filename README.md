@@ -70,7 +70,7 @@ docker-compose up  --build  -d
 ### Swagger Implementation
 
 ```bash
-swag init -g routes/ApplicationV1.go
+swag init -g infrastructure/rest/routes/routes.go
 ```
 To visualize the swagger documentation on local use 
 
@@ -81,7 +81,7 @@ http://localhost:8080/v1/swagger/index.html
 
 ```bash
 # run recursive test
-go test  ./test/unitgo/...
+go test  ./test/unit/...
 # clean go test results in cache
 go clean -testcache
 ```
