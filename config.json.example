@@ -12,8 +12,11 @@
     "OtherService": "https://dominio.com/"
   },
   "Secure": {
-    "JWTSecure": "SECURE_SALT",
-    "SecExpiration": 300
+    "JWTAccessSecure": "accesskeyyoumayneedtochangeit",
+    "JWTRefreshSecure": "refreshkeyyoumayneedtochangeit",
+    "JWTAccessTimeMinute": 10,
+    "JWTRefreshTimeHour": 10
+
   },
   "Endpoints": {
     "SiteExample": "http://localhost:8084/"
