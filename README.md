@@ -57,8 +57,8 @@ cp config.json.example config.json
 - **Dependency management**: with [go modules](https://golang.org/ref/mod)
 - **Environment variables**: using [viper](https://github.com/spf13/viper)
 - **Docker support**
-- **Code quality**: with [CodeFactor](https://www.codefactor.io/)
-- **Linting**: with [ESLint](https://eslint.org)
+- **Code quality**: with [CodeFactor](https://www.codefactor.io/) and [Codacy](https://www.codacy.com/)
+- **Linting**: with [golangci-lint](https://golangci-lint.run/usage/install/) an implementation of a Golang linter
 
 ## Commands
 

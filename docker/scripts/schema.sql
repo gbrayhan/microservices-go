@@ -1,6 +1,12 @@
 CREATE DATABASE IF NOT EXISTS boilerplate_go;
 
 USE boilerplate_go;
+CREATE USER IF NOT EXISTS 'appuser'@'localhost' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
+CREATE USER IF NOT EXISTS 'appuser'@'%' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
+CREATE USER IF NOT EXISTS 'appuser'@'mysqldb' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
+
+
+
 
 create table if not exists medicines
 (
@@ -33,6 +39,12 @@ create table if not exists users
 ) CHARSET = utf8mb4
   COLLATE = utf8mb4_general_ci;
 
+GRANT ALL ON *.* to 'appuser'@'localhost' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
+GRANT ALL ON *.* to 'appuser'@'mysqldb' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
+GRANT ALL ON *.* to 'appuser'@'%' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
+
+GRANT ALL ON *.* to 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
+GRANT ALL ON *.* to 'root'@'%' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
 FLUSH PRIVILEGES;
 
 

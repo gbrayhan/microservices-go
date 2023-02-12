@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/gbrayhan/microservices-go/config"
+	"github.com/gbrayhan/microservices-go/infrastructure/repository/config"
 	errorsController "github.com/gbrayhan/microservices-go/infrastructure/rest/controllers/errors"
 	"github.com/gbrayhan/microservices-go/infrastructure/rest/middlewares"
 	"net/http"
@@ -25,6 +25,7 @@ func main() {
 	DB, err := config.GormOpen()
 	if err != nil {
 		_ = fmt.Errorf("fatal error in database file: %s \n", err)
+		panic(err)
 	}
 	router.Use(middlewares.GinBodyLogMiddleware)
 	router.Use(errorsController.Handler)
@@ -37,6 +38,8 @@ func startServer(router http.Handler) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
 		_ = fmt.Errorf("fatal error in config file: %s \n", err.Error())
+		panic(err)
+
 	}
 	serverPort := fmt.Sprintf(":%s", viper.GetString("ServerPort"))
 	s := &http.Server{
@@ -48,5 +51,7 @@ func startServer(router http.Handler) {
 	}
 	if err := s.ListenAndServe(); err != nil {
 		_ = fmt.Errorf("fatal error description: %s \n", strings.ToLower(err.Error()))
+		panic(err)
+
 	}
 }

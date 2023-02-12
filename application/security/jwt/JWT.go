@@ -71,7 +71,14 @@ func GenerateJWTTokens(userID int) (authData *Auth, err error) {
 
 	// Sign and get the complete encoded token as a string using the secret
 	accessTokenStr, err := accessToken.SignedString([]byte(JWTAccessSecure))
+	if err != nil {
+		return
+	}
+
 	refreshTokenStr, err := refreshToken.SignedString([]byte(JWTRefreshSecure))
+	if err != nil {
+		return
+	}
 
 	authData = &Auth{
 		ExpirationAccessTime:  expirationAccessTime,

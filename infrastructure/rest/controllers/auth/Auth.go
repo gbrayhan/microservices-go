@@ -15,7 +15,7 @@ type Controller struct {
 // Login godoc
 // @Tags auth
 // @Summary Login UserName
-// @Description Auth user by user and password
+// @Description Auth user by email and password
 // @Param data body LoginRequest true "body data"
 // @Success 200 {object} useCaseAuth.DataUserAuthenticated
 // @Failure 400 {object} controllers.MessageResponse

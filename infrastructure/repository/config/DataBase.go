@@ -36,9 +36,19 @@ func GormOpen() (gormDB *gorm.DB, err error) {
 		return
 	}
 
+	dialector := mysql.New(mysql.Config{
+		DSN: infoDatabase.Read.DriverConn,
+	})
+
 	err = gormDB.Use(dbresolver.Register(dbresolver.Config{
-		Replicas: []gorm.Dialector{mysql.Open(infoDatabase.Read.DriverConn)},
+		Replicas: []gorm.Dialector{dialector},
 	}))
+	var result int
+
+	// Test the connection by executing a simple query
+	if err = gormDB.Raw("SELECT 1").Scan(&result).Error; err != nil {
+		return nil, err
+	}
 
 	return
 }

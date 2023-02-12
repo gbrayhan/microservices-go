@@ -34,16 +34,16 @@
         "Read": {
           "Hostname": "mysqldb",
           "Name": "boilerplate_go",
-          "Username": "root",
-          "Password": "password",
+          "Username": "appuser",
+          "Password": "youShouldChangeThisPassword",
           "Port": "3306",
           "Parameter": "?parseTime=true"
         },
         "Write": {
           "Hostname": "mysqldb",
           "Name": "boilerplate_go",
-          "Username": "root",
-          "Password": "password",
+          "Username": "appuser",
+          "Password": "youShouldChangeThisPassword",
           "Port": "3306",
           "Parameter": "?parseTime=true"
         }
@@ -52,16 +52,16 @@
         "Read": {
           "Hostname": "hostname_read",
           "Name": "name_database",
-          "Username": "username",
-          "Password": "PASS",
+          "Username": "appuser",
+          "Password": "youShouldChangeThisPassword",
           "Port": "3306",
           "Parameter": "?parseTime=true"
         },
         "Write": {
           "Hostname": "hostname_write",
           "Name": "name_database",
-          "Username": "username",
-          "Password": "PASS",
+          "Username": "appuser",
+          "Password": "youShouldChangeThisPassword",
           "Port": "3306",
           "Parameter": "?parseTime=true"
         }
