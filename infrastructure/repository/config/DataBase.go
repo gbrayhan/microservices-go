@@ -43,6 +43,9 @@ func GormOpen() (gormDB *gorm.DB, err error) {
 	err = gormDB.Use(dbresolver.Register(dbresolver.Config{
 		Replicas: []gorm.Dialector{dialector},
 	}))
+	if err != nil {
+		return nil, err
+	}
 	var result int
 
 	// Test the connection by executing a simple query
