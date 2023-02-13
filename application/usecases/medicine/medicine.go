@@ -28,6 +28,7 @@ func (s *Service) GetAll(page int64, limit int64) (*PaginationResultMedicine, er
 	}, nil
 }
 
+// GetByID is a function that returns a medicine by id
 func (s *Service) GetByID(id int) (*medicineDomain.Medicine, error) {
 	return s.MedicineRepository.GetByID(id)
 }

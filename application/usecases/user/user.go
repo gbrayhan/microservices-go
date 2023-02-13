@@ -16,6 +16,7 @@ func (s *Service) GetAll() (*[]userDomain.User, error) {
 	return s.UserRepository.GetAll()
 }
 
+// GetByID is a function that returns a user by id
 func (s *Service) GetByID(id int) (*userDomain.User, error) {
 	return s.UserRepository.GetByID(id)
 }
