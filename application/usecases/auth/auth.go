@@ -7,6 +7,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Service is a struct that contains the repository implementation for auth use case
 type Service struct {
 	UserRepository userRepository.Repository
 }

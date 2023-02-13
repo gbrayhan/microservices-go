@@ -37,7 +37,7 @@ func main() {
 func startServer(router http.Handler) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
-		_ = fmt.Errorf("fatal error in config file: %s \n", err.Error())
+		_ = fmt.Errorf("fatal error in config file: %s", err.Error())
 		panic(err)
 
 	}

@@ -24,7 +24,7 @@ type Claims struct {
 func GenerateJWTTokens(userID int) (authData *Auth, err error) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
-		_ = fmt.Errorf("fatal error in config file: %s \n", err.Error())
+		_ = fmt.Errorf("fatal error in config file: %s", err.Error())
 	}
 
 	JWTAccessSecure := viper.GetString("Secure.JWTAccessSecure")
@@ -93,7 +93,7 @@ func GenerateJWTTokens(userID int) (authData *Auth, err error) {
 func GetClaimsAndVerifyAccessToken(tokenString string) (claims jwt.MapClaims, err error) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
-		_ = fmt.Errorf("fatal error in config file: %s \n", err.Error())
+		_ = fmt.Errorf("fatal error in config file: %s", err.Error())
 	}
 	JWTAccessSecure := viper.GetString("Secure.JWTAccessSecure")
 
@@ -115,7 +115,7 @@ func GetClaimsAndVerifyAccessToken(tokenString string) (claims jwt.MapClaims, er
 func GetClaimsAndVerifyRefreshToken(tokenString string) (claims jwt.MapClaims, err error) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
-		_ = fmt.Errorf("fatal error in config file: %s \n", err.Error())
+		_ = fmt.Errorf("fatal error in config file: %s", err.Error())
 	}
 	JWTRefreshSecure := viper.GetString("Secure.JWTRefreshSecure")
 

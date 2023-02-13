@@ -6,6 +6,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Service is a struct that contains the repository implementation for user use case
 type Service struct {
 	UserRepository userRepository.Repository
 }
@@ -14,8 +15,8 @@ func (s *Service) GetAll() (*[]userDomain.User, error) {
 	return s.UserRepository.GetAll()
 }
 
-func (s *Service) GetById(id int) (*userDomain.User, error) {
-	return s.UserRepository.GetById(id)
+func (s *Service) GetByID(id int) (*userDomain.User, error) {
+	return s.UserRepository.GetByID(id)
 }
 
 func (s *Service) Create(newUser *NewUser) (*userDomain.User, error) {

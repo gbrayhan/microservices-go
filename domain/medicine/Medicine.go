@@ -19,7 +19,7 @@ type Service interface {
 	GetAll() ([]*Medicine, error)
 	Create(*Medicine) error
 	GetByMap(map[string]interface{}) map[string]interface{}
-	GetById(int) (*Medicine, error)
+	GetByID(int) (*Medicine, error)
 	Delete(int) error
 	Update(int, map[string]interface{}) (*Medicine, error)
 }

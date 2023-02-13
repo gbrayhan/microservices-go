@@ -1,3 +1,4 @@
+// Package config provides the database connection
 package config
 
 import (

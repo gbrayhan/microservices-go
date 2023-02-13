@@ -5,6 +5,7 @@ import (
 	medicineRepository "github.com/gbrayhan/microservices-go/infrastructure/repository/medicine"
 )
 
+// Service is a struct that contains the repository implementation for medicine use case
 type Service struct {
 	MedicineRepository medicineRepository.Repository
 }
@@ -26,7 +27,7 @@ func (s *Service) GetAll(page int64, limit int64) (*PaginationResultMedicine, er
 	}, nil
 }
 
-func (s *Service) GetById(id int) (*medicineDomain.Medicine, error) {
+func (s *Service) GetByID(id int) (*medicineDomain.Medicine, error) {
 	return s.MedicineRepository.GetByID(id)
 }
 

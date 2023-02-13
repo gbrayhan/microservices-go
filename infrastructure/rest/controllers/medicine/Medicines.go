@@ -104,7 +104,7 @@ func (c *Controller) GetMedicinesByID(ctx *gin.Context) {
 		return
 	}
 
-	domainMedicine, err := c.MedicineService.GetById(medicineID)
+	domainMedicine, err := c.MedicineService.GetByID(medicineID)
 	if err != nil {
 		appError := domainError.NewAppError(err, domainError.ValidationError)
 		_ = ctx.Error(appError)
