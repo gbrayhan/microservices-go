@@ -48,7 +48,7 @@ cp config.json.example config.json
 
 - **Golang v1.20**: Stable version of go
 - **Framework**: A stable version of [gin-go](https://github.com/gin-gonic/gin)
-- - **Token Security**: with [JWT](https://jwt.io)
+- **Token Security**: with [JWT](https://jwt.io)
 - **SQL databaseSQL**: [MariaDB](https://mariadb.org/) using internal sql package of
   go [sql](https://golang.org/pkg/databaseSQL/sql/)
 - **Testing**: unit and integration tests using package of go [testing](https://golang.org/pkg/testing/)
