@@ -13,6 +13,7 @@ import (
 	"strconv"
 )
 
+// Controller is a struct that contains the medicine service
 type Controller struct {
 	MedicineService useCaseMedicine.Service
 }
@@ -148,6 +149,7 @@ func (c *Controller) UpdateMedicine(ctx *gin.Context) {
 
 }
 
+// DeleteMedicine is the controller to delete a medicine
 func (c *Controller) DeleteMedicine(ctx *gin.Context) {
 	medicineID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {

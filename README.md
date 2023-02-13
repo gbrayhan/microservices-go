@@ -6,7 +6,8 @@
 [![license](https://img.shields.io/github/license/gbrayhan/microservices-go)](https://github.com/gbrayhan/microservices-go/tree/master/LICENSE)
 [![CodeFactor](https://www.codefactor.io/repository/github/gbrayhan/microservices-go/badge/main)](https://www.codefactor.io/repository/github/gbrayhan/microservices-go/overview/main)
 
-Example structure to start a microservices project with golang. Using a MySQL databaseSQL. Using a Hexagonal Architecture tha is a Clean Architecture.
+Example structure to start a microservices project with golang. Using a MySQL databaseSQL. Using a Hexagonal
+Architecture tha is a Clean Architecture.
 
 ## Manual Installation
 
@@ -31,7 +32,6 @@ cp config.json.example config.json
     cd microservices-go
     cp config.json.example config.json
     docker-compose up  --build  -d
-
 
 ## Table of Contents
 
@@ -73,10 +73,10 @@ docker-compose up  --build  -d
 ```bash
 swag init -g infrastructure/rest/routes/routes.go
 ```
-To visualize the swagger documentation on local use 
+
+To visualize the swagger documentation on local use
 
 http://localhost:8080/v1/swagger/index.html
-
 
 ### Unit test command
 

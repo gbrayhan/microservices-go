@@ -11,6 +11,7 @@ type Service struct {
 	MedicineRepository medicineRepository.Repository
 }
 
+// GetAll is a function that returns all medicines
 func (s *Service) GetAll(page int64, limit int64) (*PaginationResultMedicine, error) {
 	all, err := s.MedicineRepository.GetAll(page, limit)
 	if err != nil {

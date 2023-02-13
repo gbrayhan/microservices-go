@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// UserRoutes is a function that contains all routes of the user
 func UserRoutes(router *gin.RouterGroup, controller *userController.Controller) {
 	routerAuth := router.Group("/user")
 	routerAuth.Use(middlewares.AuthJWTMiddleware())

@@ -11,6 +11,7 @@ import (
 	"strconv"
 )
 
+// Controller is a struct that contains the user service
 type Controller struct {
 	UserService useCaseUser.Service
 }
