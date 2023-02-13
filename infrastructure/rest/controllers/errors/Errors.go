@@ -1,3 +1,4 @@
+// Package errors contains the error handler controller
 package errors
 
 import (

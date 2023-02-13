@@ -1,3 +1,4 @@
+// Package user provides the use case for user
 package user
 
 import (
@@ -13,6 +14,7 @@ type NewUser struct {
 	Role      string `example:"admin"`
 }
 
+// PaginationResultUser is the structure for pagination result of user
 type PaginationResultUser struct {
 	Data       []domainUser.User
 	Total      int64

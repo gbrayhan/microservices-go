@@ -1,3 +1,4 @@
+// Package jwt implements the JWT authentication
 package jwt
 
 import (

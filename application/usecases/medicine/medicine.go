@@ -1,3 +1,4 @@
+// Package medicine provides the use case for medicine
 package medicine
 
 import (

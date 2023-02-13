@@ -1,3 +1,4 @@
+// Package routes contains all routes of the application
 package routes
 
 import (

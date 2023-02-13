@@ -1,3 +1,4 @@
+// Package medicine contains the medicine controller
 package medicine
 
 import (

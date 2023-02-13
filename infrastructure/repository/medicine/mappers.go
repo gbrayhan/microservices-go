@@ -1,3 +1,4 @@
+// Package medicine contains the repository implementation for the medicine entity
 package medicine
 
 import domainMedicine "github.com/gbrayhan/microservices-go/domain/medicine"

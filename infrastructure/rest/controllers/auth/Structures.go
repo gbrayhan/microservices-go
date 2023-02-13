@@ -1,3 +1,4 @@
+// Package auth contains the auth controller
 package auth
 
 type LoginRequest struct {

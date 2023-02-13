@@ -1,3 +1,4 @@
+// Package user contains the user controller
 package user
 
 type NewUserRequest struct {

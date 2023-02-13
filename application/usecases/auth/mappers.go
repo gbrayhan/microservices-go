@@ -1,3 +1,4 @@
+// Package auth provides the use case for authentication
 package auth
 
 import (

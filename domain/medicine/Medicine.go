@@ -1,3 +1,4 @@
+// Package medicine contains the business logic for the medicine entity
 package medicine
 
 import (

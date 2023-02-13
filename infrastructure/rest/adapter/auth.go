@@ -1,3 +1,4 @@
+// Package adapter is a layer that connects the infrastructure with the application layer
 package adapter
 
 import (
