@@ -16,17 +16,19 @@ services:
     networks:
       - go-network
   mysqldb:
+    command: --default-authentication-plugin=mysql_native_password
     platform: linux/x86_64
-    image: mysql:5.7
+    image: mysql:latest
     restart: always
     environment:
       MYSQL_DATABASE: 'boilerplate_go'
-      # So you don't have to use root, but you can if you like
-      MYSQL_USER: 'user'
-      # You can use whatever password you like
-      MYSQL_PASSWORD: 'password'
       # Password for root access
-      MYSQL_ROOT_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'youShouldChangeThisPassword'
+      MYSQL_HOST: "%" # Allow connections from outside the container
+      # So you don't have to use root, but you can if you like
+      MYSQL_USER: 'appuser'
+      # You can use whatever password you like
+      MYSQL_PASSWORD: 'youShouldChangeThisPassword'
     ports:
       # <Port exposed> : < MySQL Port running inside container>
       - '3306:3306'

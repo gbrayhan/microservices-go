@@ -1,0 +1,14 @@
+package adapter
+
+import (
+	userService "github.com/gbrayhan/microservices-go/application/usecases/user"
+	userRepository "github.com/gbrayhan/microservices-go/infrastructure/repository/user"
+	userController "github.com/gbrayhan/microservices-go/infrastructure/rest/controllers/user"
+	"gorm.io/gorm"
+)
+
+func UserAdapter(db *gorm.DB) *userController.Controller {
+	uRepository := userRepository.Repository{DB: db}
+	service := userService.Service{UserRepository: uRepository}
+	return &userController.Controller{UserService: service}
+}

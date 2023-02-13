@@ -18,6 +18,46 @@
     "host": "localhost:8080",
     "basePath": "/v1",
     "paths": {
+        "/auth/login": {
+            "post": {
+                "description": "Auth user by user and password",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login UserName",
+                "parameters": [
+                    {
+                        "description": "body data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auth.DataUserAuthenticated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/medicine": {
             "get": {
                 "description": "Get all Medicines on the system",
@@ -25,13 +65,29 @@
                     "medicine"
                 ],
                 "summary": "Get all Medicines",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "page",
+                        "name": "page",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Medicine"
+                                "$ref": "#/definitions/github_com_gbrayhan_microservices-go_application_usecases_medicine.PaginationResultMedicine"
                             }
                         }
                     },
@@ -76,7 +132,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Medicine"
+                            "$ref": "#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine"
                         }
                     },
                     "400": {
@@ -114,7 +170,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Medicine"
+                            "$ref": "#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine"
                         }
                     },
                     "400": {
@@ -131,9 +187,257 @@
                     }
                 }
             }
+        },
+        "/user": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get all Users on the system",
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get all Users",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/user.ResponseUser"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Create new user on the system",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Create New UserName",
+                "parameters": [
+                    {
+                        "description": "body data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.NewUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.ResponseUser"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{user_id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Get Users by ID on the system",
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get users by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id of user",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/user.MessageResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "auth.DataUserAuthenticated": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "some@mail.com"
+                },
+                "firstName": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "lastName": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "status": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "userName": {
+                    "type": "string",
+                    "example": "UserName"
+                }
+            }
+        },
+        "auth.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "mail@mail.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "Password123"
+                }
+            }
+        },
+        "controllers.MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_gbrayhan_microservices-go_application_usecases_medicine.PaginationResultMedicine": {
+            "type": "object",
+            "properties": {
+                "current": {
+                    "type": "integer"
+                },
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "nextCursor": {
+                    "type": "integer"
+                },
+                "numPages": {
+                    "type": "integer"
+                },
+                "prevCursor": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_gbrayhan_microservices-go_domain_medicine.Medicine": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Some Description"
+                },
+                "ean_code": {
+                    "type": "string",
+                    "example": "9900000124"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 123
+                },
+                "laboratory": {
+                    "type": "string",
+                    "example": "Roche"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Paracetamol"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2021-02-24 20:19:39"
+                }
+            }
+        },
         "medicine.MessageResponse": {
             "type": "object",
             "properties": {
@@ -169,38 +473,94 @@
                 }
             }
         },
-        "models.Medicine": {
+        "user.MessageResponse": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "user.NewUserRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "firstName",
+                "lastName",
+                "password",
+                "role",
+                "user"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "mail@mail.com"
+                },
+                "firstName": {
+                    "type": "string",
+                    "example": "John"
+                },
+                "lastName": {
+                    "type": "string",
+                    "example": "Doe"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "Password123"
+                },
+                "role": {
+                    "type": "string",
+                    "example": "admin"
+                },
+                "user": {
+                    "type": "string",
+                    "example": "someUser"
+                }
+            }
+        },
+        "user.ResponseUser": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
                     "type": "string",
                     "example": "2021-02-24 20:19:39"
                 },
-                "description": {
+                "email": {
                     "type": "string",
-                    "example": "Some Description"
+                    "example": "some@mail.com"
                 },
-                "ean_code": {
+                "firstName": {
                     "type": "string",
-                    "example": "9900000124"
+                    "example": "John"
                 },
                 "id": {
                     "type": "integer",
-                    "example": 123
+                    "example": 1099
                 },
-                "laboratory": {
+                "lastName": {
                     "type": "string",
-                    "example": "Roche"
+                    "example": "Doe"
                 },
-                "name": {
-                    "type": "string",
-                    "example": "Paracetamol"
+                "status": {
+                    "type": "boolean",
+                    "example": false
                 },
-                "updated_at": {
+                "updatedAt": {
                     "type": "string",
                     "example": "2021-02-24 20:19:39"
+                },
+                "user": {
+                    "type": "string",
+                    "example": "BossonH"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }
