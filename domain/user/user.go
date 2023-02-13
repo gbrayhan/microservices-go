@@ -3,6 +3,7 @@ package user
 
 import "time"
 
+// User is a struct that contains the user information
 type User struct {
 	ID           int
 	UserName     string

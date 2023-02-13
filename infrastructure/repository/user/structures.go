@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// User is a struct that contains the user information
 type User struct {
 	ID           int       `json:"id" example:"1099" gorm:"primaryKey"`
 	UserName     string    `json:"userName" example:"UserName" gorm:"unique"`

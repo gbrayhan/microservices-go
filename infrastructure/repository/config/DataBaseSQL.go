@@ -3,6 +3,7 @@ package config
 
 import (
 	"fmt"
+	// driver mysql on this implementation
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"

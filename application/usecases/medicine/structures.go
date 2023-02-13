@@ -12,6 +12,7 @@ type NewMedicine struct {
 	Laboratory  string `json:"laboratory" example:"Roche"`
 }
 
+// PaginationResultMedicine is a struct that contains the pagination result for medicine
 type PaginationResultMedicine struct {
 	Data       *[]domainMedicine.Medicine
 	Total      int64

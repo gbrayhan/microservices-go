@@ -21,6 +21,7 @@ func (*Medicine) TableName() string {
 	return "medicines"
 }
 
+// PaginationResultMedicine is a struct that contains the pagination result for medicine
 type PaginationResultMedicine struct {
 	Data       *[]domainMedicine.Medicine
 	Total      int64

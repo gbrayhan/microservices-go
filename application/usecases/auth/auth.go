@@ -13,6 +13,7 @@ type Service struct {
 	UserRepository userRepository.Repository
 }
 
+// Login implements the login use case
 func (s *Service) Login(user LoginUser) (*SecurityAuthenticatedUser, error) {
 	userMap := map[string]interface{}{"email": user.Email}
 	domainUser, err := s.UserRepository.GetOneByMap(userMap)

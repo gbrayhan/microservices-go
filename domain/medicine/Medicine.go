@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Medicine is a struct that contains the medicine information
 type Medicine struct {
 	ID          int       `json:"id" example:"123"`
 	Name        string    `json:"name" example:"Paracetamol"`

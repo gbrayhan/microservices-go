@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+// Auth contains the data of the authentication
 type Auth struct {
 	AccessToken           string
 	RefreshToken          string
@@ -91,6 +92,7 @@ func GenerateJWTTokens(userID int) (authData *Auth, err error) {
 	return
 }
 
+// GetClaimsAndVerifyAccessToken verifies the access token and returns the claims
 func GetClaimsAndVerifyAccessToken(tokenString string) (claims jwt.MapClaims, err error) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
@@ -113,6 +115,7 @@ func GetClaimsAndVerifyAccessToken(tokenString string) (claims jwt.MapClaims, er
 	return nil, err
 }
 
+// GetClaimsAndVerifyRefreshToken verifies the refresh token and returns the claims
 func GetClaimsAndVerifyRefreshToken(tokenString string) (claims jwt.MapClaims, err error) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
