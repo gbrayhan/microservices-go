@@ -16,6 +16,7 @@ type Medicine struct {
 	UpdatedAt   time.Time `json:"updated_at,omitempty" example:"2021-02-24 20:19:39"`
 }
 
+// Service is a interface that contains the methods for the medicine service
 type Service interface {
 	Get(int) (*Medicine, error)
 	GetAll() ([]*Medicine, error)

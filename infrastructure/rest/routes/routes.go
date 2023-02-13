@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Security
+// Security is a struct that contains the security of the application
 // @SecurityDefinitions.jwt
 type Security struct {
 	Authorization string `header:"Authorization" json:"Authorization"`

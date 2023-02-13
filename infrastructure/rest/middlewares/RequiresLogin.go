@@ -9,6 +9,7 @@ import (
 	"net/http"
 )
 
+// AuthJWTMiddleware is a function that validates the jwt token
 func AuthJWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		viper.SetConfigFile("config.json")

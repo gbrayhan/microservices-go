@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// MessagesResponse is a struct that contains the response body for the message
 type MessagesResponse struct {
 	Message string `json:"message"`
 }

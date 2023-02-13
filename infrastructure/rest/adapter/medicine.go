@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// MedicineAdapter is a function that returns a medicine controller
 func MedicineAdapter(db *gorm.DB) *medicineController.Controller {
 	mRepository := medicineRepository.Repository{DB: db}
 	service := medicineService.Service{MedicineRepository: mRepository}

@@ -23,6 +23,7 @@ func (*User) TableName() string {
 	return "users"
 }
 
+// PaginationResultUser is a struct that contains the pagination result for user
 type PaginationResultUser struct {
 	Data       []User
 	Total      int

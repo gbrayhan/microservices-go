@@ -116,6 +116,7 @@ func (c *Controller) GetMedicinesByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, domainMedicine)
 }
 
+// UpdateMedicine is the controller to update a medicine
 func (c *Controller) UpdateMedicine(ctx *gin.Context) {
 	medicineID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {

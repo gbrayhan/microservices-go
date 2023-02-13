@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// UserAdapter is a function that returns a user controller
 func UserAdapter(db *gorm.DB) *userController.Controller {
 	uRepository := userRepository.Repository{DB: db}
 	service := userService.Service{UserRepository: uRepository}

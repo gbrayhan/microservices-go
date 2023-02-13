@@ -1,3 +1,4 @@
+// Package main is the entry point of the application
 package main
 
 import (
@@ -24,7 +25,7 @@ func main() {
 	var err error
 	DB, err := config.GormOpen()
 	if err != nil {
-		_ = fmt.Errorf("fatal error in database file: %s \n", err)
+		_ = fmt.Errorf("fatal error in database file: %s", err)
 		panic(err)
 	}
 	router.Use(middlewares.GinBodyLogMiddleware)
@@ -50,7 +51,7 @@ func startServer(router http.Handler) {
 		MaxHeaderBytes: 1 << 20,
 	}
 	if err := s.ListenAndServe(); err != nil {
-		_ = fmt.Errorf("fatal error description: %s \n", strings.ToLower(err.Error()))
+		_ = fmt.Errorf("fatal error description: %s", strings.ToLower(err.Error()))
 		panic(err)
 
 	}

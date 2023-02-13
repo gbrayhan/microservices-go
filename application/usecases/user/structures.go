@@ -5,6 +5,7 @@ import (
 	domainUser "github.com/gbrayhan/microservices-go/domain/user"
 )
 
+// NewUser is the structure for a new user
 type NewUser struct {
 	UserName  string `example:"UserName"`
 	Email     string `example:"some@mail.com"`

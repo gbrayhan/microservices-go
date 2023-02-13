@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// Medicine is a struct that contains the medicine model
 type Medicine struct {
 	ID          int       `json:"id" example:"123" gorm:"primaryKey"`
 	Name        string    `json:"name" example:"Paracetamol" gorm:"unique"`

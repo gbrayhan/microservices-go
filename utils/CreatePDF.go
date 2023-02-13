@@ -25,9 +25,9 @@ func RouteTemplateToPDF(routeTemplate string, data interface{}) (pdfContent stri
 	}
 
 	filenamePDF := "archives/tmp/" + randCryp.String() + "_file.pdf"
-	filenameHtml := "archives/tmp/" + randCryp.String() + "_file.html"
+	filenameHTML := "archives/tmp/" + randCryp.String() + "_file.html"
 
-	file, err := os.Create(filenameHtml)
+	file, err := os.Create(filenameHTML)
 	if err != nil {
 		return
 	}
@@ -41,7 +41,7 @@ func RouteTemplateToPDF(routeTemplate string, data interface{}) (pdfContent stri
 		return
 	}
 
-	args := []string{"-s", "Letter", "-O", "Portrait", filenameHtml, filenamePDF}
+	args := []string{"-s", "Letter", "-O", "Portrait", filenameHTML, filenamePDF}
 	cmd := exec.Command(wkhtmltopdfBin, args...)
 	// vars outString, err
 	_, err = cmd.CombinedOutput()
@@ -57,7 +57,7 @@ func RouteTemplateToPDF(routeTemplate string, data interface{}) (pdfContent stri
 	if err = os.Remove(filenamePDF); err != nil {
 		return
 	}
-	if err = os.Remove(filenameHtml); err != nil {
+	if err = os.Remove(filenameHTML); err != nil {
 		return
 	}
 

@@ -17,12 +17,14 @@ type Auth struct {
 	ExpirationRefreshTime time.Time
 }
 
+// Claims is a struct that contains the claims of the JWT
 type Claims struct {
 	ID   int    `json:"id"`
 	Type string `json:"type"`
 	jwt.RegisteredClaims
 }
 
+// GenerateJWTTokens generates the JWT tokens
 func GenerateJWTTokens(userID int) (authData *Auth, err error) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {

@@ -8,8 +8,7 @@ import (
 	"gorm.io/plugin/dbresolver"
 )
 
-var Repo Repository
-
+// Repository represents the repository using gorm
 type Repository struct {
 	DB *gorm.DB
 }
@@ -23,6 +22,7 @@ type DBConfig struct {
 	Password string
 }
 
+// GormOpen is a function that returns a gorm database connection using  initial configuration
 func GormOpen() (gormDB *gorm.DB, err error) {
 	var infoDatabase infoDatabaseSQL
 	err = infoDatabase.getDiverConn("Databases.MySQL.BoilerplateGo")

@@ -5,6 +5,7 @@ import (
 	domainMedicine "github.com/gbrayhan/microservices-go/domain/medicine"
 )
 
+// NewMedicine is a struct that contains the data for a new medicine
 type NewMedicine struct {
 	Name        string `json:"name" example:"Paracetamol"`
 	Description string `json:"description" example:"Some Description"`

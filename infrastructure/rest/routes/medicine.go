@@ -6,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// MedicineRoutes is a function that contains all medicine routes
 func MedicineRoutes(router *gin.RouterGroup, controller *medicineController.Controller) {
 
 	routerMedicine := router.Group("/medicine")

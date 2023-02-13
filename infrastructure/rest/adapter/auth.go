@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// AuthAdapter is a function that returns a auth controller
 func AuthAdapter(db *gorm.DB) *authController.Controller {
 	uRepository := userRepository.Repository{DB: db}
 	service := authService.Service{UserRepository: uRepository}

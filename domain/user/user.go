@@ -17,6 +17,7 @@ type User struct {
 	UpdatedAt    time.Time
 }
 
+// Service is the interface that provides user methods
 type Service interface {
 	Get(int) (*User, error)
 	GetAll() ([]*User, error)

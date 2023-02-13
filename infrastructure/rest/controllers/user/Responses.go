@@ -8,6 +8,7 @@ type MessageResponse struct {
 	Message string `json:"message"`
 }
 
+// ResponseUser is a struct that contains the response body for the user
 type ResponseUser struct {
 	ID        int       `json:"id" example:"1099"`
 	UserName  string    `json:"user" example:"BossonH"`
