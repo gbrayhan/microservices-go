@@ -1,3 +1,4 @@
+// Package auth provides the use case for authentication
 package auth
 
 import (
@@ -7,10 +8,12 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Service is a struct that contains the repository implementation for auth use case
 type Service struct {
 	UserRepository userRepository.Repository
 }
 
+// Login implements the login use case
 func (s *Service) Login(user LoginUser) (*SecurityAuthenticatedUser, error) {
 	userMap := map[string]interface{}{"email": user.Email}
 	domainUser, err := s.UserRepository.GetOneByMap(userMap)
@@ -32,6 +35,7 @@ func (s *Service) Login(user LoginUser) (*SecurityAuthenticatedUser, error) {
 	return secAuthUserMapper(domainUser, authInfo), err
 }
 
+// CheckPasswordHash compares a bcrypt hashed password with its possible plaintext equivalent.
 func CheckPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil

@@ -1,9 +1,11 @@
+// Package medicine provides the use case for medicine
 package medicine
 
 import (
 	domainMedicine "github.com/gbrayhan/microservices-go/domain/medicine"
 )
 
+// NewMedicine is a struct that contains the data for a new medicine
 type NewMedicine struct {
 	Name        string `json:"name" example:"Paracetamol"`
 	Description string `json:"description" example:"Some Description"`
@@ -11,6 +13,7 @@ type NewMedicine struct {
 	Laboratory  string `json:"laboratory" example:"Roche"`
 }
 
+// PaginationResultMedicine is a struct that contains the pagination result for medicine
 type PaginationResultMedicine struct {
 	Data       *[]domainMedicine.Medicine
 	Total      int64

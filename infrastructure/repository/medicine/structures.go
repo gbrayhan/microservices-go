@@ -1,3 +1,4 @@
+// Package medicine contains the repository implementation for the medicine entity
 package medicine
 
 import (
@@ -5,6 +6,7 @@ import (
 	"time"
 )
 
+// Medicine is a struct that contains the medicine model
 type Medicine struct {
 	ID          int       `json:"id" example:"123" gorm:"primaryKey"`
 	Name        string    `json:"name" example:"Paracetamol" gorm:"unique"`
@@ -20,6 +22,7 @@ func (*Medicine) TableName() string {
 	return "medicines"
 }
 
+// PaginationResultMedicine is a struct that contains the pagination result for medicine
 type PaginationResultMedicine struct {
 	Data       *[]domainMedicine.Medicine
 	Total      int64

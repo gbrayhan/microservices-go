@@ -1,3 +1,4 @@
+// Package auth contains the auth controller
 package auth
 
 import (
@@ -8,6 +9,7 @@ import (
 	"net/http"
 )
 
+// Controller is a struct that contains the auth service
 type Controller struct {
 	AuthService useCaseAuth.Service
 }

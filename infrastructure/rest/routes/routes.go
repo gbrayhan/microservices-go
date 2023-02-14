@@ -1,6 +1,8 @@
+// Package routes contains all routes of the application
 package routes
 
 import (
+	// swaggerFiles for documentation
 	_ "github.com/gbrayhan/microservices-go/docs"
 	"github.com/gbrayhan/microservices-go/infrastructure/rest/adapter"
 	"github.com/gin-gonic/gin"
@@ -9,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// Security
+// Security is a struct that contains the security of the application
 // @SecurityDefinitions.jwt
 type Security struct {
 	Authorization string `header:"Authorization" json:"Authorization"`
@@ -31,7 +33,7 @@ type Security struct {
 // @in header
 // @name Authorization
 
-// ApplicationV1Router
+// ApplicationV1Router is a function that contains all routes of the application
 // @host localhost:8080
 // @BasePath /v1
 func ApplicationV1Router(router *gin.Engine, db *gorm.DB) {

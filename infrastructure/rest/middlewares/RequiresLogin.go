@@ -1,3 +1,4 @@
+// Package middlewares contains the middlewares for the rest api
 package middlewares
 
 import (
@@ -8,11 +9,12 @@ import (
 	"net/http"
 )
 
+// AuthJWTMiddleware is a function that validates the jwt token
 func AuthJWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		viper.SetConfigFile("config.json")
 		if err := viper.ReadInConfig(); err != nil {
-			_ = fmt.Errorf("fatal error in config file: %s \n", err.Error())
+			_ = fmt.Errorf("fatal error in config file: %s", err.Error())
 		}
 
 		JWTAccessSecure := viper.GetString("Secure.JWTAccessSecure")

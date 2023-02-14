@@ -1,3 +1,4 @@
+// Package jwt implements the JWT authentication
 package jwt
 
 import (
@@ -8,6 +9,7 @@ import (
 	"time"
 )
 
+// Auth contains the data of the authentication
 type Auth struct {
 	AccessToken           string
 	RefreshToken          string
@@ -15,16 +17,18 @@ type Auth struct {
 	ExpirationRefreshTime time.Time
 }
 
+// Claims is a struct that contains the claims of the JWT
 type Claims struct {
 	ID   int    `json:"id"`
 	Type string `json:"type"`
 	jwt.RegisteredClaims
 }
 
+// GenerateJWTTokens generates the JWT tokens
 func GenerateJWTTokens(userID int) (authData *Auth, err error) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
-		_ = fmt.Errorf("fatal error in config file: %s \n", err.Error())
+		_ = fmt.Errorf("fatal error in config file: %s", err.Error())
 	}
 
 	JWTAccessSecure := viper.GetString("Secure.JWTAccessSecure")
@@ -90,10 +94,11 @@ func GenerateJWTTokens(userID int) (authData *Auth, err error) {
 	return
 }
 
+// GetClaimsAndVerifyAccessToken verifies the access token and returns the claims
 func GetClaimsAndVerifyAccessToken(tokenString string) (claims jwt.MapClaims, err error) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
-		_ = fmt.Errorf("fatal error in config file: %s \n", err.Error())
+		_ = fmt.Errorf("fatal error in config file: %s", err.Error())
 	}
 	JWTAccessSecure := viper.GetString("Secure.JWTAccessSecure")
 
@@ -112,10 +117,11 @@ func GetClaimsAndVerifyAccessToken(tokenString string) (claims jwt.MapClaims, er
 	return nil, err
 }
 
+// GetClaimsAndVerifyRefreshToken verifies the refresh token and returns the claims
 func GetClaimsAndVerifyRefreshToken(tokenString string) (claims jwt.MapClaims, err error) {
 	viper.SetConfigFile("config.json")
 	if err := viper.ReadInConfig(); err != nil {
-		_ = fmt.Errorf("fatal error in config file: %s \n", err.Error())
+		_ = fmt.Errorf("fatal error in config file: %s", err.Error())
 	}
 	JWTRefreshSecure := viper.GetString("Secure.JWTRefreshSecure")
 

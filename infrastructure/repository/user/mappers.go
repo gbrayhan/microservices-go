@@ -1,3 +1,4 @@
+// Package user contains the business logic for the user entity
 package user
 
 import domainUser "github.com/gbrayhan/microservices-go/domain/user"

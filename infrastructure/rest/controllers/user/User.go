@@ -1,3 +1,4 @@
+// Package user contains the user controller
 package user
 
 import (
@@ -10,6 +11,7 @@ import (
 	"strconv"
 )
 
+// Controller is a struct that contains the user service
 type Controller struct {
 	UserService useCaseUser.Service
 }
@@ -82,7 +84,7 @@ func (c *Controller) GetUsersByID(ctx *gin.Context) {
 		return
 	}
 
-	user, err := c.UserService.GetById(userID)
+	user, err := c.UserService.GetByID(userID)
 	if err != nil {
 		appError := domainErrors.NewAppError(err, domainErrors.ValidationError)
 		_ = ctx.Error(appError)

@@ -1,3 +1,4 @@
+// Package routes contains all routes of the application
 package routes
 
 import (
@@ -5,6 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// AuthRoutes is a function that contains all routes of the auth
 func AuthRoutes(router *gin.RouterGroup, controller *authController.Controller) {
 
 	routerAuth := router.Group("/auth")

@@ -1,3 +1,4 @@
+// Package medicine contains the medicine controller
 package medicine
 
 import (
@@ -12,6 +13,7 @@ import (
 	"strconv"
 )
 
+// Controller is a struct that contains the medicine service
 type Controller struct {
 	MedicineService useCaseMedicine.Service
 }
@@ -104,7 +106,7 @@ func (c *Controller) GetMedicinesByID(ctx *gin.Context) {
 		return
 	}
 
-	domainMedicine, err := c.MedicineService.GetById(medicineID)
+	domainMedicine, err := c.MedicineService.GetByID(medicineID)
 	if err != nil {
 		appError := domainError.NewAppError(err, domainError.ValidationError)
 		_ = ctx.Error(appError)
@@ -114,6 +116,7 @@ func (c *Controller) GetMedicinesByID(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, domainMedicine)
 }
 
+// UpdateMedicine is the controller to update a medicine
 func (c *Controller) UpdateMedicine(ctx *gin.Context) {
 	medicineID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {
@@ -147,6 +150,7 @@ func (c *Controller) UpdateMedicine(ctx *gin.Context) {
 
 }
 
+// DeleteMedicine is the controller to delete a medicine
 func (c *Controller) DeleteMedicine(ctx *gin.Context) {
 	medicineID, err := strconv.Atoi(ctx.Param("id"))
 	if err != nil {

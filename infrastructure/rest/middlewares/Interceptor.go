@@ -1,3 +1,4 @@
+// Package middlewares contains the middlewares for the rest api
 package middlewares
 
 import (
@@ -22,6 +23,7 @@ func (w bodyLogWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
+// GinBodyLogMiddleware is a middleware that logs the request and response
 func GinBodyLogMiddleware(c *gin.Context) {
 	blw := &bodyLogWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
 	c.Writer = blw

@@ -1,3 +1,4 @@
+// Package user contains the business logic for the user entity
 package user
 
 import (
@@ -7,6 +8,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Repository is a struct that contains the database implementation for user entity
 type Repository struct {
 	DB *gorm.DB
 }
@@ -60,8 +62,8 @@ func (r *Repository) GetOneByMap(userMap map[string]interface{}) (*domainUser.Us
 	return user.toDomainMapper(), nil
 }
 
-// GetById ... Fetch only one user by ID
-func (r *Repository) GetById(id int) (*domainUser.User, error) {
+// GetByID ... Fetch only one user by ID
+func (r *Repository) GetByID(id int) (*domainUser.User, error) {
 	var user User
 	err := r.DB.Where("id = ?", id).First(&user).Error
 

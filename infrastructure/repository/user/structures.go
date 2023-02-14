@@ -1,9 +1,11 @@
+// Package user contains the business logic for the user entity
 package user
 
 import (
 	"time"
 )
 
+// User is a struct that contains the user information
 type User struct {
 	ID           int       `json:"id" example:"1099" gorm:"primaryKey"`
 	UserName     string    `json:"userName" example:"UserName" gorm:"unique"`
@@ -21,6 +23,7 @@ func (*User) TableName() string {
 	return "users"
 }
 
+// PaginationResultUser is a struct that contains the pagination result for user
 type PaginationResultUser struct {
 	Data       []User
 	Total      int

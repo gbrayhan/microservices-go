@@ -1,7 +1,9 @@
+// Package middlewares contains the middlewares for the rest api
 package middlewares
 
 import "github.com/gin-gonic/gin"
 
+// CommonHeaders is a middleware that adds common headers to the response
 func CommonHeaders(c *gin.Context) {
 	c.Header("Access-Control-Allow-Origin", "*")
 	c.Header("Access-Control-Allow-Credentials", "true")

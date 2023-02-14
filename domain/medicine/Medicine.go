@@ -1,9 +1,11 @@
+// Package medicine contains the business logic for the medicine entity
 package medicine
 
 import (
 	"time"
 )
 
+// Medicine is a struct that contains the medicine information
 type Medicine struct {
 	ID          int       `json:"id" example:"123"`
 	Name        string    `json:"name" example:"Paracetamol"`
@@ -14,12 +16,13 @@ type Medicine struct {
 	UpdatedAt   time.Time `json:"updated_at,omitempty" example:"2021-02-24 20:19:39"`
 }
 
+// Service is a interface that contains the methods for the medicine service
 type Service interface {
 	Get(int) (*Medicine, error)
 	GetAll() ([]*Medicine, error)
 	Create(*Medicine) error
 	GetByMap(map[string]interface{}) map[string]interface{}
-	GetById(int) (*Medicine, error)
+	GetByID(int) (*Medicine, error)
 	Delete(int) error
 	Update(int, map[string]interface{}) (*Medicine, error)
 }

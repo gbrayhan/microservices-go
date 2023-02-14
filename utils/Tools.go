@@ -1,10 +1,11 @@
+// Package utils contains the common functions and structures for the application
 package utils
 
 import (
 	"reflect"
 )
 
-// Find element in array
+// InArray Find element in array
 func InArray(val interface{}, array interface{}) (exists bool, index int) {
 	exists = false
 	index = -1

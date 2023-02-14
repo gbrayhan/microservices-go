@@ -1,5 +1,7 @@
+// Package user contains the user controller
 package user
 
+// NewUserRequest is a struct that contains the request body for the new user
 type NewUserRequest struct {
 	UserName  string `json:"user" example:"someUser" gorm:"unique" binding:"required"`
 	Email     string `json:"email" example:"mail@mail.com" gorm:"unique" binding:"required"`
