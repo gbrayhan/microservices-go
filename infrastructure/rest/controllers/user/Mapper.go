@@ -23,6 +23,6 @@ func arrayDomainToResponseMapper(usersDomain *[]userDomain.User) *[]ResponseUser
 }
 
 func toUsecaseMapper(user *NewUserRequest) *userUseCase.NewUser {
-	return &userUseCase.NewUser{UserName: user.UserName, Email: user.Email, FirstName: user.FirstName, LastName: user.LastName, Role: user.Role}
+	return &userUseCase.NewUser{UserName: user.UserName, Password: user.Password, Email: user.Email, FirstName: user.FirstName, LastName: user.LastName, Role: user.Role}
 
 }

@@ -32,9 +32,8 @@ func (s *Service) Create(newUser *NewUser) (*userDomain.User, error) {
 	}
 	domain.HashPassword = string(hash)
 	domain.Status = true
-	err = s.UserRepository.Create(domain)
 
-	return domain, err
+	return s.UserRepository.Create(domain)
 }
 
 // GetOneByMap is a function that returns a user by map

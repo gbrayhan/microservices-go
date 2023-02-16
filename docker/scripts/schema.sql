@@ -6,8 +6,6 @@ CREATE USER IF NOT EXISTS 'appuser'@'%' IDENTIFIED WITH mysql_native_password BY
 CREATE USER IF NOT EXISTS 'appuser'@'mysqldb' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
 
 
-
-
 create table if not exists medicines
 (
     id          bigint auto_increment primary key,
@@ -25,7 +23,7 @@ create table if not exists medicines
 create table if not exists users
 (
     id            bigint auto_increment,
-    user          varchar(100) charset utf8mb4         not null,
+    user_name     varchar(100) charset utf8mb4         not null,
     email         varchar(100) charset utf8mb4         not null,
     first_name    varchar(100) charset utf8mb4         null,
     last_name     varchar(100) charset utf8mb4         null,
@@ -34,7 +32,7 @@ create table if not exists users
     created_at    timestamp  default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
     updated_at    timestamp  default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
     constraint users_UN_email unique (email),
-    constraint users_UN_user unique (user),
+    constraint users_UN_user unique (user_name),
     constraint users_id_IDX unique (id)
 ) CHARSET = utf8mb4
   COLLATE = utf8mb4_general_ci;

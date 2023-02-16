@@ -26,40 +26,39 @@ func (r *Repository) GetAll() (*[]domainUser.User, error) {
 }
 
 // Create ... Insert New data
-func (r *Repository) Create(domainUser *domainUser.User) error {
-	user := fromDomainMapper(domainUser)
-	txDb := r.DB.Create(user)
+func (r *Repository) Create(userDomain *domainUser.User) (*domainUser.User, error) {
+	userRepository := fromDomainMapper(userDomain)
+	txDb := r.DB.Create(userRepository)
 	err := txDb.Error
 	if err != nil {
 		byteErr, _ := json.Marshal(err)
 		var newError domainErrors.GormErr
 		err = json.Unmarshal(byteErr, &newError)
 		if err != nil {
-			return err
+			return &domainUser.User{}, err
 		}
 		switch newError.Number {
 		case 1062:
 			err = domainErrors.NewAppErrorWithType(domainErrors.ResourceAlreadyExists)
-			return err
+			return &domainUser.User{}, err
 
 		default:
 			err = domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 		}
 	}
-
-	return err
+	return userRepository.toDomainMapper(), err
 }
 
 // GetOneByMap ... Fetch only one user by Map values
 func (r *Repository) GetOneByMap(userMap map[string]interface{}) (*domainUser.User, error) {
-	var user User
+	var userRepository User
 
-	tx := r.DB.Where(userMap).Limit(1).Find(&user)
+	tx := r.DB.Where(userMap).Limit(1).Find(&userRepository)
 	if tx.Error != nil {
 		err := domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 		return &domainUser.User{}, err
 	}
-	return user.toDomainMapper(), nil
+	return userRepository.toDomainMapper(), nil
 }
 
 // GetByID ... Fetch only one user by ID
