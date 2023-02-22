@@ -2,6 +2,7 @@
 package auth
 
 import (
+	"errors"
 	"github.com/gbrayhan/microservices-go/application/security/jwt"
 	errorsDomain "github.com/gbrayhan/microservices-go/domain/errors"
 	userRepository "github.com/gbrayhan/microservices-go/infrastructure/repository/user"
@@ -20,11 +21,14 @@ func (s *Service) Login(user LoginUser) (*SecurityAuthenticatedUser, error) {
 	if err != nil {
 		return &SecurityAuthenticatedUser{}, err
 	}
+	if domainUser.ID == 0 {
+		return &SecurityAuthenticatedUser{}, errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
+	}
 
 	isAuthenticated := CheckPasswordHash(user.Password, domainUser.HashPassword)
 	if !isAuthenticated {
 		err = errorsDomain.NewAppError(err, errorsDomain.NotAuthorized)
-		return &SecurityAuthenticatedUser{}, err
+		return &SecurityAuthenticatedUser{}, errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
 	}
 
 	authInfo, err := jwt.GenerateJWTTokens(domainUser.ID)

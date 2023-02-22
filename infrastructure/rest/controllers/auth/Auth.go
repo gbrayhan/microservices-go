@@ -38,6 +38,7 @@ func (c *Controller) Login(ctx *gin.Context) {
 
 	authDataUser, err := c.AuthService.Login(user)
 	if err != nil {
+		_ = ctx.Error(err)
 		return
 	}
 	ctx.JSON(http.StatusOK, authDataUser)
