@@ -16,10 +16,10 @@ func secAuthUserMapper(domainUser *userDomain.User, authInfo *Auth) *SecurityAut
 			Status:    domainUser.Status,
 		},
 		Security: DataSecurityAuthenticated{
-			JWTAccessToken:        authInfo.AccessToken,
-			JWTRefreshToken:       authInfo.RefreshToken,
-			ExpirationAccessTime:  authInfo.ExpirationAccessTime,
-			ExpirationRefreshTime: authInfo.ExpirationRefreshTime,
+			JWTAccessToken:            authInfo.AccessToken,
+			JWTRefreshToken:           authInfo.RefreshToken,
+			ExpirationAccessDateTime:  authInfo.ExpirationAccessDateTime,
+			ExpirationRefreshDateTime: authInfo.ExpirationRefreshDateTime,
 		},
 	}
 

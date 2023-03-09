@@ -12,10 +12,10 @@ import (
 
 // Auth contains the data of the authentication
 type Auth struct {
-	AccessToken           string
-	RefreshToken          string
-	ExpirationAccessTime  time.Time
-	ExpirationRefreshTime time.Time
+	AccessToken               string
+	RefreshToken              string
+	ExpirationAccessDateTime  time.Time
+	ExpirationRefreshDateTime time.Time
 }
 
 // Service is a struct that contains the repository implementation for auth use case
@@ -50,10 +50,10 @@ func (s *Service) Login(user LoginUser) (*SecurityAuthenticatedUser, error) {
 	}
 
 	return secAuthUserMapper(domainUser, &Auth{
-		AccessToken:           accessTokenClaims.Token,
-		RefreshToken:          refreshTokenClaims.Token,
-		ExpirationAccessTime:  accessTokenClaims.ExpirationTime,
-		ExpirationRefreshTime: refreshTokenClaims.ExpirationTime,
+		AccessToken:               accessTokenClaims.Token,
+		RefreshToken:              refreshTokenClaims.Token,
+		ExpirationAccessDateTime:  accessTokenClaims.ExpirationTime,
+		ExpirationRefreshDateTime: refreshTokenClaims.ExpirationTime,
 	}), err
 }
 
@@ -79,10 +79,10 @@ func (s *Service) AccessTokenByRefreshToken(refreshToken string) (*SecurityAuthe
 	var expTime = int64(claimsMap["exp"].(float64))
 
 	return secAuthUserMapper(domainUser, &Auth{
-		AccessToken:           accessTokenClaims.Token,
-		ExpirationAccessTime:  accessTokenClaims.ExpirationTime,
-		RefreshToken:          refreshToken,
-		ExpirationRefreshTime: time.Unix(expTime, 0),
+		AccessToken:               accessTokenClaims.Token,
+		ExpirationAccessDateTime:  accessTokenClaims.ExpirationTime,
+		RefreshToken:              refreshToken,
+		ExpirationRefreshDateTime: time.Unix(expTime, 0),
 	}), nil
 }
 

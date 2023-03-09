@@ -22,10 +22,10 @@ type DataUserAuthenticated struct {
 
 // DataSecurityAuthenticated is a struct that contains the security data for the authenticated user
 type DataSecurityAuthenticated struct {
-	JWTAccessToken        string    `json:"jwtAccessToken" example:"SomeAccessToken"`
-	JWTRefreshToken       string    `json:"jwtRefreshToken" example:"SomeRefreshToken"`
-	ExpirationAccessTime  time.Time `json:"expirationAccessTime" example:"2023-02-02T21:03:53.196419-06:00"`
-	ExpirationRefreshTime time.Time `json:"expirationRefreshTime" example:"2023-02-03T06:53:53.196419-06:00"`
+	JWTAccessToken            string    `json:"jwtAccessToken" example:"SomeAccessToken"`
+	JWTRefreshToken           string    `json:"jwtRefreshToken" example:"SomeRefreshToken"`
+	ExpirationAccessDateTime  time.Time `json:"expirationAccessDateTime" example:"2023-02-02T21:03:53.196419-06:00"`
+	ExpirationRefreshDateTime time.Time `json:"expirationRefreshDateTime" example:"2023-02-03T06:53:53.196419-06:00"`
 }
 
 // SecurityAuthenticatedUser is a struct that contains the data for the authenticated user
