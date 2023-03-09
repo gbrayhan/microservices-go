@@ -2,11 +2,10 @@
 package auth
 
 import (
-	"github.com/gbrayhan/microservices-go/application/security/jwt"
 	userDomain "github.com/gbrayhan/microservices-go/domain/user"
 )
 
-func secAuthUserMapper(domainUser *userDomain.User, authInfo *jwt.Auth) *SecurityAuthenticatedUser {
+func secAuthUserMapper(domainUser *userDomain.User, authInfo *Auth) *SecurityAuthenticatedUser {
 	return &SecurityAuthenticatedUser{
 		Data: DataUserAuthenticated{
 			UserName:  domainUser.UserName,

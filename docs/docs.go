@@ -24,9 +24,49 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/auth/access-token": {
+            "post": {
+                "description": "Auth user by email and password",
+                "tags": [
+                    "auth"
+                ],
+                "summary": "GetAccessTokenByRefreshToken UserName",
+                "parameters": [
+                    {
+                        "description": "body data",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/auth.AccessTokenRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/auth.DataUserAuthenticated"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.MessageResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/controllers.MessageResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/login": {
             "post": {
-                "description": "Auth user by user and password",
+                "description": "Auth user by email and password",
                 "tags": [
                     "auth"
                 ],
@@ -325,6 +365,18 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "auth.AccessTokenRequest": {
+            "type": "object",
+            "required": [
+                "refreshToken"
+            ],
+            "properties": {
+                "refreshToken": {
+                    "type": "string",
+                    "example": "badbunybabybebe"
+                }
+            }
+        },
         "auth.DataUserAuthenticated": {
             "type": "object",
             "properties": {

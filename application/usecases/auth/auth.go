@@ -7,7 +7,16 @@ import (
 	errorsDomain "github.com/gbrayhan/microservices-go/domain/errors"
 	userRepository "github.com/gbrayhan/microservices-go/infrastructure/repository/user"
 	"golang.org/x/crypto/bcrypt"
+	"time"
 )
+
+// Auth contains the data of the authentication
+type Auth struct {
+	AccessToken           string
+	RefreshToken          string
+	ExpirationAccessTime  time.Time
+	ExpirationRefreshTime time.Time
+}
 
 // Service is a struct that contains the repository implementation for auth use case
 type Service struct {
@@ -31,12 +40,50 @@ func (s *Service) Login(user LoginUser) (*SecurityAuthenticatedUser, error) {
 		return &SecurityAuthenticatedUser{}, errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
 	}
 
-	authInfo, err := jwt.GenerateJWTTokens(domainUser.ID)
+	accessTokenClaims, err := jwt.GenerateJWTToken(domainUser.ID, "access")
+	if err != nil {
+		return &SecurityAuthenticatedUser{}, err
+	}
+	refreshTokenClaims, err := jwt.GenerateJWTToken(domainUser.ID, "refresh")
 	if err != nil {
 		return &SecurityAuthenticatedUser{}, err
 	}
 
-	return secAuthUserMapper(domainUser, authInfo), err
+	return secAuthUserMapper(domainUser, &Auth{
+		AccessToken:           accessTokenClaims.Token,
+		RefreshToken:          refreshTokenClaims.Token,
+		ExpirationAccessTime:  accessTokenClaims.ExpirationTime,
+		ExpirationRefreshTime: refreshTokenClaims.ExpirationTime,
+	}), err
+}
+
+// AccessTokenByRefreshToken implements the Access Token By Refresh Token use case
+func (s *Service) AccessTokenByRefreshToken(refreshToken string) (*SecurityAuthenticatedUser, error) {
+	claimsMap, err := jwt.GetClaimsAndVerifyToken(refreshToken, "refresh")
+	if err != nil {
+		return nil, err
+	}
+
+	userMap := map[string]interface{}{"id": claimsMap["id"]}
+	domainUser, err := s.UserRepository.GetOneByMap(userMap)
+	if err != nil {
+		return nil, err
+
+	}
+
+	accessTokenClaims, err := jwt.GenerateJWTToken(domainUser.ID, "access")
+	if err != nil {
+		return &SecurityAuthenticatedUser{}, err
+	}
+
+	var expTime = int64(claimsMap["exp"].(float64))
+
+	return secAuthUserMapper(domainUser, &Auth{
+		AccessToken:           accessTokenClaims.Token,
+		ExpirationAccessTime:  accessTokenClaims.ExpirationTime,
+		RefreshToken:          refreshToken,
+		ExpirationRefreshTime: time.Unix(expTime, 0),
+	}), nil
 }
 
 // CheckPasswordHash compares a bcrypt hashed password with its possible plaintext equivalent.

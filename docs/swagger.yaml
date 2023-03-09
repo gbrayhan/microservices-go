@@ -1,5 +1,13 @@
 basePath: /v1
 definitions:
+  auth.AccessTokenRequest:
+    properties:
+      refreshToken:
+        example: badbunybabybebe
+        type: string
+    required:
+    - refreshToken
+    type: object
   auth.DataUserAuthenticated:
     properties:
       email:
@@ -182,9 +190,35 @@ info:
   title: Boilerplate Golang
   version: "1.0"
 paths:
+  /auth/access-token:
+    post:
+      description: Auth user by email and password
+      parameters:
+      - description: body data
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/auth.AccessTokenRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/auth.DataUserAuthenticated'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controllers.MessageResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controllers.MessageResponse'
+      summary: GetAccessTokenByRefreshToken UserName
+      tags:
+      - auth
   /auth/login:
     post:
-      description: Auth user by user and password
+      description: Auth user by email and password
       parameters:
       - description: body data
         in: body
