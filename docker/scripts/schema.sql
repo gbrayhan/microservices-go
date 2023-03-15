@@ -9,10 +9,10 @@ CREATE USER IF NOT EXISTS 'appuser'@'mysqldb' IDENTIFIED WITH mysql_native_passw
 create table if not exists medicines
 (
     id          bigint auto_increment primary key,
-    name        varchar(30) charset utf8mb3         null,
-    ean_code    varchar(30) charset utf8mb3         null,
-    description varchar(150) charset utf8mb3        null,
-    laboratory  varchar(50) charset utf8mb3         null,
+    name        varchar(30) charset utf8mb4         null,
+    ean_code    varchar(30) charset utf8mb4         null,
+    description varchar(150) charset utf8mb4        null,
+    laboratory  varchar(50) charset utf8mb4         null,
     created_at  timestamp default CURRENT_TIMESTAMP null,
     updated_at  timestamp default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP,
     constraint medicines_UN_ean unique (ean_code),
