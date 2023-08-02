@@ -3,10 +3,11 @@ package middlewares
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/spf13/viper"
-	"net/http"
 )
 
 // AuthJWTMiddleware is a function that validates the jwt token
@@ -28,7 +29,7 @@ func AuthJWTMiddleware() gin.HandlerFunc {
 		}
 
 		claims := jwt.MapClaims{}
-		_, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		_, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
 			return signature, nil
 		})
 

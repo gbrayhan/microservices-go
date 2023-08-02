@@ -13,7 +13,7 @@ import (
 )
 
 // RouteTemplateToPDF Convert a golang template to PDF
-func RouteTemplateToPDF(routeTemplate string, data interface{}) (pdfContent string, err error) {
+func RouteTemplateToPDF(routeTemplate string, data any) (pdfContent string, err error) {
 	viper.SetConfigFile("config.json")
 	if err = viper.ReadInConfig(); err != nil {
 		return
@@ -65,7 +65,7 @@ func RouteTemplateToPDF(routeTemplate string, data interface{}) (pdfContent stri
 	return
 }
 
-func process(t *template.Template, vars interface{}) string {
+func process(t *template.Template, vars any) string {
 	var tmplBytes bytes.Buffer
 
 	err := t.Execute(&tmplBytes, vars)
@@ -75,7 +75,7 @@ func process(t *template.Template, vars interface{}) string {
 	return tmplBytes.String()
 }
 
-func processFile(rutaFileName string, vars interface{}) string {
+func processFile(rutaFileName string, vars any) string {
 	tmpl, err := template.ParseFiles(rutaFileName)
 
 	if err != nil {

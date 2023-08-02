@@ -3,12 +3,13 @@ package user
 
 import (
 	"errors"
+	"net/http"
+	"strconv"
+
 	useCaseUser "github.com/gbrayhan/microservices-go/application/usecases/user"
 	domainErrors "github.com/gbrayhan/microservices-go/domain/errors"
 	"github.com/gbrayhan/microservices-go/infrastructure/rest/controllers"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
 )
 
 // Controller is a struct that contains the user service
@@ -111,7 +112,7 @@ func (c *Controller) UpdateUser(ctx *gin.Context) {
 		_ = ctx.Error(appError)
 		return
 	}
-	var requestMap map[string]interface{}
+	var requestMap map[string]any
 
 	err = controllers.BindJSONMap(ctx, &requestMap)
 	if err != nil {

@@ -3,14 +3,16 @@ package medicine
 
 import (
 	"errors"
+
 	useCaseMedicine "github.com/gbrayhan/microservices-go/application/usecases/medicine"
 	domainError "github.com/gbrayhan/microservices-go/domain/errors"
 	domainMedicine "github.com/gbrayhan/microservices-go/domain/medicine"
 	"github.com/gbrayhan/microservices-go/infrastructure/rest/controllers"
 
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 // Controller is a struct that contains the medicine service
@@ -124,7 +126,7 @@ func (c *Controller) UpdateMedicine(ctx *gin.Context) {
 		_ = ctx.Error(appError)
 		return
 	}
-	var requestMap map[string]interface{}
+	var requestMap map[string]any
 
 	err = controllers.BindJSONMap(ctx, &requestMap)
 	if err != nil {

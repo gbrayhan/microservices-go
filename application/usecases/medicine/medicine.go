@@ -41,7 +41,7 @@ func (s *Service) Create(medicine *NewMedicine) (*medicineDomain.Medicine, error
 }
 
 // GetByMap is a function that returns a medicine by map
-func (s *Service) GetByMap(medicineMap map[string]interface{}) (*medicineDomain.Medicine, error) {
+func (s *Service) GetByMap(medicineMap map[string]any) (*medicineDomain.Medicine, error) {
 	return s.MedicineRepository.GetOneByMap(medicineMap)
 }
 
@@ -51,6 +51,6 @@ func (s *Service) Delete(id int) error {
 }
 
 // Update is a function that updates a medicine by id
-func (s *Service) Update(id int, medicineMap map[string]interface{}) (*medicineDomain.Medicine, error) {
+func (s *Service) Update(id int, medicineMap map[string]any) (*medicineDomain.Medicine, error) {
 	return s.MedicineRepository.Update(id, medicineMap)
 }

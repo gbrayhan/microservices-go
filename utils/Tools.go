@@ -6,7 +6,7 @@ import (
 )
 
 // InArray Find element in array
-func InArray(val interface{}, array interface{}) (exists bool, index int) {
+func InArray(val any, array any) (exists bool, index int) {
 	exists = false
 	index = -1
 
