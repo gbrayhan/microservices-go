@@ -3,6 +3,7 @@ package user
 
 import (
 	"encoding/json"
+
 	domainErrors "github.com/gbrayhan/microservices-go/domain/errors"
 	domainUser "github.com/gbrayhan/microservices-go/domain/user"
 	"gorm.io/gorm"
@@ -50,7 +51,7 @@ func (r *Repository) Create(userDomain *domainUser.User) (*domainUser.User, erro
 }
 
 // GetOneByMap ... Fetch only one user by Map values
-func (r *Repository) GetOneByMap(userMap map[string]interface{}) (*domainUser.User, error) {
+func (r *Repository) GetOneByMap(userMap map[string]any) (*domainUser.User, error) {
 	var userRepository User
 
 	tx := r.DB.Where(userMap).Limit(1).Find(&userRepository)
@@ -79,7 +80,7 @@ func (r *Repository) GetByID(id int) (*domainUser.User, error) {
 }
 
 // Update ... Update user
-func (r *Repository) Update(id int, userMap map[string]interface{}) (*domainUser.User, error) {
+func (r *Repository) Update(id int, userMap map[string]any) (*domainUser.User, error) {
 	var user User
 
 	user.ID = id

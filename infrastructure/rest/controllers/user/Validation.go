@@ -4,12 +4,13 @@ package user
 import (
 	"errors"
 	"fmt"
+	"strings"
+
 	domainErrors "github.com/gbrayhan/microservices-go/domain/errors"
 	"github.com/go-playground/validator/v10"
-	"strings"
 )
 
-func updateValidation(request map[string]interface{}) (err error) {
+func updateValidation(request map[string]any) (err error) {
 	var errorsValidation []string
 
 	for k, v := range request {
@@ -27,7 +28,7 @@ func updateValidation(request map[string]interface{}) (err error) {
 
 	validate := validator.New()
 	err = validate.RegisterValidation("update_validation", func(fl validator.FieldLevel) bool {
-		m, ok := fl.Field().Interface().(map[string]interface{})
+		m, ok := fl.Field().Interface().(map[string]any)
 		if !ok {
 			return false
 		}

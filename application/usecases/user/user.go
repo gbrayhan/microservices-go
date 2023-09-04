@@ -37,7 +37,7 @@ func (s *Service) Create(newUser *NewUser) (*userDomain.User, error) {
 }
 
 // GetOneByMap is a function that returns a user by map
-func (s *Service) GetOneByMap(userMap map[string]interface{}) (*userDomain.User, error) {
+func (s *Service) GetOneByMap(userMap map[string]any) (*userDomain.User, error) {
 	return s.UserRepository.GetOneByMap(userMap)
 }
 
@@ -47,6 +47,6 @@ func (s *Service) Delete(id int) error {
 }
 
 // Update is a function that updates a user by id
-func (s *Service) Update(id int, userMap map[string]interface{}) (*userDomain.User, error) {
+func (s *Service) Update(id int, userMap map[string]any) (*userDomain.User, error) {
 	return s.UserRepository.Update(id, userMap)
 }

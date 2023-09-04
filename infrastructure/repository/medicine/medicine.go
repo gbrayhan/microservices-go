@@ -3,6 +3,7 @@ package medicine
 
 import (
 	"encoding/json"
+
 	domainErrors "github.com/gbrayhan/microservices-go/domain/errors"
 	domainMedicine "github.com/gbrayhan/microservices-go/domain/medicine"
 	"gorm.io/gorm"
@@ -93,7 +94,7 @@ func (r *Repository) GetByID(id int) (*domainMedicine.Medicine, error) {
 }
 
 // GetOneByMap ... Fetch only one medicine by Map
-func (r *Repository) GetOneByMap(medicineMap map[string]interface{}) (*domainMedicine.Medicine, error) {
+func (r *Repository) GetOneByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error) {
 	var medicine Medicine
 
 	err := r.DB.Where(medicineMap).Limit(1).Find(&medicine).Error
@@ -105,7 +106,7 @@ func (r *Repository) GetOneByMap(medicineMap map[string]interface{}) (*domainMed
 }
 
 // Update ... Update medicine
-func (r *Repository) Update(id int, medicineMap map[string]interface{}) (*domainMedicine.Medicine, error) {
+func (r *Repository) Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error) {
 	var medicine Medicine
 
 	medicine.ID = id

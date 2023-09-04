@@ -3,11 +3,12 @@ package auth
 
 import (
 	"errors"
+	"time"
+
 	"github.com/gbrayhan/microservices-go/application/security/jwt"
 	errorsDomain "github.com/gbrayhan/microservices-go/domain/errors"
 	userRepository "github.com/gbrayhan/microservices-go/infrastructure/repository/user"
 	"golang.org/x/crypto/bcrypt"
-	"time"
 )
 
 // Auth contains the data of the authentication
@@ -25,7 +26,7 @@ type Service struct {
 
 // Login implements the login use case
 func (s *Service) Login(user LoginUser) (*SecurityAuthenticatedUser, error) {
-	userMap := map[string]interface{}{"email": user.Email}
+	userMap := map[string]any{"email": user.Email}
 	domainUser, err := s.UserRepository.GetOneByMap(userMap)
 	if err != nil {
 		return &SecurityAuthenticatedUser{}, err
@@ -64,7 +65,7 @@ func (s *Service) AccessTokenByRefreshToken(refreshToken string) (*SecurityAuthe
 		return nil, err
 	}
 
-	userMap := map[string]interface{}{"id": claimsMap["id"]}
+	userMap := map[string]any{"id": claimsMap["id"]}
 	domainUser, err := s.UserRepository.GetOneByMap(userMap)
 	if err != nil {
 		return nil, err

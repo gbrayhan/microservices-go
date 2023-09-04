@@ -22,8 +22,8 @@ type Service interface {
 	Get(int) (*User, error)
 	GetAll() ([]*User, error)
 	Create(*User) error
-	GetByMap(map[string]interface{}) map[string]interface{}
+	GetByMap(map[string]any) map[string]any
 	GetByID(int) (*User, error)
 	Delete(int) error
-	Update(int, map[string]interface{}) (*User, error)
+	Update(int, map[string]any) (*User, error)
 }

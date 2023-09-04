@@ -4,12 +4,13 @@ package controllers
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"io"
+
+	"github.com/gin-gonic/gin"
 )
 
 // BindJSON is a function that binds the request body to the given struct and rewrite the request body on the context
-func BindJSON(c *gin.Context, request interface{}) (err error) {
+func BindJSON(c *gin.Context, request any) (err error) {
 	buf := make([]byte, 5120)
 	num, _ := c.Request.Body.Read(buf)
 	reqBody := string(buf[0:num])
@@ -20,7 +21,7 @@ func BindJSON(c *gin.Context, request interface{}) (err error) {
 }
 
 // BindJSONMap is a function that binds the request body to the given map and rewrite the request body on the context
-func BindJSONMap(c *gin.Context, request *map[string]interface{}) (err error) {
+func BindJSONMap(c *gin.Context, request *map[string]any) (err error) {
 	buf := make([]byte, 5120)
 	num, _ := c.Request.Body.Read(buf)
 	reqBody := buf[0:num]

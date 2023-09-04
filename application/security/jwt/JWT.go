@@ -4,11 +4,12 @@ package jwt
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
+
 	domainErrors "github.com/gbrayhan/microservices-go/domain/errors"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/spf13/viper"
-	"strconv"
-	"time"
 )
 
 const (
@@ -105,7 +106,7 @@ func GetClaimsAndVerifyToken(tokenString string, tokenType string) (claims jwt.M
 		_ = fmt.Errorf("fatal error in config file: %s", err.Error())
 	}
 	JWTRefreshSecure := viper.GetString(TokenTypeKeyName[tokenType])
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, domainErrors.NewAppError(errors.New(fmt.Sprintf("unexpected signing method: %v", token.Header["alg"])), domainErrors.NotAuthenticated)
 		}

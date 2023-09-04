@@ -4,9 +4,10 @@ package middlewares
 import (
 	"bytes"
 	"fmt"
-	"github.com/gbrayhan/microservices-go/application/services"
 	"io"
 	"time"
+
+	"github.com/gbrayhan/microservices-go/application/services"
 
 	"github.com/gin-gonic/gin"
 
@@ -39,7 +40,7 @@ func GinBodyLogMiddleware(c *gin.Context) {
 	c.Request.Body = io.NopCloser(bytes.NewBuffer([]byte(reqBody)))
 
 	loc, _ := time.LoadLocation("America/Mexico_City")
-	allDataIO := map[string]interface{}{
+	allDataIO := map[string]any{
 		"ruta":          c.FullPath(),
 		"request_uri":   c.Request.RequestURI,
 		"raw_request":   reqBody,
