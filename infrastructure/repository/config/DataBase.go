@@ -8,11 +8,6 @@ import (
 	"gorm.io/plugin/dbresolver"
 )
 
-// Repository represents the repository using gorm
-type Repository struct {
-	DB *gorm.DB
-}
-
 // DBConfig represents db configuration
 type DBConfig struct {
 	Host     string

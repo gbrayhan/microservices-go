@@ -31,7 +31,7 @@ services:
       MYSQL_PASSWORD: 'youShouldChangeThisPassword'
     ports:
       # <Port exposed> : < MySQL Port running inside container>
-      - '3306:3306'
+      - '33006:3306'
     expose:
       # Opens port 3306 on the container
       - '3306'

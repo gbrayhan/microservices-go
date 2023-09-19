@@ -17,13 +17,33 @@ type User struct {
 	UpdatedAt    time.Time
 }
 
+type NewUser struct {
+	UserName  string
+	Email     string
+	FirstName string
+	LastName  string
+	Role      string
+	Password  string
+	Status    bool
+}
+
+// ToDomainMapper is a function that maps the NewUser struct to User struct
+func (newUser *NewUser) ToDomainMapper() *User {
+	return &User{
+		UserName:  newUser.UserName,
+		Email:     newUser.Email,
+		FirstName: newUser.FirstName,
+		LastName:  newUser.LastName,
+		Role:      newUser.Role,
+	}
+}
+
 // Service is the interface that provides user methods
 type Service interface {
-	Get(int) (*User, error)
-	GetAll() ([]*User, error)
-	Create(*User) error
-	GetByMap(map[string]any) map[string]any
-	GetByID(int) (*User, error)
-	Delete(int) error
-	Update(int, map[string]any) (*User, error)
+	GetAll() (*[]User, error)
+	GetByID(id int) (*User, error)
+	Create(newUser *NewUser) (*User, error)
+	GetOneByMap(userMap map[string]interface{}) (*User, error)
+	Delete(id int) error
+	Update(id int, userMap map[string]interface{}) (*User, error)
 }

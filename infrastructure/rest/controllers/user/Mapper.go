@@ -2,7 +2,6 @@
 package user
 
 import (
-	userUseCase "github.com/gbrayhan/microservices-go/application/usecases/user"
 	userDomain "github.com/gbrayhan/microservices-go/domain/user"
 )
 
@@ -22,7 +21,6 @@ func arrayDomainToResponseMapper(usersDomain *[]userDomain.User) *[]ResponseUser
 	return &usersResponse
 }
 
-func toUsecaseMapper(user *NewUserRequest) *userUseCase.NewUser {
-	return &userUseCase.NewUser{UserName: user.UserName, Password: user.Password, Email: user.Email, FirstName: user.FirstName, LastName: user.LastName, Role: user.Role}
-
+func toUsecaseMapper(user *NewUserRequest) *userDomain.NewUser {
+	return &userDomain.NewUser{UserName: user.UserName, Password: user.Password, Email: user.Email, FirstName: user.FirstName, LastName: user.LastName, Role: user.Role}
 }

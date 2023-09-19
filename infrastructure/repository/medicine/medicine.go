@@ -3,6 +3,8 @@ package medicine
 
 import (
 	"encoding/json"
+	"github.com/gbrayhan/microservices-go/domain"
+	"github.com/gbrayhan/microservices-go/infrastructure/repository"
 
 	domainErrors "github.com/gbrayhan/microservices-go/domain/errors"
 	domainMedicine "github.com/gbrayhan/microservices-go/domain/medicine"
@@ -14,38 +16,71 @@ type Repository struct {
 	DB *gorm.DB
 }
 
+var ColumnsMedicineMapping = map[string]string{
+	"id":          "id",
+	"name":        "name",
+	"description": "description",
+	"eanCode":     "ean_code",
+	"laboratory":  "laboratory",
+	"createdAt":   "created_at",
+	"updatedAt":   "updated_at",
+}
+
+var ColumnsMedicineStructure = map[string]string{
+	"id":          "ID",
+	"name":        "Name",
+	"description": "Description",
+	"eanCode":     "EanCode",
+	"laboratory":  "Laboratory",
+	"createdAt":   "CreatedAt",
+	"updatedAt":   "UpdatedAt",
+}
+
 // GetAll Fetch all medicine data
-func (r *Repository) GetAll(page int64, limit int64) (*PaginationResultMedicine, error) {
-	var medicines []Medicine
+func (r *Repository) GetAll(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error) {
+	var users []Medicine
 	var total int64
-
-	err := r.DB.Model(&Medicine{}).Count(&total).Error
-	if err != nil {
-		return &PaginationResultMedicine{}, err
-	}
 	offset := (page - 1) * limit
-	err = r.DB.Limit(int(limit)).Offset(int(offset)).Find(&medicines).Error
-	if err != nil {
-		return &PaginationResultMedicine{}, err
+
+	var searchColumns = []string{"name", "description", "ean_code", "laboratory"}
+
+	countResult := make(chan error)
+	go func() {
+		err := r.DB.Model(&Medicine{}).Scopes(repository.ApplyFilters(ColumnsMedicineMapping, filters, dateRangeFilters, searchText, searchColumns)).Count(&total).Error
+		countResult <- err
+	}()
+
+	queryResult := make(chan error)
+	go func() {
+		query, err := repository.ComplementSearch((*repository.Repository)(r), sortBy, sortDirection, limit, offset, filters, dateRangeFilters, searchText, searchColumns, ColumnsMedicineMapping)
+		if err != nil {
+			queryResult <- err
+			return
+		}
+		err = query.Find(&users).Error
+		queryResult <- err
+	}()
+
+	var countErr, queryErr error
+	for i := 0; i < 2; i++ {
+		select {
+		case err := <-countResult:
+			countErr = err
+		case err := <-queryResult:
+			queryErr = err
+		}
 	}
 
-	numPages := (total + limit - 1) / limit
-	var nextCursor, prevCursor uint
-	if page < numPages {
-		nextCursor = uint(page + 1)
+	if countErr != nil {
+		return &domainMedicine.DataMedicine{}, countErr
 	}
-	if page > 1 {
-		prevCursor = uint(page - 1)
+	if queryErr != nil {
+		return &domainMedicine.DataMedicine{}, queryErr
 	}
 
-	return &PaginationResultMedicine{
-		Data:       arrayToDomainMapper(&medicines),
-		Total:      total,
-		Limit:      limit,
-		Current:    page,
-		NextCursor: nextCursor,
-		PrevCursor: prevCursor,
-		NumPages:   numPages,
+	return &domainMedicine.DataMedicine{
+		Data:  arrayToDomainMapper(&users),
+		Total: total,
 	}, nil
 }
 

@@ -8,7 +8,7 @@ func (medicine *Medicine) toDomainMapper() *domainMedicine.Medicine {
 		ID:          medicine.ID,
 		Name:        medicine.Name,
 		Description: medicine.Description,
-		EANCode:     medicine.EANCode,
+		EanCode:     medicine.EANCode,
 		Laboratory:  medicine.Laboratory,
 		CreatedAt:   medicine.CreatedAt,
 	}
@@ -19,7 +19,7 @@ func fromDomainMapper(medicine *domainMedicine.Medicine) *Medicine {
 		ID:          medicine.ID,
 		Name:        medicine.Name,
 		Description: medicine.Description,
-		EANCode:     medicine.EANCode,
+		EANCode:     medicine.EanCode,
 		Laboratory:  medicine.Laboratory,
 		CreatedAt:   medicine.CreatedAt,
 	}

@@ -9,13 +9,13 @@ import (
 
 // UserRoutes is a function that contains all routes of the user
 func UserRoutes(router *gin.RouterGroup, controller *userController.Controller) {
-	routerAuth := router.Group("/user")
-	routerAuth.Use(middlewares.AuthJWTMiddleware())
+	routerUser := router.Group("/user")
+	routerUser.Use(middlewares.AuthJWTMiddleware())
 	{
-		routerAuth.POST("/", controller.NewUser)
-		routerAuth.GET("/:id", controller.GetUsersByID)
-		routerAuth.GET("/", controller.GetAllUsers)
-		routerAuth.PUT("/:id", controller.UpdateUser)
-		routerAuth.DELETE("/:id", controller.DeleteUser)
+		routerUser.POST("/", controller.NewUser)
+		routerUser.GET("/:id", controller.GetUsersByID)
+		routerUser.GET("/", controller.GetAllUsers)
+		routerUser.PUT("/:id", controller.UpdateUser)
+		routerUser.DELETE("/:id", controller.DeleteUser)
 	}
 }

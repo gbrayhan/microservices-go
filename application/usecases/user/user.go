@@ -12,6 +12,8 @@ type Service struct {
 	UserRepository userRepository.Repository
 }
 
+var _ userDomain.Service = &Service{}
+
 // GetAll is a function that returns all users
 func (s *Service) GetAll() (*[]userDomain.User, error) {
 	return s.UserRepository.GetAll()
@@ -23,8 +25,8 @@ func (s *Service) GetByID(id int) (*userDomain.User, error) {
 }
 
 // Create is a function that creates a new user
-func (s *Service) Create(newUser *NewUser) (*userDomain.User, error) {
-	domain := newUser.toDomainMapper()
+func (s *Service) Create(newUser *userDomain.NewUser) (*userDomain.User, error) {
+	domain := newUser.ToDomainMapper()
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	if err != nil {
