@@ -2,6 +2,7 @@
 package medicine
 
 import (
+	"github.com/gbrayhan/microservices-go/domain"
 	medicineDomain "github.com/gbrayhan/microservices-go/domain/medicine"
 	medicineRepository "github.com/gbrayhan/microservices-go/infrastructure/repository/medicine"
 )
@@ -11,22 +12,11 @@ type Service struct {
 	MedicineRepository medicineRepository.Repository
 }
 
-// GetAll is a function that returns all medicines
-func (s *Service) GetAll(page int64, limit int64) (*PaginationResultMedicine, error) {
-	all, err := s.MedicineRepository.GetAll(page, limit)
-	if err != nil {
-		return nil, err
-	}
+var _ medicineDomain.Service = &Service{}
 
-	return &PaginationResultMedicine{
-		Data:       all.Data,
-		Total:      all.Total,
-		Limit:      all.Limit,
-		Current:    all.Current,
-		NextCursor: all.NextCursor,
-		PrevCursor: all.PrevCursor,
-		NumPages:   all.NumPages,
-	}, nil
+// GetData is a function that returns all medicines
+func (s *Service) GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*medicineDomain.DataMedicine, error) {
+	return s.MedicineRepository.GetAll(page, limit, sortBy, sortDirection, filters, searchText, dateRangeFilters)
 }
 
 // GetByID is a function that returns a medicine by id
@@ -35,8 +25,8 @@ func (s *Service) GetByID(id int) (*medicineDomain.Medicine, error) {
 }
 
 // Create is a function that creates a medicine
-func (s *Service) Create(medicine *NewMedicine) (*medicineDomain.Medicine, error) {
-	medicineModel := medicine.toDomainMapper()
+func (s *Service) Create(medicine *medicineDomain.NewMedicine) (*medicineDomain.Medicine, error) {
+	medicineModel := medicine.ToDomainMapper()
 	return s.MedicineRepository.Create(medicineModel)
 }
 

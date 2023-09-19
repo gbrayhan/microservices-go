@@ -9,7 +9,7 @@ func (n *NewMedicine) toDomainMapper() *domainMedicine.Medicine {
 	return &domainMedicine.Medicine{
 		Name:        n.Name,
 		Description: n.Description,
-		EANCode:     n.EANCode,
+		EanCode:     n.EANCode,
 		Laboratory:  n.Laboratory,
 	}
 }

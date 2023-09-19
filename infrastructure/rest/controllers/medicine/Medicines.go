@@ -3,6 +3,7 @@ package medicine
 
 import (
 	"errors"
+	"github.com/gbrayhan/microservices-go/domain"
 
 	useCaseMedicine "github.com/gbrayhan/microservices-go/application/usecases/medicine"
 	domainError "github.com/gbrayhan/microservices-go/domain/errors"
@@ -39,7 +40,7 @@ func (c *Controller) NewMedicine(ctx *gin.Context) {
 		_ = ctx.Error(appError)
 		return
 	}
-	newMedicine := useCaseMedicine.NewMedicine{
+	newMedicine := domainMedicine.NewMedicine{
 		Name:        request.Name,
 		Description: request.Description,
 		Laboratory:  request.Laboratory,
@@ -55,7 +56,7 @@ func (c *Controller) NewMedicine(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, domainMedicine)
 }
 
-// GetAllMedicines godoc
+// GetDataMedicines godoc
 // @Tags medicine
 // @Summary Get all Medicines
 // @Description Get all Medicines on the system
@@ -65,30 +66,40 @@ func (c *Controller) NewMedicine(ctx *gin.Context) {
 // @Failure 400 {object} MessageResponse
 // @Failure 500 {object} MessageResponse
 // @Router /medicine [get]
-func (c *Controller) GetAllMedicines(ctx *gin.Context) {
-	pageStr := ctx.DefaultQuery("page", "1")
-	limitStr := ctx.DefaultQuery("limit", "20")
+func (c *Controller) GetDataMedicines(ctx *gin.Context) {
+	var request DataMedicineRequest
 
-	page, err := strconv.ParseInt(pageStr, 10, 64)
-	if err != nil {
-		appError := domainError.NewAppError(errors.New("param page is necessary to be an integer"), domainError.ValidationError)
-		_ = ctx.Error(appError)
-		return
-	}
-	limit, err := strconv.ParseInt(limitStr, 10, 64)
-	if err != nil {
-		appError := domainError.NewAppError(errors.New("param limit is necessary to be an integer"), domainError.ValidationError)
+	if err := controllers.BindJSON(ctx, &request); err != nil {
+		appError := domainError.NewAppError(err, domainError.ValidationError)
 		_ = ctx.Error(appError)
 		return
 	}
 
-	medicines, err := c.MedicineService.GetAll(page, limit)
+	var dateRangeFiltersDomain []domain.DateRangeFilter = make([]domain.DateRangeFilter, len(request.FieldsDateRange))
+	for i, dateRangeFilter := range request.FieldsDateRange {
+		dateRangeFiltersDomain[i] = domain.DateRangeFilter{Field: dateRangeFilter.Field, Start: dateRangeFilter.StartDate, End: dateRangeFilter.EndDate}
+	}
+
+	users, err := c.MedicineService.GetData(request.Page, request.Limit, request.SorBy.Field, request.SorBy.Direction, request.Filters, request.GlobalSearch, dateRangeFiltersDomain)
 	if err != nil {
 		appError := domainError.NewAppErrorWithType(domainError.UnknownError)
 		_ = ctx.Error(appError)
 		return
 	}
-	ctx.JSON(http.StatusOK, medicines)
+
+	numPages, nextCursor, prevCursor := controllers.PaginationValues(request.Limit, request.Page, users.Total)
+
+	var response = PaginationResultMedicine{
+		Data:       arrayDomainToResponseMapper(users.Data),
+		Total:      users.Total,
+		Limit:      request.Limit,
+		Current:    request.Page,
+		NextCursor: nextCursor,
+		PrevCursor: prevCursor,
+		NumPages:   numPages,
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }
 
 // GetMedicinesByID godoc

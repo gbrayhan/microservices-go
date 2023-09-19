@@ -37,6 +37,10 @@ create table if not exists users
 ) CHARSET = utf8mb4
   COLLATE = utf8mb4_general_ci;
 
+INSERT INTO boilerplate_go.users (user_name,email,first_name,last_name,status,hash_password,created_at,updated_at) VALUES
+    ('BossonH','bossonh.gaming@gmail.com','Alejandro','Guerrero',1,'$2a$10$aSxDLl/cdxfhDDPIdXL0cu7dyqi4Ns95NsDeSgyqGKQsePnxFLf0K','2023-09-18 22:55:32.000','2023-09-18 22:55:32.000');
+
+
 GRANT ALL ON *.* to 'appuser'@'localhost' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
 GRANT ALL ON *.* to 'appuser'@'mysqldb' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
 GRANT ALL ON *.* to 'appuser'@'%' IDENTIFIED WITH mysql_native_password BY 'youShouldChangeThisPassword';
