@@ -18,7 +18,7 @@ type Security struct {
 }
 
 // @title Boilerplate Golang
-// @version 1.0
+// @version 1.2
 // @description Documentation's Boilerplate Golang
 // @termsOfService http://swagger.io/terms/
 
