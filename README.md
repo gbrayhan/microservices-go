@@ -47,7 +47,7 @@ cp config.json.example config.json
 
 ## Features
 
-- **Golang v1.20**: Stable version of go
+- **Golang v1.21**: Stable version of go
 - **Framework**: A stable version of [gin-go](https://github.com/gin-gonic/gin)
 - **Token Security**: with [JWT](https://jwt.io)
 - **SQL databaseSQL**: [MariaDB](https://mariadb.org/) using internal sql package of
@@ -72,12 +72,16 @@ docker-compose up  --build  -d
 ### Swagger Implementation
 
 ```bash
-swag init -g infrastructure/rest/routes/routes.go
+swag init -g src/infrastructure/rest/routes/routes.go
 ```
 
 To visualize the swagger documentation on local use
 
 http://localhost:8080/v1/swagger/index.html
+
+To see the postman collection use
+https://www.postman.com/kts-mexico/workspace/boilerplategomicroservice
+
 
 ### Unit test command
 

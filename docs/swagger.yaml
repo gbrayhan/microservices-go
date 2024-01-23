@@ -35,7 +35,7 @@ definitions:
   auth.LoginRequest:
     properties:
       email:
-        example: mail@mail.com
+        example: gbrayhan@gmail.com
         type: string
       password:
         example: Password123
@@ -49,13 +49,13 @@ definitions:
       message:
         type: string
     type: object
-  github_com_gbrayhan_microservices-go_application_usecases_medicine.PaginationResultMedicine:
+  github_com_gbrayhan_microservices-go_src_application_usecases_medicine.PaginationResultMedicine:
     properties:
       current:
         type: integer
       data:
         items:
-          $ref: '#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine'
+          $ref: '#/definitions/github_com_gbrayhan_microservices-go_src_domain_medicine.Medicine'
         type: array
       limit:
         type: integer
@@ -68,7 +68,7 @@ definitions:
       total:
         type: integer
     type: object
-  github_com_gbrayhan_microservices-go_domain_medicine.Medicine:
+  github_com_gbrayhan_microservices-go_src_domain_medicine.Medicine:
     properties:
       created_at:
         type: string
@@ -101,7 +101,7 @@ definitions:
       description:
         example: Something
         type: string
-      ean_code:
+      eanCode:
         example: "122000000021"
         type: string
       laboratory:
@@ -112,7 +112,7 @@ definitions:
         type: string
     required:
     - description
-    - ean_code
+    - eanCode
     - laboratory
     - name
     type: object
@@ -188,7 +188,7 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://swagger.io/terms/
   title: Boilerplate Golang
-  version: "1.0"
+  version: "1.2"
 paths:
   /auth/access-token:
     post:
@@ -261,7 +261,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/github_com_gbrayhan_microservices-go_application_usecases_medicine.PaginationResultMedicine'
+              $ref: '#/definitions/github_com_gbrayhan_microservices-go_src_application_usecases_medicine.PaginationResultMedicine'
             type: array
         "400":
           description: Bad Request
@@ -291,7 +291,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine'
+            $ref: '#/definitions/github_com_gbrayhan_microservices-go_src_domain_medicine.Medicine'
         "400":
           description: Bad Request
           schema:
@@ -316,7 +316,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine'
+            $ref: '#/definitions/github_com_gbrayhan_microservices-go_src_domain_medicine.Medicine'
         "400":
           description: Bad Request
           schema:

@@ -13,7 +13,7 @@
             "name": "Apache 2.0",
             "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
         },
-        "version": "1.0"
+        "version": "1.2"
     },
     "host": "localhost:8080",
     "basePath": "/v1",
@@ -127,7 +127,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/github_com_gbrayhan_microservices-go_application_usecases_medicine.PaginationResultMedicine"
+                                "$ref": "#/definitions/github_com_gbrayhan_microservices-go_src_application_usecases_medicine.PaginationResultMedicine"
                             }
                         }
                     },
@@ -172,7 +172,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine"
+                            "$ref": "#/definitions/github_com_gbrayhan_microservices-go_src_domain_medicine.Medicine"
                         }
                     },
                     "400": {
@@ -210,7 +210,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine"
+                            "$ref": "#/definitions/github_com_gbrayhan_microservices-go_src_domain_medicine.Medicine"
                         }
                     },
                     "400": {
@@ -413,7 +413,7 @@
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "mail@mail.com"
+                    "example": "gbrayhan@gmail.com"
                 },
                 "password": {
                     "type": "string",
@@ -429,7 +429,7 @@
                 }
             }
         },
-        "github_com_gbrayhan_microservices-go_application_usecases_medicine.PaginationResultMedicine": {
+        "github_com_gbrayhan_microservices-go_src_application_usecases_medicine.PaginationResultMedicine": {
             "type": "object",
             "properties": {
                 "current": {
@@ -438,7 +438,7 @@
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_gbrayhan_microservices-go_domain_medicine.Medicine"
+                        "$ref": "#/definitions/github_com_gbrayhan_microservices-go_src_domain_medicine.Medicine"
                     }
                 },
                 "limit": {
@@ -458,7 +458,7 @@
                 }
             }
         },
-        "github_com_gbrayhan_microservices-go_domain_medicine.Medicine": {
+        "github_com_gbrayhan_microservices-go_src_domain_medicine.Medicine": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -502,7 +502,7 @@
             "type": "object",
             "required": [
                 "description",
-                "ean_code",
+                "eanCode",
                 "laboratory",
                 "name"
             ],
@@ -511,7 +511,7 @@
                     "type": "string",
                     "example": "Something"
                 },
-                "ean_code": {
+                "eanCode": {
                     "type": "string",
                     "example": "122000000021"
                 },
