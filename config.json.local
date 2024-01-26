@@ -1,0 +1,54 @@
+{
+  "Environment": "production",
+  "ServerPort": 8080,
+  "Services": {
+    "RabbitMq": "amqp://user:pass@host:5672",
+    "SendGrid": {
+      "url": "https://api.sendgrid.com/v3/ ",
+      "TemplatesID": {
+        "FancyMail": "d-hash-id"
+      }
+    },
+    "OtherService": "https://dominio.com/"
+  },
+  "Secure": {
+    "JWTAccessSecure": "accesskeyyoumayneedtochangeit",
+    "JWTRefreshSecure": "refreshkeyyoumayneedtochangeit",
+    "JWTAccessTimeMinute": 10,
+    "JWTRefreshTimeHour": 10
+
+  },
+  "Endpoints": {
+    "SiteExample": "http://localhost:8084/"
+  },
+  "Tools": {
+    "WkhtmltopdfBin": "/opt/bin/wkhtmltopdf"
+  },
+  "Databases": {
+    "MongoDB": {
+      "URL": "mongodb://user:pass@host:27017",
+      "DatabaseLogs": "name_database"
+    },
+    "MySQL": {
+      "BoilerplateGo": {
+        "Read": {
+          "Hostname": "localhost",
+          "Name": "boilerplate_go",
+          "Username": "appuser",
+          "Password": "youShouldChangeThisPassword",
+          "Port": "33006",
+          "Parameter": "?parseTime=true"
+        },
+        "Write": {
+          "Hostname": "localhost",
+          "Name": "boilerplate_go",
+          "Username": "appuser",
+          "Password": "youShouldChangeThisPassword",
+          "Port": "33006",
+          "Parameter": "?parseTime=true"
+        }
+      }
+    }
+  }
+}
+

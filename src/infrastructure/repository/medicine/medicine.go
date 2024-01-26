@@ -3,6 +3,7 @@ package medicine
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gbrayhan/microservices-go/src/domain"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository"
 
@@ -132,7 +133,14 @@ func (r *Repository) GetByID(id int) (*domainMedicine.Medicine, error) {
 func (r *Repository) GetOneByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error) {
 	var medicine Medicine
 
-	err := r.DB.Where(medicineMap).Limit(1).Find(&medicine).Error
+	tx := r.DB.Limit(1)
+	for key, value := range medicineMap {
+		if !repository.IsZeroValue(value) {
+			tx = tx.Where(fmt.Sprintf("%s = ?", key), value)
+		}
+	}
+
+	err := tx.Find(&medicine).Error
 	if err != nil {
 		err = domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 		return nil, err

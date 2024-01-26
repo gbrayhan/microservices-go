@@ -13,7 +13,7 @@ type ResponseMedicine struct {
 	Name        string    `json:"name" example:"Aspirina"`
 	Description string    `json:"description" example:"Some Description"`
 	Laboratory  string    `json:"laboratory" example:"Some Laboratory"`
-	EanCode     string    `json:"ean_code" example:"Some EanCode"`
+	EanCode     string    `json:"eanCode" example:"Some EanCode"`
 	CreatedAt   time.Time `json:"createdAt,omitempty" example:"2021-02-24 20:19:39" gorm:"autoCreateTime:mili"`
 	UpdatedAt   time.Time `json:"updatedAt,omitempty" example:"2021-02-24 20:19:39" gorm:"autoUpdateTime:mili"`
 }

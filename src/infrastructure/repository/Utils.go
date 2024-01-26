@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gbrayhan/microservices-go/src/domain"
 	"gorm.io/gorm"
+	"reflect"
 	"strings"
 )
 
@@ -101,4 +102,8 @@ func ApplyFilters(columnMapping map[string]string, filters map[string][]string, 
 
 		return query
 	}
+}
+
+func IsZeroValue(value any) bool {
+	return reflect.DeepEqual(value, reflect.Zero(reflect.TypeOf(value)).Interface())
 }

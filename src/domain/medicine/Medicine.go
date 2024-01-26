@@ -8,20 +8,20 @@ import (
 
 // Medicine is a struct that contains the medicine information
 type Medicine struct {
-	ID          int       `json:"id" example:"123"`
-	Name        string    `json:"name" example:"Paracetamol"`
-	Description string    `json:"description" example:"Some Description"`
-	EanCode     string    `json:"ean_code" example:"9900000124"`
-	Laboratory  string    `json:"laboratory" example:"Roche"`
-	CreatedAt   time.Time `json:"created_at,omitempty" `
-	UpdatedAt   time.Time `json:"updated_at,omitempty" example:"2021-02-24 20:19:39"`
+	ID          int
+	Name        string
+	Description string
+	EanCode     string
+	Laboratory  string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type NewMedicine struct {
-	Name        string `json:"name" example:"Paracetamol"`
-	Description string `json:"description" example:"Some Description"`
-	EANCode     string `json:"ean_code" example:"9900000124"`
-	Laboratory  string `json:"laboratory" example:"Roche"`
+	Name        string
+	Description string
+	EANCode     string
+	Laboratory  string
 }
 
 // ToDomainMapper is a function that maps the NewMedicine struct to Medicine struct

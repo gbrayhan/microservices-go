@@ -52,8 +52,9 @@ func (c *Controller) NewMedicine(ctx *gin.Context) {
 		_ = ctx.Error(err)
 		return
 	}
+	responseMedicine := domainToResponseMapper(domainMedicine)
 
-	ctx.JSON(http.StatusOK, domainMedicine)
+	ctx.JSON(http.StatusOK, responseMedicine)
 }
 
 // GetDataMedicines godoc
