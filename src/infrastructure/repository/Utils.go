@@ -73,7 +73,7 @@ func ApplyFilters(columnMapping map[string]string, filters map[string][]string, 
 		if len(filters) > 0 {
 			filters = UpdateFilterKeys(filters, columnMapping)
 			for key, values := range filters {
-				query = query.Where(fmt.Sprintf("%s IN ?", key), values)
+				query = query.Where(fmt.Sprintf("%s IN (?)", key), values)
 			}
 		}
 
