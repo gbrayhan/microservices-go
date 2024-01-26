@@ -73,31 +73,30 @@ func ApplyFilters(columnMapping map[string]string, filters map[string][]string, 
 		if len(filters) > 0 {
 			filters = UpdateFilterKeys(filters, columnMapping)
 			for key, values := range filters {
-				query = query.Where(fmt.Sprintf("%s IN (?)", key), values)
+				query = query.Where(fmt.Sprintf("%s IN ?", key), values)
 			}
 		}
 
 		if len(dateRangeFilters) > 0 {
-			for i := range dateRangeFilters {
-				if newFieldName, ok := columnMapping[dateRangeFilters[i].Field]; ok {
-					dateRangeFilters[i].Field = newFieldName
-				}
-			}
-
 			for _, filter := range dateRangeFilters {
+				if newFieldName, ok := columnMapping[filter.Field]; ok {
+					filter.Field = newFieldName
+				}
 				query = query.Where(fmt.Sprintf("%s BETWEEN ? AND ?", filter.Field), filter.Start, filter.End)
 			}
 		}
 
-		if searchText != "" {
+		if searchText != "" && len(searchColumns) > 0 {
 			var orConditions []string
+			var args []interface{}
 
 			for _, column := range searchColumns {
-				orConditions = append(orConditions, fmt.Sprintf("%s LIKE '%%%s%%'", column, searchText))
+				orConditions = append(orConditions, fmt.Sprintf("%s LIKE ?", column))
+				args = append(args, "%"+searchText+"%")
 			}
 
 			searchQuery := fmt.Sprintf("(%s)", strings.Join(orConditions, " OR "))
-			query = query.Where(searchQuery)
+			query = query.Where(searchQuery, args...)
 		}
 
 		return query
