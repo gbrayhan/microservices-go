@@ -3,9 +3,10 @@ package user
 
 import (
 	"encoding/json"
-
+	"fmt"
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository"
 	"gorm.io/gorm"
 )
 
@@ -53,12 +54,21 @@ func (r *Repository) Create(userDomain *domainUser.User) (*domainUser.User, erro
 // GetOneByMap ... Fetch only one user by Map values
 func (r *Repository) GetOneByMap(userMap map[string]any) (*domainUser.User, error) {
 	var userRepository User
+	tx := r.DB.Limit(1)
 
-	tx := r.DB.Where(userMap).Limit(1).Find(&userRepository)
+	for key, value := range userMap {
+		if !repository.IsZeroValue(value) {
+			tx = tx.Where(fmt.Sprintf("%s = ?", key), value)
+		}
+	}
+
+	tx = tx.Find(&userRepository)
+
 	if tx.Error != nil {
 		err := domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 		return &domainUser.User{}, err
 	}
+
 	return userRepository.toDomainMapper(), nil
 }
 
