@@ -14,11 +14,13 @@ func MedicineRoutes(router *gin.RouterGroup, controller *medicineController.Cont
 	routerMedicine.Use(middlewares.AuthJWTMiddleware())
 
 	{
+		routerMedicine.GET("/", controller.GetAllMedicines)
 		routerMedicine.POST("/", controller.NewMedicine)
 		routerMedicine.GET("/:id", controller.GetMedicinesByID)
 		routerMedicine.POST("/data", controller.GetDataMedicines)
 		routerMedicine.PUT("/:id", controller.UpdateMedicine)
 		routerMedicine.DELETE("/:id", controller.DeleteMedicine)
+
 	}
 
 }

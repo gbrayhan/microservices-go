@@ -70,25 +70,19 @@ definitions:
     type: object
   github_com_gbrayhan_microservices-go_src_domain_medicine.Medicine:
     properties:
-      created_at:
+      createdAt:
         type: string
       description:
-        example: Some Description
         type: string
-      ean_code:
-        example: "9900000124"
+      eanCode:
         type: string
       id:
-        example: 123
         type: integer
       laboratory:
-        example: Roche
         type: string
       name:
-        example: Paracetamol
         type: string
-      updated_at:
-        example: "2021-02-24 20:19:39"
+      updatedAt:
         type: string
     type: object
   medicine.MessageResponse:
@@ -115,6 +109,30 @@ definitions:
     - eanCode
     - laboratory
     - name
+    type: object
+  medicine.ResponseMedicine:
+    properties:
+      createdAt:
+        example: "2021-02-24 20:19:39"
+        type: string
+      description:
+        example: Some Description
+        type: string
+      eanCode:
+        example: Some EanCode
+        type: string
+      id:
+        example: 1099
+        type: integer
+      laboratory:
+        example: Some Laboratory
+        type: string
+      name:
+        example: Aspirina
+        type: string
+      updatedAt:
+        example: "2021-02-24 20:19:39"
+        type: string
     type: object
   user.MessageResponse:
     properties:
