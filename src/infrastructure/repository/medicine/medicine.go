@@ -37,8 +37,8 @@ var ColumnsMedicineStructure = map[string]string{
 	"updatedAt":   "UpdatedAt",
 }
 
-// GetAll Fetch all medicine data
-func (r *Repository) GetAll(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error) {
+// GetData Fetch all medicine data
+func (r *Repository) GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error) {
 	var users []Medicine
 	var total int64
 	offset := (page - 1) * limit
@@ -194,4 +194,16 @@ func (r *Repository) Delete(id int) (err error) {
 	}
 
 	return
+}
+
+// GetAll Fetch all medicine data no params just all data
+func (r *Repository) GetAll() (*[]domainMedicine.Medicine, error) {
+	var medicines []Medicine
+	err := r.DB.Find(&medicines).Error
+	if err != nil {
+		err = domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
+		return nil, err
+	}
+
+	return arrayToDomainMapper(&medicines), nil
 }

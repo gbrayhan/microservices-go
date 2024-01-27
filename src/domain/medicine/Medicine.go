@@ -42,6 +42,7 @@ type DataMedicine struct {
 
 // Service is a interface that contains the methods for the medicine service
 type Service interface {
+	GetAll() (*[]Medicine, error)
 	GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*DataMedicine, error)
 	GetByID(id int) (*Medicine, error)
 	Create(medicine *NewMedicine) (*Medicine, error)

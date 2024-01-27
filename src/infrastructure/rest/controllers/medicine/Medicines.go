@@ -57,6 +57,27 @@ func (c *Controller) NewMedicine(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, responseMedicine)
 }
 
+// GetAllMedicines godoc
+// @Tags medicine
+// @Summary Get all Medicines
+// @Description Get all Medicines on the system
+// @Success 200 {object} []ResponseMedicine
+// @Failure 400 {object} MessageResponse
+// @Failure 500 {object} MessageResponse
+// @Router /medicine [get]
+func (c *Controller) GetAllMedicines(ctx *gin.Context) {
+	medicines, err := c.MedicineService.GetAll()
+
+	if err != nil {
+		appError := domainError.NewAppErrorWithType(domainError.UnknownError)
+		_ = ctx.Error(appError)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, arrayDomainToResponseMapper(medicines))
+
+}
+
 // GetDataMedicines godoc
 // @Tags medicine
 // @Summary Get all Medicines

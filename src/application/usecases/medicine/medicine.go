@@ -16,7 +16,7 @@ var _ medicineDomain.Service = &Service{}
 
 // GetData is a function that returns all medicines
 func (s *Service) GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*medicineDomain.DataMedicine, error) {
-	return s.MedicineRepository.GetAll(page, limit, sortBy, sortDirection, filters, searchText, dateRangeFilters)
+	return s.MedicineRepository.GetData(page, limit, sortBy, sortDirection, filters, searchText, dateRangeFilters)
 }
 
 // GetByID is a function that returns a medicine by id
@@ -43,4 +43,9 @@ func (s *Service) Delete(id int) error {
 // Update is a function that updates a medicine by id
 func (s *Service) Update(id int, medicineMap map[string]any) (*medicineDomain.Medicine, error) {
 	return s.MedicineRepository.Update(id, medicineMap)
+}
+
+// GetAll is a function that returns all medicines
+func (s *Service) GetAll() (*[]medicineDomain.Medicine, error) {
+	return s.MedicineRepository.GetAll()
 }

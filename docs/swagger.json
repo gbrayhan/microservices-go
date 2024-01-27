@@ -461,32 +461,26 @@
         "github_com_gbrayhan_microservices-go_src_domain_medicine.Medicine": {
             "type": "object",
             "properties": {
-                "created_at": {
+                "createdAt": {
                     "type": "string"
                 },
                 "description": {
-                    "type": "string",
-                    "example": "Some Description"
+                    "type": "string"
                 },
-                "ean_code": {
-                    "type": "string",
-                    "example": "9900000124"
+                "eanCode": {
+                    "type": "string"
                 },
                 "id": {
-                    "type": "integer",
-                    "example": 123
+                    "type": "integer"
                 },
                 "laboratory": {
-                    "type": "string",
-                    "example": "Roche"
+                    "type": "string"
                 },
                 "name": {
-                    "type": "string",
-                    "example": "Paracetamol"
+                    "type": "string"
                 },
-                "updated_at": {
-                    "type": "string",
-                    "example": "2021-02-24 20:19:39"
+                "updatedAt": {
+                    "type": "string"
                 }
             }
         },
@@ -522,6 +516,39 @@
                 "name": {
                     "type": "string",
                     "example": "Paracetamol"
+                }
+            }
+        },
+        "medicine.ResponseMedicine": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string",
+                    "example": "2021-02-24 20:19:39"
+                },
+                "description": {
+                    "type": "string",
+                    "example": "Some Description"
+                },
+                "eanCode": {
+                    "type": "string",
+                    "example": "Some EanCode"
+                },
+                "id": {
+                    "type": "integer",
+                    "example": 1099
+                },
+                "laboratory": {
+                    "type": "string",
+                    "example": "Some Laboratory"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Aspirina"
+                },
+                "updatedAt": {
+                    "type": "string",
+                    "example": "2021-02-24 20:19:39"
                 }
             }
         },
