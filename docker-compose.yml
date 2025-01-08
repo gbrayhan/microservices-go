@@ -16,9 +16,8 @@ services:
     networks:
       - go-network
   mysqldb:
-    command: --default-authentication-plugin=mysql_native_password
     platform: linux/x86_64
-    image: mysql:latest
+    image: mysql:8.0
     restart: always
     environment:
       MYSQL_DATABASE: 'boilerplate_go'
