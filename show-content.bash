@@ -45,8 +45,8 @@ git ls-files --cached --others --exclude-standard -z | while IFS= read -r -d '' 
 
     echo "File: $file"
     echo "Content:"
-    echo "----------------------------------------"
+    echo "---"
     cat "$file"
-    echo "----------------------------------------"
+    echo "---"
     echo -e "\n"
 done
