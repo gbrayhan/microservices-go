@@ -1,58 +1,44 @@
-// Package main is the entry point of the application
 package main
 
 import (
 	"fmt"
-	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/config"
-	errorsController "github.com/gbrayhan/microservices-go/src/infrastructure/rest/controllers/errors"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/middlewares"
-	"net/http"
-	"strings"
-	"time"
-
-	limit "github.com/aviddiviner/gin-limit"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/spf13/viper"
-
-	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/routes"
+	"net/http"
+	"os"
+	"strings"
+	"time"
 )
 
 func main() {
 	router := gin.Default()
-	router.Use(limit.MaxAllowed(200))
 	router.Use(cors.Default())
-	var err error
-	DB, err := config.GormOpen()
+	DB, err := repository.InitDB()
 	if err != nil {
-		_ = fmt.Errorf("fatal error in database file: %s", err)
-		panic(err)
+		panic(fmt.Errorf("error inicializando la base de datos: %w", err))
 	}
+
+	router.Use(middlewares.ErrorHandler())
 	router.Use(middlewares.GinBodyLogMiddleware)
-	router.Use(errorsController.Handler)
-	routes.ApplicationV1Router(router, DB)
-	startServer(router)
+	router.Use(middlewares.CommonHeaders)
+	routes.ApplicationRouter(router, DB)
 
-}
-
-func startServer(router http.Handler) {
-	viper.SetConfigFile("config.json")
-	if err := viper.ReadInConfig(); err != nil {
-		_ = fmt.Errorf("fatal error in config file: %s", err.Error())
-		panic(err)
-
+	port := os.Getenv("SERVER_PORT")
+	if port == "" {
+		port = "8080"
 	}
-	serverPort := fmt.Sprintf(":%s", viper.GetString("ServerPort"))
 	s := &http.Server{
-		Addr:           serverPort,
+		Addr:           ":" + port,
 		Handler:        router,
 		ReadTimeout:    18000 * time.Second,
 		WriteTimeout:   18000 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
+	fmt.Printf("Servidor corriendo en http://localhost:%s\n", port)
 	if err := s.ListenAndServe(); err != nil {
-		_ = fmt.Errorf("fatal error description: %s", strings.ToLower(err.Error()))
-		panic(err)
-
+		panic(strings.ToLower(err.Error()))
 	}
 }

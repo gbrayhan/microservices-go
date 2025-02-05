@@ -1,17 +1,30 @@
-// Package auth provides the use case for authentication
 package auth
 
 import (
 	"errors"
+	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
 	"time"
 
-	"github.com/gbrayhan/microservices-go/src/application/security/jwt"
 	errorsDomain "github.com/gbrayhan/microservices-go/src/domain/errors"
-	userRepository "github.com/gbrayhan/microservices-go/src/infrastructure/repository/user"
+	jwtInfrastructure "github.com/gbrayhan/microservices-go/src/infrastructure/security/jwt"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Auth contains the data of the authentication
+type IAuthUseCase interface {
+	Login(user LoginUser) (*SecurityAuthenticatedUser, error)
+	AccessTokenByRefreshToken(refreshToken string) (*SecurityAuthenticatedUser, error)
+}
+
+type AuthUseCase struct {
+	userRepository userDomain.IUserService
+}
+
+func NewAuthUseCase(userRepository userDomain.IUserService) IAuthUseCase {
+	return &AuthUseCase{
+		userRepository: userRepository,
+	}
+}
+
 type Auth struct {
 	AccessToken               string
 	RefreshToken              string
@@ -19,33 +32,28 @@ type Auth struct {
 	ExpirationRefreshDateTime time.Time
 }
 
-// Service is a struct that contains the repository implementation for auth use case
-type Service struct {
-	UserRepository userRepository.Repository
-}
-
-// Login implements the login use case
-func (s *Service) Login(user LoginUser) (*SecurityAuthenticatedUser, error) {
-	userMap := map[string]any{"email": user.Email}
-	domainUser, err := s.UserRepository.GetOneByMap(userMap)
+func (s *AuthUseCase) Login(user LoginUser) (*SecurityAuthenticatedUser, error) {
+	userMap := map[string]interface{}{"email": user.Email}
+	domainUser, err := s.userRepository.GetOneByMap(userMap)
 	if err != nil {
 		return &SecurityAuthenticatedUser{}, err
 	}
 	if domainUser.ID == 0 {
-		return &SecurityAuthenticatedUser{}, errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
+		return &SecurityAuthenticatedUser{},
+			errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
 	}
 
-	isAuthenticated := CheckPasswordHash(user.Password, domainUser.HashPassword)
+	isAuthenticated := checkPasswordHash(user.Password, domainUser.HashPassword)
 	if !isAuthenticated {
-		err = errorsDomain.NewAppError(err, errorsDomain.NotAuthorized)
-		return &SecurityAuthenticatedUser{}, errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
+		return &SecurityAuthenticatedUser{},
+			errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
 	}
 
-	accessTokenClaims, err := jwt.GenerateJWTToken(domainUser.ID, "access")
+	accessTokenClaims, err := jwtInfrastructure.GenerateJWTToken(domainUser.ID, "access")
 	if err != nil {
 		return &SecurityAuthenticatedUser{}, err
 	}
-	refreshTokenClaims, err := jwt.GenerateJWTToken(domainUser.ID, "refresh")
+	refreshTokenClaims, err := jwtInfrastructure.GenerateJWTToken(domainUser.ID, "refresh")
 	if err != nil {
 		return &SecurityAuthenticatedUser{}, err
 	}
@@ -55,24 +63,21 @@ func (s *Service) Login(user LoginUser) (*SecurityAuthenticatedUser, error) {
 		RefreshToken:              refreshTokenClaims.Token,
 		ExpirationAccessDateTime:  accessTokenClaims.ExpirationTime,
 		ExpirationRefreshDateTime: refreshTokenClaims.ExpirationTime,
-	}), err
+	}), nil
 }
 
-// AccessTokenByRefreshToken implements the Access Token By Refresh Token use case
-func (s *Service) AccessTokenByRefreshToken(refreshToken string) (*SecurityAuthenticatedUser, error) {
-	claimsMap, err := jwt.GetClaimsAndVerifyToken(refreshToken, "refresh")
+func (s *AuthUseCase) AccessTokenByRefreshToken(refreshToken string) (*SecurityAuthenticatedUser, error) {
+	claimsMap, err := jwtInfrastructure.GetClaimsAndVerifyToken(refreshToken, "refresh")
+	if err != nil {
+		return nil, err
+	}
+	userMap := map[string]interface{}{"id": claimsMap["id"]}
+	domainUser, err := s.userRepository.GetOneByMap(userMap)
 	if err != nil {
 		return nil, err
 	}
 
-	userMap := map[string]any{"id": claimsMap["id"]}
-	domainUser, err := s.UserRepository.GetOneByMap(userMap)
-	if err != nil {
-		return nil, err
-
-	}
-
-	accessTokenClaims, err := jwt.GenerateJWTToken(domainUser.ID, "access")
+	accessTokenClaims, err := jwtInfrastructure.GenerateJWTToken(domainUser.ID, "access")
 	if err != nil {
 		return &SecurityAuthenticatedUser{}, err
 	}
@@ -87,8 +92,7 @@ func (s *Service) AccessTokenByRefreshToken(refreshToken string) (*SecurityAuthe
 	}), nil
 }
 
-// CheckPasswordHash compares a bcrypt hashed password with its possible plaintext equivalent.
-func CheckPasswordHash(password, hash string) bool {
+func checkPasswordHash(password, hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 	return err == nil
 }

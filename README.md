@@ -20,12 +20,6 @@ Clone the repo:
 git clone https://github.com/gbrayhan/microservices-go
 ```
 
-If you need, configure the environment variables in file config.json, if you use docker-compose leave the variables set
-in the file config.json.example
-
-```bash 
-cp config.json.example config.json
-```
 
 **TL;DR command list**
 

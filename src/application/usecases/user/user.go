@@ -1,54 +1,57 @@
-// Package user provides the use case for user
 package user
 
 import (
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
-	userRepository "github.com/gbrayhan/microservices-go/src/infrastructure/repository/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Service is a struct that contains the repository implementation for user use case
-type Service struct {
-	UserRepository userRepository.Repository
+type IUserUseCase interface {
+	GetAll() (*[]userDomain.User, error)
+	GetByID(id int) (*userDomain.User, error)
+	Create(newUser *userDomain.User) (*userDomain.User, error)
+	GetOneByMap(userMap map[string]interface{}) (*userDomain.User, error)
+	Delete(id int) error
+	Update(id int, userMap map[string]interface{}) (*userDomain.User, error)
 }
 
-var _ userDomain.Service = &Service{}
-
-// GetAll is a function that returns all users
-func (s *Service) GetAll() (*[]userDomain.User, error) {
-	return s.UserRepository.GetAll()
+type UserUseCase struct {
+	userRepository userDomain.IUserService
 }
 
-// GetByID is a function that returns a user by id
-func (s *Service) GetByID(id int) (*userDomain.User, error) {
-	return s.UserRepository.GetByID(id)
+func NewUserUseCase(userRepository userDomain.IUserService) IUserUseCase {
+	return &UserUseCase{
+		userRepository: userRepository,
+	}
 }
 
-// Create is a function that creates a new user
-func (s *Service) Create(newUser *userDomain.NewUser) (*userDomain.User, error) {
-	domain := newUser.ToDomainMapper()
+func (s *UserUseCase) GetAll() (*[]userDomain.User, error) {
+	return s.userRepository.GetAll()
+}
+
+func (s *UserUseCase) GetByID(id int) (*userDomain.User, error) {
+	return s.userRepository.GetByID(id)
+}
+
+func (s *UserUseCase) Create(newUser *userDomain.User) (*userDomain.User, error) {
 
 	hash, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return &userDomain.User{}, err
 	}
-	domain.HashPassword = string(hash)
-	domain.Status = true
+	newUser.HashPassword = string(hash)
+	newUser.Status = true
 
-	return s.UserRepository.Create(domain)
+	return s.userRepository.Create(newUser)
 }
 
-// GetOneByMap is a function that returns a user by map
-func (s *Service) GetOneByMap(userMap map[string]any) (*userDomain.User, error) {
-	return s.UserRepository.GetOneByMap(userMap)
+func (s *UserUseCase) GetOneByMap(userMap map[string]interface{}) (*userDomain.User, error) {
+	return s.userRepository.GetOneByMap(userMap)
 }
 
-// Delete is a function that deletes a user by id
-func (s *Service) Delete(id int) error {
-	return s.UserRepository.Delete(id)
+func (s *UserUseCase) Delete(id int) error {
+	return s.userRepository.Delete(id)
 }
 
-// Update is a function that updates a user by id
-func (s *Service) Update(id int, userMap map[string]any) (*userDomain.User, error) {
-	return s.UserRepository.Update(id, userMap)
+func (s *UserUseCase) Update(id int, userMap map[string]interface{}) (*userDomain.User, error) {
+	return s.userRepository.Update(id, userMap)
 }

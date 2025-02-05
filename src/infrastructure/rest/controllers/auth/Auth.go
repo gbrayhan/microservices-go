@@ -1,4 +1,3 @@
-// Package auth contains the auth controller
 package auth
 
 import (
@@ -9,34 +8,33 @@ import (
 	"net/http"
 )
 
-// Controller is a struct that contains the auth service
-type Controller struct {
-	AuthService useCaseAuth.Service
+type IAuthController interface {
+	Login(ctx *gin.Context)
+	GetAccessTokenByRefreshToken(ctx *gin.Context)
 }
 
-// Login godoc
-// @Tags auth
-// @Summary Login UserName
-// @Description Auth user by email and password
-// @Param data body LoginRequest true "body data"
-// @Success 200 {object} useCaseAuth.DataUserAuthenticated
-// @Failure 400 {object} controllers.MessageResponse
-// @Failure 500 {object} controllers.MessageResponse
-// @Router /auth/login [post]
-func (c *Controller) Login(ctx *gin.Context) {
-	var request LoginRequest
+type AuthController struct {
+	authUsecase useCaseAuth.IAuthUseCase
+}
 
+func NewAuthController(authUsecase useCaseAuth.IAuthUseCase) IAuthController {
+	return &AuthController{
+		authUsecase: authUsecase,
+	}
+}
+
+func (c *AuthController) Login(ctx *gin.Context) {
+	var request LoginRequest
 	if err := controllers.BindJSON(ctx, &request); err != nil {
 		appError := domainErrors.NewAppError(err, domainErrors.ValidationError)
 		_ = ctx.Error(appError)
 		return
 	}
-	user := useCaseAuth.LoginUser{
+	userLogin := useCaseAuth.LoginUser{
 		Email:    request.Email,
 		Password: request.Password,
 	}
-
-	authDataUser, err := c.AuthService.Login(user)
+	authDataUser, err := c.authUsecase.Login(userLogin)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
@@ -44,25 +42,14 @@ func (c *Controller) Login(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, authDataUser)
 }
 
-// GetAccessTokenByRefreshToken godoc
-// @Tags auth
-// @Summary GetAccessTokenByRefreshToken UserName
-// @Description Auth user by email and password
-// @Param data body AccessTokenRequest true "body data"
-// @Success 200 {object} useCaseAuth.DataUserAuthenticated
-// @Failure 400 {object} controllers.MessageResponse
-// @Failure 500 {object} controllers.MessageResponse
-// @Router /auth/access-token [post]
-func (c *Controller) GetAccessTokenByRefreshToken(ctx *gin.Context) {
+func (c *AuthController) GetAccessTokenByRefreshToken(ctx *gin.Context) {
 	var request AccessTokenRequest
-
 	if err := controllers.BindJSON(ctx, &request); err != nil {
 		appError := domainErrors.NewAppError(err, domainErrors.ValidationError)
 		_ = ctx.Error(appError)
 		return
 	}
-
-	authDataUser, err := c.AuthService.AccessTokenByRefreshToken(request.RefreshToken)
+	authDataUser, err := c.authUsecase.AccessTokenByRefreshToken(request.RefreshToken)
 	if err != nil {
 		_ = ctx.Error(err)
 		return

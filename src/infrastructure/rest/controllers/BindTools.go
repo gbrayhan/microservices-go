@@ -1,4 +1,3 @@
-// Package controllers contains the common functions and structures for the controllers
 package controllers
 
 import (
@@ -9,24 +8,38 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// BindJSON is a function that binds the request body to the given struct and rewrite the request body on the context
-func BindJSON(c *gin.Context, request any) (err error) {
+func BindJSON(c *gin.Context, request any) error {
 	buf := make([]byte, 5120)
 	num, _ := c.Request.Body.Read(buf)
 	reqBody := string(buf[0:num])
 	c.Request.Body = io.NopCloser(bytes.NewBuffer([]byte(reqBody)))
-	err = c.ShouldBindJSON(request)
+	err := c.ShouldBindJSON(request)
 	c.Request.Body = io.NopCloser(bytes.NewBuffer([]byte(reqBody)))
-	return
+	return err
 }
 
-// BindJSONMap is a function that binds the request body to the given map and rewrite the request body on the context
-func BindJSONMap(c *gin.Context, request *map[string]any) (err error) {
+func BindJSONMap(c *gin.Context, request *map[string]any) error {
 	buf := make([]byte, 5120)
 	num, _ := c.Request.Body.Read(buf)
 	reqBody := buf[0:num]
 	c.Request.Body = io.NopCloser(bytes.NewBuffer(reqBody))
-	err = json.Unmarshal(reqBody, &request)
+	err := json.Unmarshal(reqBody, &request)
 	c.Request.Body = io.NopCloser(bytes.NewBuffer(reqBody))
-	return
+	return err
+}
+
+// MessageResponse ...
+type MessageResponse struct {
+	Message string `json:"message"`
+}
+
+type SortByDataRequest struct {
+	Field     string `json:"field"`
+	Direction string `json:"direction"`
+}
+
+type FieldDateRangeDataRequest struct {
+	Field     string `json:"field"`
+	StartDate string `json:"startDate"`
+	EndDate   string `json:"endDate"`
 }

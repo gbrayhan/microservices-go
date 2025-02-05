@@ -1,18 +1,46 @@
-// Package medicine contains the repository implementation for the medicine entity
 package medicine
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/gbrayhan/microservices-go/src/domain"
-	"github.com/gbrayhan/microservices-go/src/infrastructure/repository"
 
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository"
 	"gorm.io/gorm"
 )
 
-// Repository is a struct that contains the database implementation for medicine entity
+type IMedicineRepository interface {
+	GetData(
+		page int64, limit int64,
+		sortBy string, sortDirection string,
+		filters map[string][]string,
+		searchText string,
+		dateRangeFilters []domain.DateRangeFilter,
+	) (*domainMedicine.DataMedicine, error)
+	Create(newMedicine *domainMedicine.Medicine) (*domainMedicine.Medicine, error)
+	GetByID(id int) (*domainMedicine.Medicine, error)
+	GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error)
+	Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error)
+	Delete(id int) error
+	GetAll() (*[]domainMedicine.Medicine, error)
+}
+
+func (I Repository) GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func NewMedicineRepository(DB *gorm.DB) IMedicineRepository {
+	return &Repository{
+		DB: DB}
+}
+
+func (*Medicine) TableName() string {
+	return "medicines"
+}
+
 type Repository struct {
 	DB *gorm.DB
 }
@@ -27,19 +55,14 @@ var ColumnsMedicineMapping = map[string]string{
 	"updatedAt":   "updated_at",
 }
 
-var ColumnsMedicineStructure = map[string]string{
-	"id":          "ID",
-	"name":        "Name",
-	"description": "Description",
-	"eanCode":     "EanCode",
-	"laboratory":  "Laboratory",
-	"createdAt":   "CreatedAt",
-	"updatedAt":   "UpdatedAt",
-}
-
-// GetData Fetch all medicine data
-func (r *Repository) GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error) {
-	var users []Medicine
+func (r *Repository) GetData(
+	page int64, limit int64,
+	sortBy string, sortDirection string,
+	filters map[string][]string,
+	searchText string,
+	dateRangeFilters []domain.DateRangeFilter,
+) (*domainMedicine.DataMedicine, error) {
+	var medicines []Medicine
 	var total int64
 	offset := (page - 1) * limit
 
@@ -47,18 +70,34 @@ func (r *Repository) GetData(page int64, limit int64, sortBy string, sortDirecti
 
 	countResult := make(chan error)
 	go func() {
-		err := r.DB.Model(&Medicine{}).Scopes(repository.ApplyFilters(ColumnsMedicineMapping, filters, dateRangeFilters, searchText, searchColumns)).Count(&total).Error
+		err := r.DB.Model(&Medicine{}).
+			Scopes(repository.ApplyFilters(ColumnsMedicineMapping, filters, dateRangeFilters, searchText, searchColumns)).
+			Count(&total).Error
 		countResult <- err
 	}()
 
 	queryResult := make(chan error)
 	go func() {
-		query, err := repository.ComplementSearch((*repository.Repository)(r), sortBy, sortDirection, limit, offset, filters, dateRangeFilters, searchText, searchColumns, ColumnsMedicineMapping)
+		query, err := repository.ComplementSearch(
+			(*repository.Repository)(nil),
+			sortBy, sortDirection,
+			limit, offset,
+			filters, dateRangeFilters, searchText,
+			searchColumns, ColumnsMedicineMapping,
+		)
 		if err != nil {
 			queryResult <- err
 			return
 		}
-		err = query.Find(&users).Error
+		if query == nil {
+			query = r.DB // fallback
+		} else {
+			query = r.DB.Scopes(repository.ApplyFilters(
+				ColumnsMedicineMapping, filters, dateRangeFilters, searchText, searchColumns,
+			))
+		}
+
+		err = query.Find(&medicines).Error
 		queryResult <- err
 	}()
 
@@ -80,130 +119,105 @@ func (r *Repository) GetData(page int64, limit int64, sortBy string, sortDirecti
 	}
 
 	return &domainMedicine.DataMedicine{
-		Data:  arrayToDomainMapper(&users),
+		Data:  arrayToDomainMapper(&medicines),
 		Total: total,
 	}, nil
 }
 
-// Create ... Insert New data
-func (r *Repository) Create(newMedicine *domainMedicine.Medicine) (createdMedicine *domainMedicine.Medicine, err error) {
-	medicine := fromDomainMapper(newMedicine)
+func (r *Repository) Create(newMedicine *domainMedicine.Medicine) (*domainMedicine.Medicine, error) {
+	medicine := &Medicine{
+		Name:        newMedicine.Name,
+		Description: newMedicine.Description,
+		EANCode:     newMedicine.EanCode,
+		Laboratory:  newMedicine.Laboratory,
+	}
 
 	tx := r.DB.Create(medicine)
-
 	if tx.Error != nil {
 		byteErr, _ := json.Marshal(tx.Error)
 		var newError domainErrors.GormErr
-		err = json.Unmarshal(byteErr, &newError)
+		err := json.Unmarshal(byteErr, &newError)
 		if err != nil {
-			return
+			return nil, err
 		}
 		switch newError.Number {
 		case 1062:
-			err = domainErrors.NewAppErrorWithType(domainErrors.ResourceAlreadyExists)
+			return nil, domainErrors.NewAppErrorWithType(domainErrors.ResourceAlreadyExists)
 		default:
-			err = domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
+			return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 		}
-		return
 	}
-
-	createdMedicine = medicine.toDomainMapper()
-	return
-}
-
-// GetByID ... Fetch only one medicine by Id
-func (r *Repository) GetByID(id int) (*domainMedicine.Medicine, error) {
-	var medicine Medicine
-	err := r.DB.Where("id = ?", id).First(&medicine).Error
-
-	if err != nil {
-		switch err.Error() {
-		case gorm.ErrRecordNotFound.Error():
-			err = domainErrors.NewAppErrorWithType(domainErrors.NotFound)
-		default:
-			err = domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
-		}
-		return &domainMedicine.Medicine{}, err
-	}
-
 	return medicine.toDomainMapper(), nil
 }
 
-// GetOneByMap ... Fetch only one medicine by Map
+func (r *Repository) GetByID(id int) (*domainMedicine.Medicine, error) {
+	var medicine Medicine
+	err := r.DB.Where("id = ?", id).First(&medicine).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, domainErrors.NewAppErrorWithType(domainErrors.NotFound)
+		}
+		return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
+	}
+	return medicine.toDomainMapper(), nil
+}
+
 func (r *Repository) GetOneByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error) {
 	var medicine Medicine
-
 	tx := r.DB.Limit(1)
 	for key, value := range medicineMap {
 		if !repository.IsZeroValue(value) {
 			tx = tx.Where(fmt.Sprintf("%s = ?", key), value)
 		}
 	}
-
 	err := tx.Find(&medicine).Error
 	if err != nil {
-		err = domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
-		return nil, err
+		return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
-	return medicine.toDomainMapper(), err
+	return medicine.toDomainMapper(), nil
 }
 
-// Update ... Update medicine
 func (r *Repository) Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error) {
-	var medicine Medicine
-
-	medicine.ID = id
-	err := r.DB.Model(&medicine).
+	var med Medicine
+	med.ID = id
+	err := r.DB.Model(&med).
 		Select("name", "description", "ean_code", "laboratory").
 		Updates(medicineMap).Error
-
-	// err = config.DB.Save(medicine).Error
 	if err != nil {
 		byteErr, _ := json.Marshal(err)
 		var newError domainErrors.GormErr
-		err = json.Unmarshal(byteErr, &newError)
-		if err != nil {
-			return &domainMedicine.Medicine{}, err
+		errUnmarshal := json.Unmarshal(byteErr, &newError)
+		if errUnmarshal != nil {
+			return nil, errUnmarshal
 		}
 		switch newError.Number {
 		case 1062:
-			err = domainErrors.NewAppErrorWithType(domainErrors.ResourceAlreadyExists)
-			return &domainMedicine.Medicine{}, err
-
+			return nil, domainErrors.NewAppErrorWithType(domainErrors.ResourceAlreadyExists)
 		default:
-			err = domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
-			return &domainMedicine.Medicine{}, err
+			return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 		}
 	}
-
-	err = r.DB.Where("id = ?", id).First(&medicine).Error
-
-	return medicine.toDomainMapper(), err
+	err = r.DB.Where("id = ?", id).First(&med).Error
+	return med.toDomainMapper(), err
 }
 
-// Delete ... Delete medicine
-func (r *Repository) Delete(id int) (err error) {
-	tx := r.DB.Delete(&domainMedicine.Medicine{}, id)
+// Delete ...
+func (r *Repository) Delete(id int) error {
+	tx := r.DB.Delete(&Medicine{}, id)
 	if tx.Error != nil {
-		err = domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
-		return
+		return domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
-
 	if tx.RowsAffected == 0 {
-		err = domainErrors.NewAppErrorWithType(domainErrors.NotFound)
+		return domainErrors.NewAppErrorWithType(domainErrors.NotFound)
 	}
-
-	return
+	return nil
 }
 
-// GetAll Fetch all medicine data no params just all data
 func (r *Repository) GetAll() (*[]domainMedicine.Medicine, error) {
 	var medicines []Medicine
 	err := r.DB.Find(&medicines).Error
 	if err != nil {
-		err = domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
-		return nil, err
+		return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
-
 	return arrayToDomainMapper(&medicines), nil
 }

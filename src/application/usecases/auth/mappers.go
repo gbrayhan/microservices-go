@@ -1,4 +1,3 @@
-// Package auth provides the use case for authentication
 package auth
 
 import (
@@ -22,5 +21,4 @@ func secAuthUserMapper(domainUser *userDomain.User, authInfo *Auth) *SecurityAut
 			ExpirationRefreshDateTime: authInfo.ExpirationRefreshDateTime,
 		},
 	}
-
 }

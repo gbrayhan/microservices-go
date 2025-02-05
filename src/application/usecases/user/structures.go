@@ -1,11 +1,7 @@
-// Package user provides the use case for user
 package user
 
-import (
-	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
-)
+import domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
 
-// PaginationResultUser is the structure for pagination result of user
 type PaginationResultUser struct {
 	Data       []domainUser.User
 	Total      int64

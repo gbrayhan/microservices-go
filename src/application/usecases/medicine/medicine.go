@@ -1,51 +1,56 @@
-// Package medicine provides the use case for medicine
 package medicine
 
 import (
 	"github.com/gbrayhan/microservices-go/src/domain"
-	medicineDomain "github.com/gbrayhan/microservices-go/src/domain/medicine"
-	medicineRepository "github.com/gbrayhan/microservices-go/src/infrastructure/repository/medicine"
+	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
 )
 
-// Service is a struct that contains the repository implementation for medicine use case
-type Service struct {
-	MedicineRepository medicineRepository.Repository
+type IMedicineUseCase interface {
+	GetData(page int64, limit int64, sortBy string, sortDirection string,
+		filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error)
+	GetByID(id int) (*domainMedicine.Medicine, error)
+	Create(medicine *domainMedicine.Medicine) (*domainMedicine.Medicine, error)
+	GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error)
+	Delete(id int) error
+	Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error)
+	GetAll() (*[]domainMedicine.Medicine, error)
 }
 
-var _ medicineDomain.Service = &Service{}
+type MedicineUseCase struct {
+	MedicineRepository domainMedicine.IMedicineService
+}
 
-// GetData is a function that returns all medicines
-func (s *Service) GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*medicineDomain.DataMedicine, error) {
+func NewMedicineUseCase(medicineRepository domainMedicine.IMedicineService) IMedicineUseCase {
+	return &MedicineUseCase{
+		MedicineRepository: medicineRepository,
+	}
+}
+
+func (s *MedicineUseCase) GetData(page int64, limit int64, sortBy string, sortDirection string,
+	filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error) {
 	return s.MedicineRepository.GetData(page, limit, sortBy, sortDirection, filters, searchText, dateRangeFilters)
 }
 
-// GetByID is a function that returns a medicine by id
-func (s *Service) GetByID(id int) (*medicineDomain.Medicine, error) {
+func (s *MedicineUseCase) GetByID(id int) (*domainMedicine.Medicine, error) {
 	return s.MedicineRepository.GetByID(id)
 }
 
-// Create is a function that creates a medicine
-func (s *Service) Create(medicine *medicineDomain.NewMedicine) (*medicineDomain.Medicine, error) {
-	medicineModel := medicine.ToDomainMapper()
-	return s.MedicineRepository.Create(medicineModel)
+func (s *MedicineUseCase) Create(medicine *domainMedicine.Medicine) (*domainMedicine.Medicine, error) {
+	return s.MedicineRepository.Create(medicine)
 }
 
-// GetByMap is a function that returns a medicine by map
-func (s *Service) GetByMap(medicineMap map[string]any) (*medicineDomain.Medicine, error) {
-	return s.MedicineRepository.GetOneByMap(medicineMap)
+func (s *MedicineUseCase) GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error) {
+	return s.MedicineRepository.GetByMap(medicineMap)
 }
 
-// Delete is a function that deletes a medicine by id
-func (s *Service) Delete(id int) error {
+func (s *MedicineUseCase) Delete(id int) error {
 	return s.MedicineRepository.Delete(id)
 }
 
-// Update is a function that updates a medicine by id
-func (s *Service) Update(id int, medicineMap map[string]any) (*medicineDomain.Medicine, error) {
+func (s *MedicineUseCase) Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error) {
 	return s.MedicineRepository.Update(id, medicineMap)
 }
 
-// GetAll is a function that returns all medicines
-func (s *Service) GetAll() (*[]medicineDomain.Medicine, error) {
+func (s *MedicineUseCase) GetAll() (*[]domainMedicine.Medicine, error) {
 	return s.MedicineRepository.GetAll()
 }

@@ -3,9 +3,18 @@ services:
   go-microservice:
     build: .
     image: go-microservice
+    # these are the environment variables that will be passed to the container at runtime and will be used in the application
     environment:
-      - MYSQL_URL=sql://user:pass
-      - MONGODB_URL=mongodb://mongodb:27017/go-boilerplate
+      - DB_HOST=mysqldb
+      - DB_NAME=boilerplate_go
+      - DB_PASS=youShouldChangeThisPassword
+      - DB_PORT=3306
+      - DB_USER=appuser
+      - JWT_ACCESS_SECRET=accesskeyyoumayneedtochangeit
+      - JWT_ACCESS_TIME_MINUTE=10
+      - JWT_REFRESH_SECRET=refreshkeyyoumayneedtochangeit
+      - JWT_REFRESH_TIME_HOUR=10
+      - SERVER_PORT=8080
     ports:
       - '8080:8080'
     restart: on-failure
@@ -38,7 +47,6 @@ services:
     volumes:
       - ./docker/scripts/schema.sql:/docker-entrypoint-initdb.d/setup.sql
       - dbdata:/var/lib/mysql
-
 
     networks:
       - go-network

@@ -1,4 +1,3 @@
-// Package middlewares contains the middlewares for the rest api
 package middlewares
 
 import (
@@ -7,11 +6,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/gbrayhan/microservices-go/src/application/services"
-
 	"github.com/gin-gonic/gin"
-
-	"github.com/gbrayhan/microservices-go/utils"
 )
 
 type bodyLogWriter struct {
@@ -24,20 +19,19 @@ func (w bodyLogWriter) Write(b []byte) (int, error) {
 	return w.ResponseWriter.Write(b)
 }
 
-// GinBodyLogMiddleware is a middleware that logs the request and response
 func GinBodyLogMiddleware(c *gin.Context) {
 	blw := &bodyLogWriter{body: bytes.NewBufferString(""), ResponseWriter: c.Writer}
 	c.Writer = blw
-	c.Next()
 
 	buf := make([]byte, 4096)
 	num, err := c.Request.Body.Read(buf)
 	if err != nil && err.Error() != "EOF" {
-
 		_ = fmt.Errorf("error reading buffer: %s", err.Error())
 	}
 	reqBody := string(buf[0:num])
 	c.Request.Body = io.NopCloser(bytes.NewBuffer([]byte(reqBody)))
+
+	c.Next()
 
 	loc, _ := time.LoadLocation("America/Mexico_City")
 	allDataIO := map[string]any{
@@ -50,17 +44,4 @@ func GinBodyLogMiddleware(c *gin.Context) {
 		"created_at":    time.Now().In(loc).Format("2006-01-02T15:04:05"),
 	}
 	_ = fmt.Sprintf("%v", allDataIO)
-
-	allLogs := []string{
-		"/payment-with-recurrence",
-		"/buy-console",
-		"/other-route",
-	}
-
-	if existAll, _ := utils.InArray(c.FullPath(), allLogs); existAll {
-		if c.Writer.Status() == 500 {
-			go func() { err = services.SendSimpleMail() }()
-		}
-		// go SaveLogs(allDataIO)
-	}
 }

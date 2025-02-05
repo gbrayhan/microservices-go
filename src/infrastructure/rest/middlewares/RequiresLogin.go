@@ -1,44 +1,62 @@
-// Package middlewares contains the middlewares for the rest api
 package middlewares
 
 import (
-	"fmt"
 	"net/http"
+	"os"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
-	"github.com/spf13/viper"
 )
 
-// AuthJWTMiddleware is a function that validates the jwt token
 func AuthJWTMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		viper.SetConfigFile("config.json")
-		if err := viper.ReadInConfig(); err != nil {
-			_ = fmt.Errorf("fatal error in config file: %s", err.Error())
-		}
-
-		JWTAccessSecure := viper.GetString("Secure.JWTAccessSecure")
 		tokenString := c.GetHeader("Authorization")
-		signature := []byte(JWTAccessSecure)
-
 		if tokenString == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token not provided"})
 			c.Abort()
 			return
 		}
-
+		accessSecret := os.Getenv("JWT_ACCESS_SECRET")
+		if accessSecret == "" {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT_ACCESS_SECRET not configured"})
+			c.Abort()
+			return
+		}
+		if strings.HasPrefix(tokenString, "Bearer ") {
+			tokenString = strings.TrimPrefix(tokenString, "Bearer ")
+		}
 		claims := jwt.MapClaims{}
 		_, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
-			return signature, nil
+			return []byte(accessSecret), nil
 		})
-
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
 			c.Abort()
 			return
 		}
-
+		if exp, ok := claims["exp"].(float64); ok {
+			if int64(exp) < (jwt.TimeFunc().Unix()) {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
+				c.Abort()
+				return
+			}
+		} else {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+			c.Abort()
+			return
+		}
+		if t, ok := claims["type"].(string); ok {
+			if t != "access" {
+				c.JSON(http.StatusForbidden, gin.H{"error": "Token type mismatch"})
+				c.Abort()
+				return
+			}
+		} else {
+			c.JSON(http.StatusForbidden, gin.H{"error": "Missing token type"})
+			c.Abort()
+			return
+		}
 		c.Next()
 	}
 }

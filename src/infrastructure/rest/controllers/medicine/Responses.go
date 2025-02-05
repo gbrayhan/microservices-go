@@ -1,24 +1,17 @@
-// Package medicine contains the medicine controller
 package medicine
 
 import "time"
 
-// MessageResponse is a struct that contains the response body for the message
-type MessageResponse struct {
-	Message string `json:"message"`
-}
-
 type ResponseMedicine struct {
-	ID          int       `json:"id" example:"1099"`
-	Name        string    `json:"name" example:"Aspirina"`
-	Description string    `json:"description" example:"Some Description"`
-	Laboratory  string    `json:"laboratory" example:"Some Laboratory"`
-	EanCode     string    `json:"eanCode" example:"Some EanCode"`
-	CreatedAt   time.Time `json:"createdAt,omitempty" example:"2021-02-24 20:19:39" gorm:"autoCreateTime:mili"`
-	UpdatedAt   time.Time `json:"updatedAt,omitempty" example:"2021-02-24 20:19:39" gorm:"autoUpdateTime:mili"`
+	ID          int       `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	EanCode     string    `json:"eanCode"`
+	Laboratory  string    `json:"laboratory"`
+	CreatedAt   time.Time `json:"createdAt,omitempty"`
+	UpdatedAt   time.Time `json:"updatedAt,omitempty"`
 }
 
-// PaginationResultMedicine is the structure for pagination result of client
 type PaginationResultMedicine struct {
 	Data       *[]ResponseMedicine `json:"data"`
 	Total      int64               `json:"total"`
