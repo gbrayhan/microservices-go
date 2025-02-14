@@ -19,7 +19,7 @@ const (
 type AppToken struct {
 	Token          string    `json:"token"`
 	TokenType      string    `json:"type"`
-	ExpirationTime time.Time `json:"expitationTime"`
+	ExpirationTime time.Time `json:"expirationTime"`
 }
 
 type Claims struct {
