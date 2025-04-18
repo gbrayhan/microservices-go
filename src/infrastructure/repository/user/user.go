@@ -3,10 +3,9 @@ package user
 import (
 	"encoding/json"
 	"fmt"
-
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
-	"github.com/gbrayhan/microservices-go/src/infrastructure/repository"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/utils"
 	"gorm.io/gorm"
 )
 
@@ -65,7 +64,7 @@ func (r *Repository) GetOneByMap(userMap map[string]interface{}) (*domainUser.Us
 	var userRepository User
 	tx := r.DB.Limit(1)
 	for key, value := range userMap {
-		if !repository.IsZeroValue(value) {
+		if !utils.IsZeroValue(value) {
 			tx = tx.Where(fmt.Sprintf("%s = ?", key), value)
 		}
 	}

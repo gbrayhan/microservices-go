@@ -1,4 +1,4 @@
-package repository
+package utils
 
 import (
 	"fmt"
@@ -9,26 +9,12 @@ import (
 	"gorm.io/gorm"
 )
 
-type Repository struct {
-	DB *gorm.DB
-}
-
-func ComplementSearch(
-	r *Repository,
-	sortBy string, sortDirection string,
-	limit int64,
-	offset int64,
-	filters map[string][]string,
-	dateRangeFilters []domain.DateRangeFilter,
-	searchText string,
-	searchColumns []string,
-	columnMapping map[string]string,
-) (query *gorm.DB, err error) {
-	if r == nil || r.DB == nil {
+func ComplementSearch(r *gorm.DB, sortBy string, sortDirection string, limit int64, offset int64, filters map[string][]string, dateRangeFilters []domain.DateRangeFilter, searchText string, searchColumns []string, columnMapping map[string]string) (query *gorm.DB, err error) {
+	if r == nil {
 		return nil, nil
 	}
 
-	query = r.DB
+	query = r
 	if sortBy != "" {
 		orderClause := fmt.Sprintf("%s %s", columnMapping[sortBy], sortDirection)
 		query = query.Order(orderClause).Limit(int(limit)).Offset(int(offset))
@@ -77,13 +63,7 @@ func UpdateFilterKeys(filters map[string][]string, columnMapping map[string]stri
 	return updatedFilters
 }
 
-func ApplyFilters(
-	columnMapping map[string]string,
-	filters map[string][]string,
-	dateRangeFilters []domain.DateRangeFilter,
-	searchText string,
-	searchColumns []string,
-) func(db *gorm.DB) *gorm.DB {
+func ApplyFilters(columnMapping map[string]string, filters map[string][]string, dateRangeFilters []domain.DateRangeFilter, searchText string, searchColumns []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		query := db
 		if len(filters) > 0 {

@@ -3,12 +3,11 @@ package jwt
 import (
 	"errors"
 	"fmt"
+	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
+	"github.com/golang-jwt/jwt/v4"
 	"os"
 	"strconv"
 	"time"
-
-	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
-	"github.com/golang-jwt/jwt/v4"
 )
 
 const (

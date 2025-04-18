@@ -1,58 +1,45 @@
-version: '3'
+version: "3.9"
+
 services:
-  go-microservice:
-    build: .
-    image: go-microservice
-    # these are the environment variables that will be passed to the container at runtime and will be used in the application
+  postgres:
+    image: postgres:17.4
+    restart: always
+    env_file:
+      - .env
     environment:
-      - DB_HOST=mysqldb
-      - DB_NAME=boilerplate_go
-      - DB_PASS=youShouldChangeThisPassword
-      - DB_PORT=3306
-      - DB_USER=appuser
-      - JWT_ACCESS_SECRET=accesskeyyoumayneedtochangeit
-      - JWT_ACCESS_TIME_MINUTE=10
-      - JWT_REFRESH_SECRET=refreshkeyyoumayneedtochangeit
-      - JWT_REFRESH_TIME_HOUR=10
-      - SERVER_PORT=8080
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
     ports:
-      - '8080:8080'
-    restart: on-failure
-    depends_on:
-      - mysqldb
-    #volumes:
-    #  - .:/srv/go-app
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     networks:
       - go-network
-  mysqldb:
-    platform: linux/x86_64
-    image: mysql:8.0
-    restart: always
-    environment:
-      MYSQL_DATABASE: 'boilerplate_go'
-      # Password for root access
-      MYSQL_ROOT_PASSWORD: 'youShouldChangeThisPassword'
-      MYSQL_HOST: "%" # Allow connections from outside the container
-      # So you don't have to use root, but you can if you like
-      MYSQL_USER: 'appuser'
-      # You can use whatever password you like
-      MYSQL_PASSWORD: 'youShouldChangeThisPassword'
-    ports:
-      # <Port exposed> : < MySQL Port running inside container>
-      - '33006:3306'
-    expose:
-      # Opens port 3306 on the container
-      - '3306'
-      # Where our data will be persisted
-    volumes:
-      - ./docker/scripts/schema.sql:/docker-entrypoint-initdb.d/setup.sql
-      - dbdata:/var/lib/mysql
 
+  go-microservice:
+    build:
+      context: .
+    image: go-microservice
+    restart: on-failure
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - go-network
 
 volumes:
-  dbdata:
+  pgdata:
 
 networks:
   go-network:

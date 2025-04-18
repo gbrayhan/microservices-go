@@ -7,18 +7,12 @@ import (
 
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
-	"github.com/gbrayhan/microservices-go/src/infrastructure/repository"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/utils"
 	"gorm.io/gorm"
 )
 
 type IMedicineRepository interface {
-	GetData(
-		page int64, limit int64,
-		sortBy string, sortDirection string,
-		filters map[string][]string,
-		searchText string,
-		dateRangeFilters []domain.DateRangeFilter,
-	) (*domainMedicine.DataMedicine, error)
+	GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error)
 	Create(newMedicine *domainMedicine.Medicine) (*domainMedicine.Medicine, error)
 	GetByID(id int) (*domainMedicine.Medicine, error)
 	GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error)
@@ -28,7 +22,6 @@ type IMedicineRepository interface {
 }
 
 func (I Repository) GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error) {
-	//TODO implement me
 	panic("implement me")
 }
 
@@ -55,13 +48,7 @@ var ColumnsMedicineMapping = map[string]string{
 	"updatedAt":   "updated_at",
 }
 
-func (r *Repository) GetData(
-	page int64, limit int64,
-	sortBy string, sortDirection string,
-	filters map[string][]string,
-	searchText string,
-	dateRangeFilters []domain.DateRangeFilter,
-) (*domainMedicine.DataMedicine, error) {
+func (r *Repository) GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error) {
 	var medicines []Medicine
 	var total int64
 	offset := (page - 1) * limit
@@ -71,30 +58,22 @@ func (r *Repository) GetData(
 	countResult := make(chan error)
 	go func() {
 		err := r.DB.Model(&Medicine{}).
-			Scopes(repository.ApplyFilters(ColumnsMedicineMapping, filters, dateRangeFilters, searchText, searchColumns)).
+			Scopes(utils.ApplyFilters(ColumnsMedicineMapping, filters, dateRangeFilters, searchText, searchColumns)).
 			Count(&total).Error
 		countResult <- err
 	}()
 
 	queryResult := make(chan error)
 	go func() {
-		query, err := repository.ComplementSearch(
-			(*repository.Repository)(nil),
-			sortBy, sortDirection,
-			limit, offset,
-			filters, dateRangeFilters, searchText,
-			searchColumns, ColumnsMedicineMapping,
-		)
+		query, err := utils.ComplementSearch((*gorm.DB)(nil), sortBy, sortDirection, limit, offset, filters, dateRangeFilters, searchText, searchColumns, ColumnsMedicineMapping)
 		if err != nil {
 			queryResult <- err
 			return
 		}
 		if query == nil {
-			query = r.DB // fallback
+			query = r.DB
 		} else {
-			query = r.DB.Scopes(repository.ApplyFilters(
-				ColumnsMedicineMapping, filters, dateRangeFilters, searchText, searchColumns,
-			))
+			query = r.DB.Scopes(utils.ApplyFilters(ColumnsMedicineMapping, filters, dateRangeFilters, searchText, searchColumns))
 		}
 
 		err = query.Find(&medicines).Error
@@ -166,7 +145,7 @@ func (r *Repository) GetOneByMap(medicineMap map[string]any) (*domainMedicine.Me
 	var medicine Medicine
 	tx := r.DB.Limit(1)
 	for key, value := range medicineMap {
-		if !repository.IsZeroValue(value) {
+		if !utils.IsZeroValue(value) {
 			tx = tx.Where(fmt.Sprintf("%s = ?", key), value)
 		}
 	}
@@ -201,7 +180,6 @@ func (r *Repository) Update(id int, medicineMap map[string]any) (*domainMedicine
 	return med.toDomainMapper(), err
 }
 
-// Delete ...
 func (r *Repository) Delete(id int) error {
 	tx := r.DB.Delete(&Medicine{}, id)
 	if tx.Error != nil {

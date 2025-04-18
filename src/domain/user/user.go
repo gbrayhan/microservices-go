@@ -2,7 +2,6 @@ package user
 
 import "time"
 
-// User is a struct that contains the user information
 type User struct {
 	ID           int
 	UserName     string
@@ -16,7 +15,6 @@ type User struct {
 	UpdatedAt    time.Time
 }
 
-// Service is the interface that provides user methods
 type IUserService interface {
 	GetAll() (*[]User, error)
 	GetByID(id int) (*User, error)
