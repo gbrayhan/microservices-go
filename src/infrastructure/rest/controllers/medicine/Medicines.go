@@ -61,7 +61,6 @@ func (c *Controller) GetAllMedicines(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, arrayDomainToResponseMapper(medicines))
 }
 
-// Ejemplo de obtener datos con paginación, etc.
 func (c *Controller) GetDataMedicines(ctx *gin.Context) {
 	var request DataMedicineRequest
 	if err := controllers.BindJSON(ctx, &request); err != nil {

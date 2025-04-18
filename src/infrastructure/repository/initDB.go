@@ -2,37 +2,37 @@ package repository
 
 import (
 	"fmt"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/medicine"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/user"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 	"log"
 	"os"
 	"strconv"
 	"time"
-
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 func InitDB() (*gorm.DB, error) {
 	dbHost := getEnv("DB_HOST", "localhost")
-	dbPort := getEnv("DB_PORT", "3306")
-	dbUser := getEnv("DB_USER", "root")
+	dbPort := getEnv("DB_PORT", "5432")
+	dbUser := getEnv("DB_USER", "postgres")
 	dbPass := getEnv("DB_PASS", "")
-	dbName := getEnv("DB_NAME", "boilerplatego")
+	dbName := getEnv("DB_NAME", "postgres")
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true",
-		dbUser, dbPass, dbHost, dbPort, dbName)
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=America/Mexico_City", dbHost, dbUser, dbPass, dbName, dbPort)
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Info),
 	})
 	if err != nil {
-		log.Printf("Error abriendo la conexión a DB: %v", err)
+		log.Printf("Error connecting to database: %v", err)
 		return nil, err
 	}
 
 	sqlDB, err := db.DB()
 	if err != nil {
-		log.Printf("Error al obtener sql.DB desde gorm.DB: %v", err)
+		log.Printf("Error retrieving sql.DB from gorm.DB: %v", err)
 		return nil, err
 	}
 
@@ -45,7 +45,12 @@ func InitDB() (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(time.Duration(connMaxLifetime) * time.Second)
 
 	if err = sqlDB.Ping(); err != nil {
-		log.Printf("Error al hacer ping a la DB: %v", err)
+		log.Printf("Error pinging database: %v", err)
+		return nil, err
+	}
+
+	if err = db.AutoMigrate(&user.User{}, &medicine.Medicine{}); err != nil {
+		log.Printf("Error auto-migrating database schema: %v", err)
 		return nil, err
 	}
 

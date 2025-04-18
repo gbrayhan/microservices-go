@@ -28,7 +28,6 @@ func BindJSONMap(c *gin.Context, request *map[string]any) error {
 	return err
 }
 
-// MessageResponse ...
 type MessageResponse struct {
 	Message string `json:"message"`
 }

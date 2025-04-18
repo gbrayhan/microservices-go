@@ -25,7 +25,7 @@ git clone https://github.com/gbrayhan/microservices-go
 
     git clone https://github.com/gbrayhan/microservices-go
     cd microservices-go
-    cp config.json.example config.json
+    cp .env.example .env
     docker-compose up  --build  -d
 
 ## Table of Contents
@@ -41,16 +41,15 @@ git clone https://github.com/gbrayhan/microservices-go
 
 ## Features
 
-- **Golang v1.21**: Stable version of go
+- **Golang v1.24.2**: Stable version of go
 - **Framework**: A stable version of [gin-go](https://github.com/gin-gonic/gin)
 - **Token Security**: with [JWT](https://jwt.io)
-- **SQL databaseSQL**: [MariaDB](https://mariadb.org/) using internal sql package of
+- **SQL databaseSQL**: [Postgresql](https://www.postgresql.org/) using internal sql package of
   go [sql](https://golang.org/pkg/databaseSQL/sql/)
 - **Testing**: unit and integration tests using package of go [testing](https://golang.org/pkg/testing/)
 - **API documentation**: with [swaggo](https://github.com/swaggo/swag) @latest version that is a go implementation
   of [swagger](https://swagger.io/)
 - **Dependency management**: with [go modules](https://golang.org/ref/mod)
-- **Environment variables**: using [viper](https://github.com/spf13/viper)
 - **Docker support**
 - **Code quality**: with [CodeFactor](https://www.codefactor.io/) and [Codacy](https://www.codacy.com/)
 - **Linting**: with [golangci-lint](https://golangci-lint.run/usage/install/) an implementation of a Golang linter

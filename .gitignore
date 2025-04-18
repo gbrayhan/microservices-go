@@ -1,8 +1,11 @@
 # IDE Folders and Files
 .idea
 .DS_Store
+.env
 
 
+*.txt
+*.log
 
 microservices
 config.json

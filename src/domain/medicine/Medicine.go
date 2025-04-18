@@ -6,7 +6,6 @@ import (
 	"github.com/gbrayhan/microservices-go/src/domain"
 )
 
-// Medicine is a struct that contains the medicine information
 type Medicine struct {
 	ID          int
 	Name        string

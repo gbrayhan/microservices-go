@@ -2,12 +2,11 @@ package auth
 
 import (
 	"errors"
-	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
-	"time"
-
 	errorsDomain "github.com/gbrayhan/microservices-go/src/domain/errors"
+	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
 	jwtInfrastructure "github.com/gbrayhan/microservices-go/src/infrastructure/security/jwt"
 	"golang.org/x/crypto/bcrypt"
+	"time"
 )
 
 type IAuthUseCase interface {
@@ -39,14 +38,12 @@ func (s *AuthUseCase) Login(user LoginUser) (*SecurityAuthenticatedUser, error) 
 		return &SecurityAuthenticatedUser{}, err
 	}
 	if domainUser.ID == 0 {
-		return &SecurityAuthenticatedUser{},
-			errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
+		return &SecurityAuthenticatedUser{}, errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
 	}
 
 	isAuthenticated := checkPasswordHash(user.Password, domainUser.HashPassword)
 	if !isAuthenticated {
-		return &SecurityAuthenticatedUser{},
-			errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
+		return &SecurityAuthenticatedUser{}, errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
 	}
 
 	accessTokenClaims, err := jwtInfrastructure.GenerateJWTToken(domainUser.ID, "access")
