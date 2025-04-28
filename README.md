@@ -54,6 +54,16 @@ git clone https://github.com/gbrayhan/microservices-go
 - **Code quality**: with [CodeFactor](https://www.codefactor.io/) and [Codacy](https://www.codacy.com/)
 - **Linting**: with [golangci-lint](https://golangci-lint.run/usage/install/) an implementation of a Golang linter
 
+
+## Security Checks using Trivy
+
+https://github.com/aquasecurity/trivy?tab=readme-ov-file
+
+command:
+```bash
+trivy fs . 
+```
+
 ## Commands
 
 ### Build and run image of docker
