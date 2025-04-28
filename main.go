@@ -18,7 +18,7 @@ func main() {
 	router.Use(cors.Default())
 	DB, err := repository.InitDB()
 	if err != nil {
-		panic(fmt.Errorf("error inicializando la base de datos: %w", err))
+		panic(fmt.Errorf("error initializing the database: %w", err))
 	}
 
 	router.Use(middlewares.ErrorHandler())
@@ -37,7 +37,7 @@ func main() {
 		WriteTimeout:   18000 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	fmt.Printf("Servidor corriendo en http://localhost:%s\n", port)
+	fmt.Printf("Server running at http://localhost:%s\n", port)
 	if err := s.ListenAndServe(); err != nil {
 		panic(strings.ToLower(err.Error()))
 	}
