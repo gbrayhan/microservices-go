@@ -96,7 +96,7 @@ func GetClaimsAndVerifyToken(tokenString string, tokenType string) (jwt.MapClaim
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, domainErrors.NewAppError(errors.New(fmt.Sprintf("unexpected signing method: %v", token.Header["alg"])), domainErrors.NotAuthenticated)
+			return nil, domainErrors.NewAppError(fmt.Errorf("unexpected signing method: %v", token.Header["alg"]), domainErrors.NotAuthenticated)
 		}
 		return []byte(secretKey), nil
 	})
