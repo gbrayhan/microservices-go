@@ -2,6 +2,7 @@ package user
 
 import (
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
+	"github.com/gbrayhan/microservices-go/src/infrastructure"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -15,10 +16,10 @@ type IUserUseCase interface {
 }
 
 type UserUseCase struct {
-	userRepository userDomain.IUserService
+	userRepository infrastructure.UserRepositoryInterface
 }
 
-func NewUserUseCase(userRepository userDomain.IUserService) IUserUseCase {
+func NewUserUseCase(userRepository infrastructure.UserRepositoryInterface) IUserUseCase {
 	return &UserUseCase{
 		userRepository: userRepository,
 	}
@@ -33,7 +34,6 @@ func (s *UserUseCase) GetByID(id int) (*userDomain.User, error) {
 }
 
 func (s *UserUseCase) Create(newUser *userDomain.User) (*userDomain.User, error) {
-
 	hash, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return &userDomain.User{}, err

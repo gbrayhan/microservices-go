@@ -3,6 +3,7 @@ package medicine
 import (
 	"github.com/gbrayhan/microservices-go/src/domain"
 	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
+	"github.com/gbrayhan/microservices-go/src/infrastructure"
 )
 
 type IMedicineUseCase interface {
@@ -17,10 +18,10 @@ type IMedicineUseCase interface {
 }
 
 type MedicineUseCase struct {
-	MedicineRepository domainMedicine.IMedicineService
+	MedicineRepository infrastructure.MedicineRepositoryInterface
 }
 
-func NewMedicineUseCase(medicineRepository domainMedicine.IMedicineService) IMedicineUseCase {
+func NewMedicineUseCase(medicineRepository infrastructure.MedicineRepositoryInterface) IMedicineUseCase {
 	return &MedicineUseCase{
 		MedicineRepository: medicineRepository,
 	}

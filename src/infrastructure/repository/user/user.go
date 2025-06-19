@@ -6,6 +6,8 @@ import (
 
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
+	"github.com/gbrayhan/microservices-go/src/infrastructure"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/utils"
 	"gorm.io/gorm"
 )
@@ -14,26 +16,17 @@ func (*User) TableName() string {
 	return "users"
 }
 
-type IUserRepository interface {
-	GetAll() (*[]domainUser.User, error)
-	Create(userDomain *domainUser.User) (*domainUser.User, error)
-	GetOneByMap(userMap map[string]interface{}) (*domainUser.User, error)
-	GetByID(id int) (*domainUser.User, error)
-	Update(id int, userMap map[string]interface{}) (*domainUser.User, error)
-	Delete(id int) error
-}
-
 type Repository struct {
-	DB *gorm.DB
+	DB repository.DatabaseInterface
 }
 
-func NewUserRepository(db *gorm.DB) IUserRepository {
-	return &Repository{DB: db}
+func NewUserRepository(db *gorm.DB) infrastructure.UserRepositoryInterface {
+	return &Repository{DB: repository.NewGormDBAdapter(db)}
 }
 
 func (r *Repository) GetAll() (*[]domainUser.User, error) {
 	var users []User
-	if err := r.DB.Find(&users).Error; err != nil {
+	if err := r.DB.Find(&users).Error(); err != nil {
 		return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
 	return arrayToDomainMapper(&users), nil
@@ -42,7 +35,7 @@ func (r *Repository) GetAll() (*[]domainUser.User, error) {
 func (r *Repository) Create(userDomain *domainUser.User) (*domainUser.User, error) {
 	userRepository := fromDomainMapper(userDomain)
 	txDb := r.DB.Create(userRepository)
-	err := txDb.Error
+	err := txDb.Error()
 	if err != nil {
 		byteErr, _ := json.Marshal(err)
 		var newError domainErrors.GormErr
@@ -69,7 +62,7 @@ func (r *Repository) GetOneByMap(userMap map[string]interface{}) (*domainUser.Us
 			tx = tx.Where(fmt.Sprintf("%s = ?", key), value)
 		}
 	}
-	if err := tx.Find(&userRepository).Error; err != nil {
+	if err := tx.Find(&userRepository).Error(); err != nil {
 		return &domainUser.User{}, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
 	return userRepository.toDomainMapper(), nil
@@ -77,7 +70,7 @@ func (r *Repository) GetOneByMap(userMap map[string]interface{}) (*domainUser.Us
 
 func (r *Repository) GetByID(id int) (*domainUser.User, error) {
 	var user User
-	err := r.DB.Where("id = ?", id).First(&user).Error
+	err := r.DB.Where("id = ?", id).First(&user).Error()
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			err = domainErrors.NewAppErrorWithType(domainErrors.NotFound)
@@ -94,7 +87,7 @@ func (r *Repository) Update(id int, userMap map[string]interface{}) (*domainUser
 	userObj.ID = id
 	err := r.DB.Model(&userObj).
 		Select("user_name", "email", "first_name", "last_name", "status", "role").
-		Updates(userMap).Error
+		Updates(userMap).Error()
 	if err != nil {
 		byteErr, _ := json.Marshal(err)
 		var newError domainErrors.GormErr
@@ -109,7 +102,7 @@ func (r *Repository) Update(id int, userMap map[string]interface{}) (*domainUser
 			return &domainUser.User{}, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 		}
 	}
-	if err := r.DB.Where("id = ?", id).First(&userObj).Error; err != nil {
+	if err := r.DB.Where("id = ?", id).First(&userObj).Error(); err != nil {
 		return &domainUser.User{}, err
 	}
 	return userObj.toDomainMapper(), nil
@@ -117,10 +110,10 @@ func (r *Repository) Update(id int, userMap map[string]interface{}) (*domainUser
 
 func (r *Repository) Delete(id int) error {
 	tx := r.DB.Delete(&User{}, id)
-	if tx.Error != nil {
+	if tx.Error() != nil {
 		return domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
-	if tx.RowsAffected == 0 {
+	if tx.RowsAffected() == 0 {
 		return domainErrors.NewAppErrorWithType(domainErrors.NotFound)
 	}
 	return nil

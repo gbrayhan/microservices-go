@@ -4,6 +4,7 @@ import (
 	authUseCase "github.com/gbrayhan/microservices-go/src/application/usecases/auth"
 	medicineUseCase "github.com/gbrayhan/microservices-go/src/application/usecases/medicine"
 	userUseCase "github.com/gbrayhan/microservices-go/src/application/usecases/user"
+	"github.com/gbrayhan/microservices-go/src/infrastructure"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository"
 	medicineRepository "github.com/gbrayhan/microservices-go/src/infrastructure/repository/medicine"
 	userRepository "github.com/gbrayhan/microservices-go/src/infrastructure/repository/user"
@@ -21,6 +22,11 @@ type ApplicationContext struct {
 	UserController     userController.IUserController
 	MedicineController medicineController.IMedicineController
 	JWTService         security.IJWTService
+	UserRepository     infrastructure.UserRepositoryInterface
+	MedicineRepository infrastructure.MedicineRepositoryInterface
+	AuthUseCase        authUseCase.IAuthUseCase
+	UserUseCase        userUseCase.IUserUseCase
+	MedicineUseCase    medicineUseCase.IMedicineUseCase
 }
 
 // SetupDependencies creates a new application context with all dependencies
@@ -54,13 +60,18 @@ func SetupDependencies() (*ApplicationContext, error) {
 		UserController:     userController,
 		MedicineController: medicineController,
 		JWTService:         jwtService,
+		UserRepository:     userRepo,
+		MedicineRepository: medicineRepo,
+		AuthUseCase:        authUC,
+		UserUseCase:        userUC,
+		MedicineUseCase:    medicineUC,
 	}, nil
 }
 
 // NewTestApplicationContext creates an application context for testing with mocked dependencies
 func NewTestApplicationContext(
-	mockUserRepo userRepository.IUserRepository,
-	mockMedicineRepo medicineRepository.IMedicineRepository,
+	mockUserRepo infrastructure.UserRepositoryInterface,
+	mockMedicineRepo infrastructure.MedicineRepositoryInterface,
 	mockJWTService security.IJWTService,
 ) *ApplicationContext {
 	// Initialize use cases with mocked repositories
@@ -78,5 +89,10 @@ func NewTestApplicationContext(
 		UserController:     userController,
 		MedicineController: medicineController,
 		JWTService:         mockJWTService,
+		UserRepository:     mockUserRepo,
+		MedicineRepository: mockMedicineRepo,
+		AuthUseCase:        authUC,
+		UserUseCase:        userUC,
+		MedicineUseCase:    medicineUC,
 	}
 }

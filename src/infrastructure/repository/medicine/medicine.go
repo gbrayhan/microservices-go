@@ -8,28 +8,10 @@ import (
 
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
+	"github.com/gbrayhan/microservices-go/src/infrastructure"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/utils"
 	"gorm.io/gorm"
 )
-
-type IMedicineRepository interface {
-	GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error)
-	Create(newMedicine *domainMedicine.Medicine) (*domainMedicine.Medicine, error)
-	GetByID(id int) (*domainMedicine.Medicine, error)
-	GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error)
-	Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error)
-	Delete(id int) error
-	GetAll() (*[]domainMedicine.Medicine, error)
-}
-
-func (I Repository) GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error) {
-	panic("implement me")
-}
-
-func NewMedicineRepository(DB *gorm.DB) IMedicineRepository {
-	return &Repository{
-		DB: DB}
-}
 
 func (*Medicine) TableName() string {
 	return "medicines"
@@ -37,6 +19,11 @@ func (*Medicine) TableName() string {
 
 type Repository struct {
 	DB *gorm.DB
+}
+
+func NewMedicineRepository(DB *gorm.DB) infrastructure.MedicineRepositoryInterface {
+	return &Repository{
+		DB: DB}
 }
 
 var ColumnsMedicineMapping = map[string]string{
@@ -142,7 +129,7 @@ func (r *Repository) GetByID(id int) (*domainMedicine.Medicine, error) {
 	return medicine.toDomainMapper(), nil
 }
 
-func (r *Repository) GetOneByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error) {
+func (r *Repository) GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error) {
 	var medicine Medicine
 	tx := r.DB.Limit(1)
 	for key, value := range medicineMap {

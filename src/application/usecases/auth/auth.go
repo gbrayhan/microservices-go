@@ -5,7 +5,7 @@ import (
 	"time"
 
 	errorsDomain "github.com/gbrayhan/microservices-go/src/domain/errors"
-	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
+	"github.com/gbrayhan/microservices-go/src/infrastructure"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/security"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -16,11 +16,11 @@ type IAuthUseCase interface {
 }
 
 type AuthUseCase struct {
-	userRepository userDomain.IUserService
+	userRepository infrastructure.UserRepositoryInterface
 	jwtService     security.IJWTService
 }
 
-func NewAuthUseCase(userRepository userDomain.IUserService, jwtService security.IJWTService) IAuthUseCase {
+func NewAuthUseCase(userRepository infrastructure.UserRepositoryInterface, jwtService security.IJWTService) IAuthUseCase {
 	return &AuthUseCase{
 		userRepository: userRepository,
 		jwtService:     jwtService,
