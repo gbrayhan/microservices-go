@@ -37,6 +37,43 @@ services:
         condition: service_healthy
     networks:
       - go-network
+    environment:
+      # Server Configuration
+      - SERVER_PORT=${SERVER_PORT:-8080}
+      
+      # Database Configuration
+      - DB_HOST=${DB_HOST:-postgres}
+      - DB_PORT=${DB_PORT:-5432}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_NAME=${DB_NAME}
+      - DB_SSLMODE=${DB_SSLMODE:-disable}
+      
+      # Database Connection Pool Configuration
+      - DB_MAX_IDLE_CONNS=${DB_MAX_IDLE_CONNS:-10}
+      - DB_MAX_OPEN_CONNS=${DB_MAX_OPEN_CONNS:-50}
+      - DB_CONN_MAX_LIFETIME=${DB_CONN_MAX_LIFETIME:-300}
+      
+      # JWT Configuration
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_ACCESS_TIME_MINUTE=${JWT_ACCESS_TIME_MINUTE:-15}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_REFRESH_TIME_HOUR=${JWT_REFRESH_TIME_HOUR:-168}
+      
+      # Initial User Configuration
+      - START_USER_EMAIL=${START_USER_EMAIL:-admin@example.com}
+      - START_USER_PW=${START_USER_PW:-admin123}
+      
+      # Optional External Services
+      - IMGUR_CLIENT_ID=${IMGUR_CLIENT_ID:-}
+      - WKHTMLTOPDF_BIN=${WKHTMLTOPDF_BIN:-/usr/local/bin/wkhtmltopdf}
+      
+      # Legacy JWT Configuration (for backward compatibility)
+      - ACCESS_SECRET_KEY=${ACCESS_SECRET_KEY:-${JWT_ACCESS_SECRET}}
+      - ACCESS_TOKEN_TTL=${ACCESS_TOKEN_TTL:-15}
+      - REFRESH_SECRET_KEY=${REFRESH_SECRET_KEY:-${JWT_REFRESH_SECRET}}
+      - REFRESH_TOKEN_TTL=${REFRESH_TOKEN_TTL:-10080}
+      - JWT_ISSUER=${JWT_ISSUER:-aceso}
 
 volumes:
   pgdata:

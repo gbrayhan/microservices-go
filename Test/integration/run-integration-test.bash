@@ -33,23 +33,45 @@ else
 fi
 
 echo "🔧 Exporting environment variables (if not already set)..."
-export ACCESS_SECRET_KEY="${ACCESS_SECRET_KEY:-yourAccessSecretKey}"
-export ACCESS_TOKEN_TTL="${ACCESS_TOKEN_TTL:-15}"
-export APP_PORT
-export DB_HOST="${DB_HOST:-localhost}"
-export DB_NAME="${DB_NAME:-aceso}"
-export DB_PASSWORD="${DB_PASSWORD:-yourpassword}"
+# Server Configuration
+export SERVER_PORT="${SERVER_PORT:-8080}"
+
+# Database Configuration
+export DB_HOST="${DB_HOST:-127.0.0.1}"
+export DB_NAME="${DB_NAME:-boilerplate_go}"
+export DB_PASS="${DB_PASS:-devPassword123}"
 export DB_PORT="${DB_PORT:-5432}"
 export DB_SSLMODE="${DB_SSLMODE:-disable}"
-export DB_USER="${DB_USER:-app_user}"
+export DB_USER="${DB_USER:-appuser}"
+
+# Database Connection Pool Configuration
+export DB_MAX_IDLE_CONNS="${DB_MAX_IDLE_CONNS:-10}"
+export DB_MAX_OPEN_CONNS="${DB_MAX_OPEN_CONNS:-50}"
+export DB_CONN_MAX_LIFETIME="${DB_CONN_MAX_LIFETIME:-300}"
+
+# JWT Configuration
+export JWT_ACCESS_SECRET="${JWT_ACCESS_SECRET:-devAccessSecretKey123456789}"
+export JWT_ACCESS_TIME_MINUTE="${JWT_ACCESS_TIME_MINUTE:-15}"
+export JWT_REFRESH_SECRET="${JWT_REFRESH_SECRET:-devRefreshSecretKey123456789}"
+export JWT_REFRESH_TIME_HOUR="${JWT_REFRESH_TIME_HOUR:-168}"
+
+# Initial User Configuration
+export START_USER_EMAIL="${START_USER_EMAIL:-gbrayhan@gmail.com}"
+export START_USER_PW="${START_USER_PW:-qweqwe}"
+
+# Optional External Services
 export IMGUR_CLIENT_ID="${IMGUR_CLIENT_ID:-yourImgurClientId}"
-export JWT_ISSUER="${JWT_ISSUER:-aceso}"
-export REFRESH_SECRET_KEY="${REFRESH_SECRET_KEY:-yourRefreshSecretKey}"
-export REFRESH_TOKEN_TTL="${REFRESH_TOKEN_TTL:-10080}"
 export WKHTMLTOPDF_BIN="${WKHTMLTOPDF_BIN:-/usr/local/bin/wkhtmltopdf}"
 
-echo "▶️ Starting the application (logs suppressed)…"
-"$PROJECT_ROOT/$BUILD_NAME" > /dev/null 2>&1 &
+# Legacy JWT Configuration (for backward compatibility)
+export ACCESS_SECRET_KEY="${ACCESS_SECRET_KEY:-${JWT_ACCESS_SECRET}}"
+export ACCESS_TOKEN_TTL="${ACCESS_TOKEN_TTL:-15}"
+export REFRESH_SECRET_KEY="${REFRESH_SECRET_KEY:-${JWT_REFRESH_SECRET}}"
+export REFRESH_TOKEN_TTL="${REFRESH_TOKEN_TTL:-10080}"
+export JWT_ISSUER="${JWT_ISSUER:-aceso}"
+
+echo "▶️ Starting the application (showing logs)…"
+"$PROJECT_ROOT/$BUILD_NAME" &
 APP_PID=$!
 
 until lsof -ti tcp:"$APP_PORT" >/dev/null; do sleep 0.1; done
@@ -59,7 +81,7 @@ echo
 echo "🧪 Running integration tests…"
 trap '' ERR
 set +e
-go test -count=1 ./Test/integration -tags=integration
+go test -count=1 ./Test/integration -tags=integration -v
 TEST_EXIT=$?
 set -e
 trap 'error_handler $LINENO' ERR

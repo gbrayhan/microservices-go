@@ -1,39 +1,30 @@
 package repository
 
 import (
-	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/medicine"
-	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/user"
-	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
+// InitDB initializes the database connection and migrations using the new repository structure
 func InitDB() (*gorm.DB, error) {
-	dbHost := getEnv("DB_HOST", "localhost")
-	dbPort := getEnv("DB_PORT", "5432")
-	dbUser := getEnv("DB_USER", "postgres")
-	dbPass := getEnv("DB_PASS", "")
-	dbName := getEnv("DB_NAME", "postgres")
+	logger := log.New(os.Stdout, "[DB] ", log.LstdFlags)
 
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=America/Mexico_City", dbHost, dbUser, dbPass, dbName, dbPort)
+	repo := NewRepository(nil, logger)
+	repo.SetAuthService(NewAuthService())
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
-	})
+	err := repo.InitDatabase()
 	if err != nil {
-		log.Printf("Error connecting to database: %v", err)
+		logger.Printf("Error initializing database: %v", err)
 		return nil, err
 	}
 
-	sqlDB, err := db.DB()
+	sqlDB, err := repo.DB.DB()
 	if err != nil {
-		log.Printf("Error retrieving sql.DB from gorm.DB: %v", err)
+		logger.Printf("Error retrieving sql.DB from gorm.DB: %v", err)
 		return nil, err
 	}
 
@@ -46,23 +37,11 @@ func InitDB() (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(time.Duration(connMaxLifetime) * time.Second)
 
 	if err = sqlDB.Ping(); err != nil {
-		log.Printf("Error pinging database: %v", err)
+		logger.Printf("Error pinging database: %v", err)
 		return nil, err
 	}
 
-	if err = db.AutoMigrate(&user.User{}, &medicine.Medicine{}); err != nil {
-		log.Printf("Error auto-migrating database schema: %v", err)
-		return nil, err
-	}
-
-	return db, nil
-}
-
-func getEnv(key string, defaultVal string) string {
-	if val, ok := os.LookupEnv(key); ok {
-		return val
-	}
-	return defaultVal
+	return repo.DB, nil
 }
 
 func getEnvAsInt(key string, defaultVal int) int {
