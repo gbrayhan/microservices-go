@@ -4,10 +4,9 @@ import (
 	"errors"
 	"time"
 
-	jwtInfrastructure "github.com/gbrayhan/microservices-go/src/infrastructure/security"
-
 	errorsDomain "github.com/gbrayhan/microservices-go/src/domain/errors"
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/security"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,11 +17,13 @@ type IAuthUseCase interface {
 
 type AuthUseCase struct {
 	userRepository userDomain.IUserService
+	jwtService     security.IJWTService
 }
 
-func NewAuthUseCase(userRepository userDomain.IUserService) IAuthUseCase {
+func NewAuthUseCase(userRepository userDomain.IUserService, jwtService security.IJWTService) IAuthUseCase {
 	return &AuthUseCase{
 		userRepository: userRepository,
+		jwtService:     jwtService,
 	}
 }
 
@@ -48,11 +49,11 @@ func (s *AuthUseCase) Login(user LoginUser) (*SecurityAuthenticatedUser, error) 
 		return &SecurityAuthenticatedUser{}, errorsDomain.NewAppError(errors.New("email or password does not match"), errorsDomain.NotAuthorized)
 	}
 
-	accessTokenClaims, err := jwtInfrastructure.GenerateJWTToken(domainUser.ID, "access")
+	accessTokenClaims, err := s.jwtService.GenerateJWTToken(domainUser.ID, "access")
 	if err != nil {
 		return &SecurityAuthenticatedUser{}, err
 	}
-	refreshTokenClaims, err := jwtInfrastructure.GenerateJWTToken(domainUser.ID, "refresh")
+	refreshTokenClaims, err := s.jwtService.GenerateJWTToken(domainUser.ID, "refresh")
 	if err != nil {
 		return &SecurityAuthenticatedUser{}, err
 	}
@@ -66,7 +67,7 @@ func (s *AuthUseCase) Login(user LoginUser) (*SecurityAuthenticatedUser, error) 
 }
 
 func (s *AuthUseCase) AccessTokenByRefreshToken(refreshToken string) (*SecurityAuthenticatedUser, error) {
-	claimsMap, err := jwtInfrastructure.GetClaimsAndVerifyToken(refreshToken, "refresh")
+	claimsMap, err := s.jwtService.GetClaimsAndVerifyToken(refreshToken, "refresh")
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +77,7 @@ func (s *AuthUseCase) AccessTokenByRefreshToken(refreshToken string) (*SecurityA
 		return nil, err
 	}
 
-	accessTokenClaims, err := jwtInfrastructure.GenerateJWTToken(domainUser.ID, "access")
+	accessTokenClaims, err := s.jwtService.GenerateJWTToken(domainUser.ID, "access")
 	if err != nil {
 		return &SecurityAuthenticatedUser{}, err
 	}

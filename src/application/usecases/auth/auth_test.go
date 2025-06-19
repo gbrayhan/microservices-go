@@ -2,13 +2,13 @@ package auth
 
 import (
 	"errors"
-	"os"
 	"testing"
-
-	jwtInfrastructure "github.com/gbrayhan/microservices-go/src/infrastructure/security"
+	"time"
 
 	errorsDomain "github.com/gbrayhan/microservices-go/src/domain/errors"
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/security"
+	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -37,6 +37,19 @@ func (m *mockUserService) Update(id int, userMap map[string]interface{}) (*userD
 	return nil, nil
 }
 
+type mockJWTService struct {
+	generateTokenFn func(int, string) (*security.AppToken, error)
+	verifyTokenFn   func(string, string) (jwt.MapClaims, error)
+}
+
+func (m *mockJWTService) GenerateJWTToken(userID int, tokenType string) (*security.AppToken, error) {
+	return m.generateTokenFn(userID, tokenType)
+}
+
+func (m *mockJWTService) GetClaimsAndVerifyToken(tokenString string, tokenType string) (jwt.MapClaims, error) {
+	return m.verifyTokenFn(tokenString, tokenType)
+}
+
 func HashPasswordForTest(plain string) (string, error) {
 	hashedBytes, err := bcrypt.GenerateFromPassword([]byte(plain), bcrypt.DefaultCost)
 	if err != nil {
@@ -62,14 +75,10 @@ func TestCheckPasswordHash(t *testing.T) {
 }
 
 func TestAuthUseCase_Login(t *testing.T) {
-	os.Setenv("JWT_ACCESS_SECRET", "test_access_secret")
-	os.Setenv("JWT_ACCESS_TIME_MINUTE", "60")
-	os.Setenv("JWT_REFRESH_SECRET", "test_refresh_secret")
-	os.Setenv("JWT_REFRESH_TIME_HOUR", "24")
-
 	tests := []struct {
 		name                   string
 		mockGetOneByMapFn      func(map[string]interface{}) (*userDomain.User, error)
+		mockGenerateTokenFn    func(int, string) (*security.AppToken, error)
 		inputLogin             LoginUser
 		wantErr                bool
 		wantErrType            string
@@ -81,6 +90,9 @@ func TestAuthUseCase_Login(t *testing.T) {
 			mockGetOneByMapFn: func(m map[string]interface{}) (*userDomain.User, error) {
 				return nil, errors.New("db error")
 			},
+			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
+				return &security.AppToken{Token: "test_token"}, nil
+			},
 			inputLogin: LoginUser{Email: "test@example.com", Password: "123456"},
 			wantErr:    true,
 		},
@@ -88,6 +100,9 @@ func TestAuthUseCase_Login(t *testing.T) {
 			name: "User not found (ID=0)",
 			mockGetOneByMapFn: func(m map[string]interface{}) (*userDomain.User, error) {
 				return &userDomain.User{ID: 0}, nil
+			},
+			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
+				return &security.AppToken{Token: "test_token"}, nil
 			},
 			inputLogin:  LoginUser{Email: "test@example.com", Password: "123456"},
 			wantErr:     true,
@@ -99,6 +114,9 @@ func TestAuthUseCase_Login(t *testing.T) {
 				hashed, _ := HashPasswordForTest("someOtherPass")
 				return &userDomain.User{ID: 10, HashPassword: hashed}, nil
 			},
+			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
+				return &security.AppToken{Token: "test_token"}, nil
+			},
 			inputLogin:        LoginUser{Email: "test@example.com", Password: "wrong"},
 			wantErr:           true,
 			wantErrType:       errorsDomain.NotAuthorized,
@@ -109,6 +127,9 @@ func TestAuthUseCase_Login(t *testing.T) {
 			mockGetOneByMapFn: func(m map[string]interface{}) (*userDomain.User, error) {
 				hashed, _ := HashPasswordForTest("somePass")
 				return &userDomain.User{ID: 10, HashPassword: hashed}, nil
+			},
+			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
+				return nil, errors.New("token generation failed")
 			},
 			inputLogin: LoginUser{Email: "test@example.com", Password: "somePass"},
 			wantErr:    true,
@@ -123,6 +144,12 @@ func TestAuthUseCase_Login(t *testing.T) {
 					HashPassword: hashed,
 				}, nil
 			},
+			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
+				return &security.AppToken{
+					Token:          "test_token_" + tokenType,
+					ExpirationTime: time.Now().Add(time.Hour),
+				}, nil
+			},
 			inputLogin:             LoginUser{Email: "test@example.com", Password: "mySecretPass"},
 			wantErr:                false,
 			wantSuccessAccessToken: true,
@@ -134,11 +161,12 @@ func TestAuthUseCase_Login(t *testing.T) {
 			userRepoMock := &mockUserService{
 				getOneByMapFn: tt.mockGetOneByMapFn,
 			}
-			uc := NewAuthUseCase(userRepoMock)
 
-			if tt.name == "Access token generation fails" {
-				os.Setenv("JWT_ACCESS_TIME_MINUTE", "")
+			jwtMock := &mockJWTService{
+				generateTokenFn: tt.mockGenerateTokenFn,
 			}
+
+			uc := NewAuthUseCase(userRepoMock, jwtMock)
 
 			result, err := uc.Login(tt.inputLogin)
 			if (err != nil) != tt.wantErr {
@@ -161,85 +189,90 @@ func TestAuthUseCase_Login(t *testing.T) {
 					t.Errorf("[%s] expected empty AccessToken, but got a non-empty one", tt.name)
 				}
 			}
-
-			if tt.name == "Access token generation fails" {
-				os.Setenv("JWT_ACCESS_TIME_MINUTE", "60")
-			}
 		})
 	}
 }
 
 func TestAuthUseCase_AccessTokenByRefreshToken(t *testing.T) {
-	os.Setenv("JWT_REFRESH_SECRET", "test_refresh_secret")
-	os.Setenv("JWT_REFRESH_TIME_HOUR", "24")
-	os.Setenv("JWT_ACCESS_SECRET", "test_access_secret")
-	os.Setenv("JWT_ACCESS_TIME_MINUTE", "60")
-
-	validRefresh, _ := jwtInfrastructure.GenerateJWTToken(123, "refresh")
-
 	tests := []struct {
-		name            string
-		refreshToken    string
-		mockGetOneByMap func(map[string]interface{}) (*userDomain.User, error)
-		modifySecretEnv bool
-		wantErr         bool
+		name                string
+		mockVerifyTokenFn   func(string, string) (jwt.MapClaims, error)
+		mockGetOneByMapFn   func(map[string]interface{}) (*userDomain.User, error)
+		mockGenerateTokenFn func(int, string) (*security.AppToken, error)
+		inputToken          string
+		wantErr             bool
+		wantErrType         string
 	}{
 		{
-			name:         "Invalid token string -> claims error",
-			refreshToken: "some.invalid.token",
-			mockGetOneByMap: func(map[string]interface{}) (*userDomain.User, error) {
-				return &userDomain.User{}, nil
+			name: "Invalid token string -> claims error",
+			mockVerifyTokenFn: func(tokenString, tokenType string) (jwt.MapClaims, error) {
+				return nil, errors.New("invalid token")
 			},
-			wantErr: true,
+			inputToken: "invalid_token",
+			wantErr:    true,
 		},
 		{
-			name:         "DB error retrieving user",
-			refreshToken: validRefresh.Token,
-			mockGetOneByMap: func(map[string]interface{}) (*userDomain.User, error) {
+			name: "DB error retrieving user",
+			mockVerifyTokenFn: func(tokenString, tokenType string) (jwt.MapClaims, error) {
+				return jwt.MapClaims{"id": float64(1)}, nil
+			},
+			mockGetOneByMapFn: func(m map[string]interface{}) (*userDomain.User, error) {
 				return nil, errors.New("db error")
 			},
-			wantErr: true,
+			inputToken: "valid_token",
+			wantErr:    true,
 		},
 		{
-			name:         "Access token generation error",
-			refreshToken: validRefresh.Token,
-			mockGetOneByMap: func(map[string]interface{}) (*userDomain.User, error) {
-				return &userDomain.User{ID: 999}, nil
+			name: "OK - valid refresh token",
+			mockVerifyTokenFn: func(tokenString, tokenType string) (jwt.MapClaims, error) {
+				return jwt.MapClaims{
+					"id":  float64(1),
+					"exp": float64(time.Now().Add(time.Hour).Unix()),
+				}, nil
 			},
-			modifySecretEnv: true,
-			wantErr:         true,
-		},
-		{
-			name:         "OK - valid refresh token and user found",
-			refreshToken: validRefresh.Token,
-			mockGetOneByMap: func(map[string]interface{}) (*userDomain.User, error) {
-				return &userDomain.User{ID: 999}, nil
+			mockGetOneByMapFn: func(m map[string]interface{}) (*userDomain.User, error) {
+				return &userDomain.User{ID: 1}, nil
 			},
-			wantErr: false,
+			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
+				return &security.AppToken{
+					Token:          "new_access_token",
+					ExpirationTime: time.Now().Add(time.Hour),
+				}, nil
+			},
+			inputToken: "valid_refresh_token",
+			wantErr:    false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			userRepoMock := &mockUserService{
-				getOneByMapFn: tt.mockGetOneByMap,
-			}
-			uc := NewAuthUseCase(userRepoMock)
-
-			if tt.modifySecretEnv {
-				os.Setenv("JWT_ACCESS_SECRET", "")
+				getOneByMapFn: tt.mockGetOneByMapFn,
 			}
 
-			resp, err := uc.AccessTokenByRefreshToken(tt.refreshToken)
+			jwtMock := &mockJWTService{
+				verifyTokenFn:   tt.mockVerifyTokenFn,
+				generateTokenFn: tt.mockGenerateTokenFn,
+			}
+
+			uc := NewAuthUseCase(userRepoMock, jwtMock)
+
+			result, err := uc.AccessTokenByRefreshToken(tt.inputToken)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("[%s] got err = %v, wantErr = %v", tt.name, err, tt.wantErr)
-			}
-			if !tt.wantErr && resp.Security.JWTAccessToken == "" {
-				t.Errorf("[%s] expected a new AccessToken, got empty", tt.name)
+				t.Fatalf("[%s] got err = %v, wantErr = %v", tt.name, err, tt.wantErr)
 			}
 
-			if tt.modifySecretEnv {
-				os.Setenv("JWT_ACCESS_SECRET", "test_access_secret")
+			if tt.wantErrType != "" && err != nil {
+				appErr, ok := err.(*errorsDomain.AppError)
+				if !ok || appErr.Type != tt.wantErrType {
+					t.Errorf("[%s] expected error type = %s, got = %v", tt.name, tt.wantErrType, err)
+				}
+			}
+
+			if !tt.wantErr {
+				if result.Security.JWTAccessToken == "" {
+					t.Errorf("[%s] expected a non-empty AccessToken, got empty", tt.name)
+				}
 			}
 		})
 	}

@@ -202,30 +202,30 @@ func NewAppError(err error, errType string) *AppError {
 }
 
 func NewAppErrorWithType(errType string) *AppError {
-	var err error
+	return &AppError{
+		Err:  errors.New(getErrorMessage(errType)),
+		Type: errType,
+	}
+}
 
+func getErrorMessage(errType string) string {
 	switch errType {
 	case NotFound:
-		err = errors.New(notFoundMessage)
+		return notFoundMessage
 	case ValidationError:
-		err = errors.New(validationErrorMessage)
+		return validationErrorMessage
 	case ResourceAlreadyExists:
-		err = errors.New(alreadyExistsErrorMessage)
+		return alreadyExistsErrorMessage
 	case RepositoryError:
-		err = errors.New(repositoryErrorMessage)
+		return repositoryErrorMessage
 	case NotAuthenticated:
-		err = errors.New(notAuthenticatedErrorMessage)
-	case NotAuthorized:
-		err = errors.New(notAuthorizedErrorMessage)
+		return notAuthenticatedErrorMessage
 	case TokenGeneratorError:
-		err = errors.New(tokenGeneratorErrorMessage)
+		return tokenGeneratorErrorMessage
+	case NotAuthorized:
+		return notAuthorizedErrorMessage
 	default:
-		err = errors.New(unknownErrorMessage)
-	}
-
-	return &AppError{
-		Err:  err,
-		Type: errType,
+		return unknownErrorMessage
 	}
 }
 
@@ -234,12 +234,10 @@ func (appErr *AppError) Error() string {
 }
 
 func GenerateNewUUID() (string, error) {
-	uuid := make([]byte, 16)
-	if _, err := rand.Read(uuid); err != nil {
+	b := make([]byte, 16)
+	_, err := rand.Read(b)
+	if err != nil {
 		return "", err
 	}
-	uuid[6] = (uuid[6] & 0x0f) | 0x40
-	uuid[8] = (uuid[8] & 0x3f) | 0x80
-
-	return fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:]), nil
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:]), nil
 }

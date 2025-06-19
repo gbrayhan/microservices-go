@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
-	"github.com/gbrayhan/microservices-go/src/infrastructure/repository"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/config"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/di"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/middlewares"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/routes"
 	"github.com/gin-contrib/cors"
@@ -15,31 +15,48 @@ import (
 )
 
 func main() {
-	router := gin.Default()
-	router.Use(cors.Default())
-	DB, err := repository.InitDB()
+	// Load configuration
+	cfg := config.LoadConfig()
+
+	// Initialize application context with dependencies
+	appContext, err := di.SetupDependencies()
 	if err != nil {
-		panic(fmt.Errorf("error initializing the database: %w", err))
+		panic(fmt.Errorf("error initializing application context: %w", err))
 	}
 
+	// Setup router
+	router := setupRouter(appContext)
+
+	// Setup server
+	server := setupServer(router, cfg.Server.Port)
+
+	// Start server
+	fmt.Printf("Server running at http://localhost:%s\n", cfg.Server.Port)
+	if err := server.ListenAndServe(); err != nil {
+		panic(strings.ToLower(err.Error()))
+	}
+}
+
+func setupRouter(appContext *di.ApplicationContext) *gin.Engine {
+	router := gin.Default()
+	router.Use(cors.Default())
+
+	// Add middlewares
 	router.Use(middlewares.ErrorHandler())
 	router.Use(middlewares.GinBodyLogMiddleware)
 	router.Use(middlewares.CommonHeaders)
-	routes.ApplicationRouter(router, DB)
 
-	port := os.Getenv("SERVER_PORT")
-	if port == "" {
-		port = "8080"
-	}
-	s := &http.Server{
+	// Setup routes
+	routes.ApplicationRouter(router, appContext)
+	return router
+}
+
+func setupServer(router *gin.Engine, port string) *http.Server {
+	return &http.Server{
 		Addr:           ":" + port,
 		Handler:        router,
 		ReadTimeout:    18000 * time.Second,
 		WriteTimeout:   18000 * time.Second,
 		MaxHeaderBytes: 1 << 20,
-	}
-	fmt.Printf("Server running at http://localhost:%s\n", port)
-	if err := s.ListenAndServe(); err != nil {
-		panic(strings.ToLower(err.Error()))
 	}
 }
