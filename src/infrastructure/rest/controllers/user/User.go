@@ -2,12 +2,13 @@ package user
 
 import (
 	"errors"
+	"net/http"
+	"strconv"
+
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/controllers"
 	"github.com/gin-gonic/gin"
-	"net/http"
-	"strconv"
 )
 
 type IUserController interface {

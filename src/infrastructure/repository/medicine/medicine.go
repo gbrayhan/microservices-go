@@ -3,6 +3,7 @@ package medicine
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/gbrayhan/microservices-go/src/domain"
 
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"

@@ -2,11 +2,12 @@ package auth
 
 import (
 	"errors"
+	jwtInfrastructure "github.com/gbrayhan/microservices-go/src/infrastructure/security"
+	"time"
+
 	errorsDomain "github.com/gbrayhan/microservices-go/src/domain/errors"
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
-	jwtInfrastructure "github.com/gbrayhan/microservices-go/src/infrastructure/security/jwt"
 	"golang.org/x/crypto/bcrypt"
-	"time"
 )
 
 type IAuthUseCase interface {

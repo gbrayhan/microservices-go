@@ -1,0 +1,36 @@
+pre-commit:
+  parallel: true
+  commands:
+    gofmt:
+      glob: "**/*.go"
+      run: go fmt ./...
+
+    go-imports:
+      glob: "**/*.go"
+      run: goimports -w .
+
+    go-mod-tidy:
+      run: go mod tidy -v
+      always_run: true
+
+    go-build:
+      run: go build ./...
+
+    golangci-lint:
+      glob: "**/*.go"
+      run: golangci-lint run --timeout=3m --out-format=colored-line-number
+
+    staticcheck:
+      glob: "**/*.go"
+      run: staticcheck ./...
+
+    go-vet:
+      glob: "**/*.go"
+      run: go vet ./...
+
+    unit-tests:
+      glob: "**/*_test.go"
+      run: go test -count=1 -timeout=30s ./...
+
+    trivy-scan:
+      run: trivy fs . --scanners vuln,misconfig,secret --exit-code 1 --skip-dirs .git,vendor --quiet

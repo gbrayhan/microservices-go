@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/cucumber/godog"
 	"io"
 	"log"
 	"math/rand"
@@ -19,6 +18,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/cucumber/godog"
 )
 
 var (

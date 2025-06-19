@@ -4,9 +4,10 @@
 package integration
 
 import (
-	"github.com/cucumber/godog"
 	"os"
 	"testing"
+
+	"github.com/cucumber/godog"
 )
 
 func TestIntegration(t *testing.T) {

@@ -2,15 +2,16 @@ package repository
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"time"
+
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/medicine"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/user"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
-	"os"
-	"strconv"
-	"time"
 )
 
 func InitDB() (*gorm.DB, error) {

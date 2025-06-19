@@ -17,15 +17,15 @@ func AuthJWTMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
 		accessSecret := os.Getenv("JWT_ACCESS_SECRET")
 		if accessSecret == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT_ACCESS_SECRET not configured"})
 			c.Abort()
 			return
 		}
-		if strings.HasPrefix(tokenString, "Bearer ") {
-			tokenString = strings.TrimPrefix(tokenString, "Bearer ")
-		}
+
+		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 		claims := jwt.MapClaims{}
 		_, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (any, error) {
 			return []byte(accessSecret), nil
@@ -35,8 +35,9 @@ func AuthJWTMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
 		if exp, ok := claims["exp"].(float64); ok {
-			if int64(exp) < (jwt.TimeFunc().Unix()) {
+			if int64(exp) < jwt.TimeFunc().Unix() {
 				c.JSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
 				c.Abort()
 				return
@@ -46,6 +47,7 @@ func AuthJWTMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
 		if t, ok := claims["type"].(string); ok {
 			if t != "access" {
 				c.JSON(http.StatusForbidden, gin.H{"error": "Token type mismatch"})
@@ -57,6 +59,7 @@ func AuthJWTMiddleware() gin.HandlerFunc {
 			c.Abort()
 			return
 		}
+
 		c.Next()
 	}
 }

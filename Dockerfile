@@ -12,9 +12,11 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 FROM gcr.io/distroless/static:nonroot
 
 WORKDIR /srv/go-app
-
 COPY --from=builder /srv/go-app/microservice .
 
 USER nonroot:nonroot
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s \
+  CMD ["/srv/go-app/microservice","health"]
 
 CMD ["./microservice"]

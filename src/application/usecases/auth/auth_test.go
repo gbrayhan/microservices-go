@@ -2,12 +2,13 @@ package auth
 
 import (
 	"errors"
-	errorsDomain "github.com/gbrayhan/microservices-go/src/domain/errors"
-	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
-	jwtInfrastructure "github.com/gbrayhan/microservices-go/src/infrastructure/security/jwt"
-	"golang.org/x/crypto/bcrypt"
+	jwtInfrastructure "github.com/gbrayhan/microservices-go/src/infrastructure/security"
 	"os"
 	"testing"
+
+	errorsDomain "github.com/gbrayhan/microservices-go/src/domain/errors"
+	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type mockUserService struct {

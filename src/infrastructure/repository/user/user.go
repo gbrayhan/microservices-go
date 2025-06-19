@@ -3,6 +3,7 @@ package user
 import (
 	"encoding/json"
 	"fmt"
+
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/utils"

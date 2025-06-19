@@ -1,11 +1,12 @@
 package auth
 
 import (
+	"net/http"
+
 	useCaseAuth "github.com/gbrayhan/microservices-go/src/application/usecases/auth"
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/controllers"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type IAuthController interface {
