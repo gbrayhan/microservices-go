@@ -10,6 +10,23 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 )
 
+const (
+	Access  = "access"
+	Refresh = "refresh"
+)
+
+type AppToken struct {
+	Token          string    `json:"token"`
+	TokenType      string    `json:"type"`
+	ExpirationTime time.Time `json:"expirationTime"`
+}
+
+type Claims struct {
+	ID   int    `json:"id"`
+	Type string `json:"type"`
+	jwt.RegisteredClaims
+}
+
 // IJWTService defines the interface for JWT operations
 type IJWTService interface {
 	GenerateJWTToken(userID int, tokenType string) (*AppToken, error)
@@ -86,8 +103,11 @@ func (s *JWTService) GetClaimsAndVerifyToken(tokenString string, tokenType strin
 	}
 
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, domainErrors.NewAppError(fmt.Errorf("unexpected signing method: %v", token.Header["alg"]), domainErrors.NotAuthenticated)
+		if token.Method.Alg() != jwt.SigningMethodHS256.Alg() {
+			return nil, domainErrors.NewAppError(
+				fmt.Errorf("unexpected signing method: %v", token.Header["alg"]),
+				domainErrors.NotAuthenticated,
+			)
 		}
 		return []byte(secretKey), nil
 	})
@@ -96,15 +116,17 @@ func (s *JWTService) GetClaimsAndVerifyToken(tokenString string, tokenType strin
 		return nil, err
 	}
 
-	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		if claims["type"] != tokenType {
-			return nil, domainErrors.NewAppError(errors.New("invalid token type"), domainErrors.NotAuthenticated)
-		}
-		var timeExpire = claims["exp"].(float64)
-		if time.Now().Unix() > int64(timeExpire) {
-			return nil, domainErrors.NewAppError(errors.New("token expired"), domainErrors.NotAuthenticated)
-		}
-		return claims, nil
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		return nil, errors.New("invalid claims type or token not valid")
 	}
-	return nil, err
+
+	if claims["type"] != tokenType {
+		return nil, domainErrors.NewAppError(errors.New("invalid token type"), domainErrors.NotAuthenticated)
+	}
+	var timeExpire = claims["exp"].(float64)
+	if time.Now().Unix() > int64(timeExpire) {
+		return nil, domainErrors.NewAppError(errors.New("token expired"), domainErrors.NotAuthenticated)
+	}
+	return claims, nil
 }
