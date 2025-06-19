@@ -2,8 +2,9 @@ package auth
 
 import (
 	"errors"
-	jwtInfrastructure "github.com/gbrayhan/microservices-go/src/infrastructure/security"
 	"time"
+
+	jwtInfrastructure "github.com/gbrayhan/microservices-go/src/infrastructure/security"
 
 	errorsDomain "github.com/gbrayhan/microservices-go/src/domain/errors"
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
