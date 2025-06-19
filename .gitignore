@@ -12,4 +12,7 @@ config.json
 
 microservices-go
 
+coverage.html
+coverage.out
+coverage_filtered.out
 

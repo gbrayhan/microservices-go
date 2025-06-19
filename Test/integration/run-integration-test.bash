@@ -11,7 +11,7 @@ error_handler() {
   exit "$exit_code"
 }
 
-BUILD_NAME="dev-aceso"
+BUILD_NAME="app-microservice"
 : "${APP_PORT:=8080}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
