@@ -12,7 +12,6 @@ pre-commit:
     go-mod-tidy:
       run: go mod tidy -v
 
-
     go-build:
       run: go build ./...
 
