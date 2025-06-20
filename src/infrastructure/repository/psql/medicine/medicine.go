@@ -2,12 +2,7 @@ package medicine
 
 import (
 	"encoding/json"
-	"fmt"
-	"reflect"
-	"strings"
 	"time"
-
-	"github.com/gbrayhan/microservices-go/src/domain"
 
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
@@ -19,10 +14,8 @@ import (
 // MedicineRepositoryInterface defines the interface for medicine repository operations
 type MedicineRepositoryInterface interface {
 	GetAll() (*[]domainMedicine.Medicine, error)
-	GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error)
 	GetByID(id int) (*domainMedicine.Medicine, error)
 	Create(medicine *domainMedicine.Medicine) (*domainMedicine.Medicine, error)
-	GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error)
 	Delete(id int) error
 	Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error)
 }
@@ -74,64 +67,6 @@ func NewMedicineRepository(DB *gorm.DB, loggerInstance *logger.Logger) MedicineR
 	}
 }
 
-func (r *Repository) GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error) {
-	var medicines []Medicine
-	var total int64
-	offset := (page - 1) * limit
-
-	var searchColumns = []string{"name", "description", "ean_code", "laboratory"}
-
-	countResult := make(chan error)
-	go func() {
-		err := r.DB.Model(&Medicine{}).
-			Scopes(ApplyFilters(ColumnsMedicineMapping, filters, dateRangeFilters, searchText, searchColumns)).
-			Count(&total).Error
-		countResult <- err
-	}()
-
-	queryResult := make(chan error)
-	go func() {
-		query, err := ComplementSearch((*gorm.DB)(nil), sortBy, sortDirection, limit, offset, filters, dateRangeFilters, searchText, searchColumns, ColumnsMedicineMapping)
-		if err != nil {
-			queryResult <- err
-			return
-		}
-		if query == nil {
-			query = r.DB
-		} else {
-			query = r.DB.Scopes(ApplyFilters(ColumnsMedicineMapping, filters, dateRangeFilters, searchText, searchColumns))
-		}
-
-		err = query.Find(&medicines).Error
-		queryResult <- err
-	}()
-
-	var countErr, queryErr error
-	for i := 0; i < 2; i++ {
-		select {
-		case err := <-countResult:
-			countErr = err
-		case err := <-queryResult:
-			queryErr = err
-		}
-	}
-
-	if countErr != nil {
-		r.Logger.Error("Error counting medicines", zap.Error(countErr))
-		return &domainMedicine.DataMedicine{}, countErr
-	}
-	if queryErr != nil {
-		r.Logger.Error("Error querying medicines", zap.Error(queryErr))
-		return &domainMedicine.DataMedicine{}, queryErr
-	}
-
-	r.Logger.Info("Successfully retrieved medicines data", zap.Int64("total", total), zap.Int("count", len(medicines)))
-	return &domainMedicine.DataMedicine{
-		Data:  arrayToDomainMapper(&medicines),
-		Total: total,
-	}, nil
-}
-
 func (r *Repository) Create(newMedicine *domainMedicine.Medicine) (*domainMedicine.Medicine, error) {
 	medicine := &Medicine{
 		Name:        newMedicine.Name,
@@ -172,23 +107,6 @@ func (r *Repository) GetByID(id int) (*domainMedicine.Medicine, error) {
 		return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
 	r.Logger.Info("Successfully retrieved medicine by ID", zap.Int("id", id))
-	return medicine.toDomainMapper(), nil
-}
-
-func (r *Repository) GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error) {
-	var medicine Medicine
-	tx := r.DB.Limit(1)
-	for key, value := range medicineMap {
-		if !IsZeroValue(value) {
-			tx = tx.Where(fmt.Sprintf("%s = ?", key), value)
-		}
-	}
-	err := tx.Find(&medicine).Error
-	if err != nil {
-		r.Logger.Error("Error getting medicine by map", zap.Error(err), zap.Any("medicineMap", medicineMap))
-		return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
-	}
-	r.Logger.Info("Successfully retrieved medicine by map", zap.Any("medicineMap", medicineMap))
 	return medicine.toDomainMapper(), nil
 }
 
@@ -268,94 +186,3 @@ func arrayToDomainMapper(medicines *[]Medicine) *[]domainMedicine.Medicine {
 }
 
 // IsZeroValue checks if a value is the zero value of its type
-func IsZeroValue(value any) bool {
-	return reflect.DeepEqual(value, reflect.Zero(reflect.TypeOf(value)).Interface())
-}
-
-// ComplementSearch function moved from Utils.go
-func ComplementSearch(r *gorm.DB, sortBy string, sortDirection string, limit int64, offset int64, filters map[string][]string, dateRangeFilters []domain.DateRangeFilter, searchText string, searchColumns []string, columnMapping map[string]string) (query *gorm.DB, err error) {
-	if r == nil {
-		return nil, nil
-	}
-
-	query = r
-	if sortBy != "" {
-		orderClause := fmt.Sprintf("%s %s", columnMapping[sortBy], sortDirection)
-		query = query.Order(orderClause).Limit(int(limit)).Offset(int(offset))
-	} else {
-		query = query.Limit(int(limit)).Offset(int(offset))
-	}
-
-	if len(filters) > 0 {
-		filters = UpdateFilterKeys(filters, columnMapping)
-		for key, values := range filters {
-			query = query.Where(fmt.Sprintf("%s IN (?)", key), values)
-		}
-	}
-
-	if len(dateRangeFilters) > 0 {
-		for i := range dateRangeFilters {
-			if newFieldName, ok := columnMapping[dateRangeFilters[i].Field]; ok {
-				dateRangeFilters[i].Field = newFieldName
-			}
-		}
-		for _, filter := range dateRangeFilters {
-			query = query.Where(fmt.Sprintf("%s BETWEEN ? AND ?", filter.Field), filter.Start, filter.End)
-		}
-	}
-
-	if searchText != "" {
-		var orConditions []string
-		for _, column := range searchColumns {
-			orConditions = append(orConditions, fmt.Sprintf("%s LIKE '%%%s%%'", column, searchText))
-		}
-		searchQuery := fmt.Sprintf("AND (%s)", strings.Join(orConditions, " OR "))
-		query = query.Where(fmt.Sprintf("1=1 %s", searchQuery))
-	}
-	return
-}
-
-// UpdateFilterKeys function moved from Utils.go
-func UpdateFilterKeys(filters map[string][]string, columnMapping map[string]string) map[string][]string {
-	updatedFilters := make(map[string][]string)
-	for key, value := range filters {
-		if updatedKey, ok := columnMapping[key]; ok {
-			updatedFilters[updatedKey] = value
-		} else {
-			updatedFilters[key] = value
-		}
-	}
-	return updatedFilters
-}
-
-// ApplyFilters function moved from Utils.go
-func ApplyFilters(columnMapping map[string]string, filters map[string][]string, dateRangeFilters []domain.DateRangeFilter, searchText string, searchColumns []string) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		query := db
-		if len(filters) > 0 {
-			filters = UpdateFilterKeys(filters, columnMapping)
-			for key, values := range filters {
-				query = query.Where(fmt.Sprintf("%s IN (?)", key), values)
-			}
-		}
-		if len(dateRangeFilters) > 0 {
-			for _, filter := range dateRangeFilters {
-				if newFieldName, ok := columnMapping[filter.Field]; ok {
-					filter.Field = newFieldName
-				}
-				query = query.Where(fmt.Sprintf("%s BETWEEN ? AND ?", filter.Field), filter.Start, filter.End)
-			}
-		}
-		if searchText != "" && len(searchColumns) > 0 {
-			var orConditions []string
-			var args []interface{}
-			for _, column := range searchColumns {
-				orConditions = append(orConditions, fmt.Sprintf("%s LIKE ?", column))
-				args = append(args, "%"+searchText+"%")
-			}
-			searchQuery := fmt.Sprintf("(%s)", strings.Join(orConditions, " OR "))
-			query = query.Where(searchQuery, args...)
-		}
-		return query
-	}
-}

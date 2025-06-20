@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/gbrayhan/microservices-go/src/domain"
 	medicineDomain "github.com/gbrayhan/microservices-go/src/domain/medicine"
 	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/stretchr/testify/assert"
@@ -98,111 +97,6 @@ func TestArrayToDomainMapper(t *testing.T) {
 	assert.Equal(t, medicines[1].ID, (*domainMedicines)[1].ID)
 }
 
-func TestIsZeroValue(t *testing.T) {
-	// Test zero values
-	assert.True(t, IsZeroValue(0))
-	assert.True(t, IsZeroValue(""))
-	assert.True(t, IsZeroValue(false))
-	assert.True(t, IsZeroValue(0.0))
-	assert.True(t, IsZeroValue(uint(0)))
-
-	// Test non-zero values
-	assert.False(t, IsZeroValue(1))
-	assert.False(t, IsZeroValue("test"))
-	assert.False(t, IsZeroValue(true))
-	assert.False(t, IsZeroValue(1.5))
-	assert.False(t, IsZeroValue(uint(1)))
-	assert.False(t, IsZeroValue([]int{1, 2, 3}))
-
-	// Test with nil - this should be handled carefully
-	// We'll skip testing nil since it causes a panic in reflect.Zero
-}
-
-func TestComplementSearch(t *testing.T) {
-	t.Skip("Skipping integration test - uses real database")
-
-	// Test with nil DB
-	query, err := ComplementSearch(nil, "name", "ASC", 10, 0, nil, nil, "", nil, ColumnsMedicineMapping)
-	assert.NoError(t, err)
-	assert.Nil(t, query)
-
-	// Test with valid parameters using in-memory SQLite for testing
-	db, err := gorm.Open(postgres.Open(""), &gorm.Config{})
-	require.NoError(t, err)
-
-	// Auto migrate the medicine table
-	err = db.AutoMigrate(&Medicine{})
-	require.NoError(t, err)
-
-	query, err = ComplementSearch(db, "name", "ASC", 10, 0, nil, nil, "", nil, ColumnsMedicineMapping)
-	assert.NoError(t, err)
-	assert.NotNil(t, query)
-
-	// Test with filters
-	filters := map[string][]string{"name": {"test"}}
-	query, err = ComplementSearch(db, "name", "ASC", 10, 0, filters, nil, "", nil, ColumnsMedicineMapping)
-	assert.NoError(t, err)
-	assert.NotNil(t, query)
-
-	// Test with date range filters
-	dateFilters := []domain.DateRangeFilter{
-		{Field: "createdAt", Start: "2023-01-01", End: "2023-12-31"},
-	}
-	query, err = ComplementSearch(db, "name", "ASC", 10, 0, nil, dateFilters, "", nil, ColumnsMedicineMapping)
-	assert.NoError(t, err)
-	assert.NotNil(t, query)
-
-	// Test with search text
-	query, err = ComplementSearch(db, "name", "ASC", 10, 0, nil, nil, "test", []string{"name"}, ColumnsMedicineMapping)
-	assert.NoError(t, err)
-	assert.NotNil(t, query)
-
-	// Test with invalid sort order
-	query, err = ComplementSearch(db, "name", "INVALID", 10, 0, nil, nil, "", nil, ColumnsMedicineMapping)
-	assert.NoError(t, err)
-	assert.NotNil(t, query)
-}
-
-func TestUpdateFilterKeys(t *testing.T) {
-	filters := map[string][]string{
-		"name":        {"test"},
-		"description": {"desc"},
-		"unknown":     {"value"},
-	}
-
-	updated := UpdateFilterKeys(filters, ColumnsMedicineMapping)
-
-	assert.Equal(t, "test", updated["name"][0])
-	assert.Equal(t, "desc", updated["description"][0])
-	assert.Equal(t, "value", updated["unknown"][0])
-}
-
-func TestApplyFilters(t *testing.T) {
-	// Test with no filters
-	filterFunc := ApplyFilters(ColumnsMedicineMapping, nil, nil, "", nil)
-	assert.NotNil(t, filterFunc)
-
-	// Test with filters
-	filters := map[string][]string{"name": {"test"}}
-	filterFunc = ApplyFilters(ColumnsMedicineMapping, filters, nil, "", nil)
-	assert.NotNil(t, filterFunc)
-
-	// Test with date range filters
-	dateFilters := []domain.DateRangeFilter{
-		{Field: "createdAt", Start: "2023-01-01", End: "2023-12-31"},
-	}
-	filterFunc = ApplyFilters(ColumnsMedicineMapping, nil, dateFilters, "", nil)
-	assert.NotNil(t, filterFunc)
-
-	// Test with search text
-	filterFunc = ApplyFilters(ColumnsMedicineMapping, nil, nil, "test", []string{"name"})
-	assert.NotNil(t, filterFunc)
-
-	// Test with all filters combined
-	filterFunc = ApplyFilters(ColumnsMedicineMapping, filters, dateFilters, "test", []string{"name"})
-	assert.NotNil(t, filterFunc)
-}
-
 // Integration-style tests using in-memory SQLite database
 func TestRepository_GetAll(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
@@ -255,21 +149,6 @@ func TestRepository_Create(t *testing.T) {
 	assert.Equal(t, "New Medicine", medicine.Name)
 }
 
-func TestRepository_GetByMap(t *testing.T) {
-	db, mock, cleanup := setupMockDB(t)
-	defer cleanup()
-	logger := setupLogger(t)
-	repo := NewMedicineRepository(db, logger)
-	rows := sqlmock.NewRows([]string{"id", "name", "description", "ean_code", "laboratory"}).
-		AddRow(1, "Medicine 1", "Description 1", "1234567890123", "Lab 1")
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "medicines" WHERE name = $1 LIMIT $2`)).
-		WithArgs("Medicine 1", 1).WillReturnRows(rows)
-	medicine, err := repo.GetByMap(map[string]any{"name": "Medicine 1"})
-	assert.NoError(t, err)
-	assert.NotNil(t, medicine)
-	assert.Equal(t, "Medicine 1", medicine.Name)
-}
-
 func TestRepository_Update(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
@@ -300,52 +179,6 @@ func TestRepository_Delete(t *testing.T) {
 	mock.ExpectCommit()
 	err := repo.Delete(1)
 	assert.NoError(t, err)
-}
-
-func TestRepository_GetData(t *testing.T) {
-	db, mock, cleanup := setupMockDB(t)
-	defer cleanup()
-	mock.MatchExpectationsInOrder(false)
-	logger := setupLogger(t)
-	repo := NewMedicineRepository(db, logger)
-
-	// Mock count query
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "medicines"`)).
-		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
-
-	// Mock data query
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "medicines"`)).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "description", "ean_code", "laboratory"}).
-			AddRow(1, "Medicine 1", "Description 1", "1234567890123", "Lab 1").
-			AddRow(2, "Medicine 2", "Description 2", "1234567890124", "Lab 2"))
-
-	result, err := repo.GetData(1, 10, "name", "ASC", nil, "", nil)
-	assert.NoError(t, err)
-	assert.NotNil(t, result)
-	assert.Equal(t, int64(2), result.Total)
-	assert.Len(t, *result.Data, 2)
-}
-
-func TestRepository_ErrorCases(t *testing.T) {
-	db, mock, cleanup := setupMockDB(t)
-	defer cleanup()
-	logger := setupLogger(t)
-	repo := NewMedicineRepository(db, logger)
-
-	// Test GetByID with not found
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "medicines" WHERE id = $1 ORDER BY "medicines"."id" LIMIT $2`)).
-		WithArgs(999, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name", "description", "ean_code", "laboratory"}))
-	_, err := repo.GetByID(999)
-	assert.Error(t, err)
-	// Puede ser nil o un struct vacío, pero no debe causar panic
-
-	// Test Delete with not found
-	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "medicines" WHERE "medicines"."id" = $1`)).
-		WithArgs(999).WillReturnResult(sqlmock.NewResult(0, 0))
-	mock.ExpectCommit()
-	err = repo.Delete(999)
-	assert.Error(t, err)
 }
 
 func TestColumnsMedicineMapping(t *testing.T) {

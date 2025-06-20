@@ -13,7 +13,6 @@ func MedicineRoutes(router *gin.RouterGroup, controller medicine.IMedicineContro
 		med.GET("/", controller.GetAllMedicines)
 		med.POST("/", controller.NewMedicine)
 		med.GET("/:id", controller.GetMedicinesByID)
-		med.POST("/data", controller.GetDataMedicines)
 		med.PUT("/:id", controller.UpdateMedicine)
 		med.DELETE("/:id", controller.DeleteMedicine)
 	}

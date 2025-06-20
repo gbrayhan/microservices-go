@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gbrayhan/microservices-go/src/domain"
 	domainError "github.com/gbrayhan/microservices-go/src/domain/errors"
 	medicineDomain "github.com/gbrayhan/microservices-go/src/domain/medicine"
 	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
@@ -55,7 +54,6 @@ type PaginationResultMedicine struct {
 type IMedicineController interface {
 	NewMedicine(ctx *gin.Context)
 	GetAllMedicines(ctx *gin.Context)
-	GetDataMedicines(ctx *gin.Context)
 	GetMedicinesByID(ctx *gin.Context)
 	UpdateMedicine(ctx *gin.Context)
 	DeleteMedicine(ctx *gin.Context)
@@ -107,47 +105,6 @@ func (c *Controller) GetAllMedicines(ctx *gin.Context) {
 	}
 	c.Logger.Info("Successfully retrieved all medicines", zap.Int("count", len(*medicines)))
 	ctx.JSON(http.StatusOK, arrayDomainToResponseMapper(medicines))
-}
-
-func (c *Controller) GetDataMedicines(ctx *gin.Context) {
-	c.Logger.Info("Getting medicine data")
-	var request DataMedicineRequest
-	if err := controllers.BindJSON(ctx, &request); err != nil {
-		c.Logger.Error("Error binding JSON for medicine data", zap.Error(err))
-		appError := domainError.NewAppError(err, domainError.ValidationError)
-		_ = ctx.Error(appError)
-		return
-	}
-	var dateRangeFiltersDomain []domain.DateRangeFilter
-	for _, f := range request.FieldsDateRange {
-		dateRangeFiltersDomain = append(dateRangeFiltersDomain, domain.DateRangeFilter{
-			Field: f.Field, Start: f.StartDate, End: f.EndDate,
-		})
-	}
-	result, err := c.medicineService.GetData(
-		request.Page, request.Limit,
-		request.SorBy.Field, request.SorBy.Direction,
-		request.Filters, request.GlobalSearch,
-		dateRangeFiltersDomain,
-	)
-	if err != nil {
-		c.Logger.Error("Error getting medicine data", zap.Error(err))
-		appError := domainError.NewAppErrorWithType(domainError.UnknownError)
-		_ = ctx.Error(appError)
-		return
-	}
-	numPages, nextCursor, prevCursor := controllers.PaginationValues(request.Limit, request.Page, result.Total)
-	resp := PaginationResultMedicine{
-		Data:       arrayDomainToResponseMapper(result.Data),
-		Total:      result.Total,
-		Limit:      request.Limit,
-		Current:    request.Page,
-		NextCursor: nextCursor,
-		PrevCursor: prevCursor,
-		NumPages:   numPages,
-	}
-	c.Logger.Info("Successfully retrieved medicine data", zap.Int64("total", result.Total), zap.Int("count", len(*result.Data)))
-	ctx.JSON(http.StatusOK, resp)
 }
 
 func (c *Controller) GetMedicinesByID(ctx *gin.Context) {

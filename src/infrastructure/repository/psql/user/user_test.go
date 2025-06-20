@@ -83,13 +83,6 @@ func TestArrayToDomainMapper(t *testing.T) {
 	assert.Equal(t, "A", (*d)[0].UserName)
 }
 
-func TestIsZeroValue(t *testing.T) {
-	assert.True(t, IsZeroValue(0))
-	assert.True(t, IsZeroValue(""))
-	assert.False(t, IsZeroValue(1))
-	assert.False(t, IsZeroValue("a"))
-}
-
 func TestRepository_GetAll(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
@@ -167,6 +160,32 @@ func TestRepository_Delete(t *testing.T) {
 	mock.ExpectCommit()
 	err = repo.Delete(2)
 	assert.Error(t, err)
+}
+
+func TestRepository_GetByEmail(t *testing.T) {
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
+	logger := setupLogger(t)
+	repo := NewUserRepository(db, logger)
+
+	email := "test@example.com"
+	rows := sqlmock.NewRows([]string{"id", "user_name", "email", "first_name", "last_name", "status", "hash_password"}).
+		AddRow(1, "user1", email, "A", "B", true, "hash1")
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE email = $1 ORDER BY "users"."id" LIMIT $2`)).
+		WithArgs(email, 1).WillReturnRows(rows)
+	user, err := repo.GetByEmail(email)
+	assert.NoError(t, err)
+	assert.NotNil(t, user)
+	assert.Equal(t, email, user.Email)
+
+	// Not found
+	emailNotFound := "notfound@example.com"
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE email = $1 ORDER BY "users"."id" LIMIT $2`)).
+		WithArgs(emailNotFound, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "user_name", "email", "first_name", "last_name", "status", "hash_password"}))
+	user, err = repo.GetByEmail(emailNotFound)
+	assert.Error(t, err)
+	assert.NotNil(t, user)
+	assert.Equal(t, 0, user.ID) // Should be zero value
 }
 
 // Los siguientes tests requieren refactor para usar sqlmock o deben moverse a integración:

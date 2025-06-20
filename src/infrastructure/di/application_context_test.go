@@ -34,19 +34,19 @@ func (m *MockUserRepository) Create(user *domainUser.User) (*domainUser.User, er
 	return args.Get(0).(*domainUser.User), args.Error(1)
 }
 
-func (m *MockUserRepository) GetOneByMap(userMap map[string]interface{}) (*domainUser.User, error) {
-	args := m.Called(userMap)
-	return args.Get(0).(*domainUser.User), args.Error(1)
-}
-
-func (m *MockUserRepository) Update(id int, userMap map[string]interface{}) (*domainUser.User, error) {
-	args := m.Called(id, userMap)
+func (m *MockUserRepository) GetByEmail(email string) (*domainUser.User, error) {
+	args := m.Called(email)
 	return args.Get(0).(*domainUser.User), args.Error(1)
 }
 
 func (m *MockUserRepository) Delete(id int) error {
 	args := m.Called(id)
 	return args.Error(0)
+}
+
+func (m *MockUserRepository) Update(id int, userMap map[string]interface{}) (*domainUser.User, error) {
+	args := m.Called(id, userMap)
+	return args.Get(0).(*domainUser.User), args.Error(1)
 }
 
 type MockMedicineRepository struct {

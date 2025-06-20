@@ -41,8 +41,7 @@ type AuthTokens struct {
 
 func (s *AuthUseCase) Login(email, password string) (*domainUser.User, *AuthTokens, error) {
 	s.Logger.Info("User login attempt", zap.String("email", email))
-	userMap := map[string]interface{}{"email": email}
-	user, err := s.UserRepository.GetOneByMap(userMap)
+	user, err := s.UserRepository.GetByEmail(email)
 	if err != nil {
 		s.Logger.Error("Error getting user for login", zap.Error(err), zap.String("email", email))
 		return nil, nil, err
@@ -87,10 +86,10 @@ func (s *AuthUseCase) AccessTokenByRefreshToken(refreshToken string) (*domainUse
 		s.Logger.Error("Error verifying refresh token", zap.Error(err))
 		return nil, nil, err
 	}
-	userMap := map[string]interface{}{"id": claimsMap["id"]}
-	user, err := s.UserRepository.GetOneByMap(userMap)
+	userID := int(claimsMap["id"].(float64))
+	user, err := s.UserRepository.GetByID(userID)
 	if err != nil {
-		s.Logger.Error("Error getting user for token refresh", zap.Error(err), zap.Any("userID", claimsMap["id"]))
+		s.Logger.Error("Error getting user for token refresh", zap.Error(err), zap.Int("userID", userID))
 		return nil, nil, err
 	}
 

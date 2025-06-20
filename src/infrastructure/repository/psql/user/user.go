@@ -2,8 +2,6 @@ package user
 
 import (
 	"encoding/json"
-	"fmt"
-	"reflect"
 	"time"
 
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
@@ -33,8 +31,8 @@ func (User) TableName() string {
 type UserRepositoryInterface interface {
 	GetAll() (*[]domainUser.User, error)
 	Create(userDomain *domainUser.User) (*domainUser.User, error)
-	GetOneByMap(userMap map[string]interface{}) (*domainUser.User, error)
 	GetByID(id int) (*domainUser.User, error)
+	GetByEmail(email string) (*domainUser.User, error)
 	Update(id int, userMap map[string]interface{}) (*domainUser.User, error)
 	Delete(id int) error
 }
@@ -83,22 +81,6 @@ func (r *Repository) Create(userDomain *domainUser.User) (*domainUser.User, erro
 	return userRepository.toDomainMapper(), err
 }
 
-func (r *Repository) GetOneByMap(userMap map[string]interface{}) (*domainUser.User, error) {
-	var userRepository User
-	tx := r.DB.Limit(1)
-	for key, value := range userMap {
-		if !IsZeroValue(value) {
-			tx = tx.Where(fmt.Sprintf("%s = ?", key), value)
-		}
-	}
-	if err := tx.Find(&userRepository).Error; err != nil {
-		r.Logger.Error("Error getting user by map", zap.Error(err), zap.Any("userMap", userMap))
-		return &domainUser.User{}, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
-	}
-	r.Logger.Info("Successfully retrieved user by map", zap.Any("userMap", userMap))
-	return userRepository.toDomainMapper(), nil
-}
-
 func (r *Repository) GetByID(id int) (*domainUser.User, error) {
 	var user User
 	err := r.DB.Where("id = ?", id).First(&user).Error
@@ -113,6 +95,23 @@ func (r *Repository) GetByID(id int) (*domainUser.User, error) {
 		return &domainUser.User{}, err
 	}
 	r.Logger.Info("Successfully retrieved user by ID", zap.Int("id", id))
+	return user.toDomainMapper(), nil
+}
+
+func (r *Repository) GetByEmail(email string) (*domainUser.User, error) {
+	var user User
+	err := r.DB.Where("email = ?", email).First(&user).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			r.Logger.Warn("User not found", zap.String("email", email))
+			err = domainErrors.NewAppErrorWithType(domainErrors.NotFound)
+		} else {
+			r.Logger.Error("Error getting user by email", zap.Error(err), zap.String("email", email))
+			err = domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
+		}
+		return &domainUser.User{}, err
+	}
+	r.Logger.Info("Successfully retrieved user by email", zap.String("email", email))
 	return user.toDomainMapper(), nil
 }
 
@@ -194,9 +193,4 @@ func arrayToDomainMapper(users *[]User) *[]domainUser.User {
 		usersDomain[i] = *user.toDomainMapper()
 	}
 	return &usersDomain
-}
-
-// IsZeroValue checks if a value is the zero value of its type
-func IsZeroValue(value any) bool {
-	return reflect.DeepEqual(value, reflect.Zero(reflect.TypeOf(value)).Interface())
 }

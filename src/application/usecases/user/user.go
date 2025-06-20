@@ -11,8 +11,8 @@ import (
 type IUserUseCase interface {
 	GetAll() (*[]userDomain.User, error)
 	GetByID(id int) (*userDomain.User, error)
+	GetByEmail(email string) (*userDomain.User, error)
 	Create(newUser *userDomain.User) (*userDomain.User, error)
-	GetOneByMap(userMap map[string]interface{}) (*userDomain.User, error)
 	Delete(id int) error
 	Update(id int, userMap map[string]interface{}) (*userDomain.User, error)
 }
@@ -39,6 +39,11 @@ func (s *UserUseCase) GetByID(id int) (*userDomain.User, error) {
 	return s.userRepository.GetByID(id)
 }
 
+func (s *UserUseCase) GetByEmail(email string) (*userDomain.User, error) {
+	s.Logger.Info("Getting user by email", zap.String("email", email))
+	return s.userRepository.GetByEmail(email)
+}
+
 func (s *UserUseCase) Create(newUser *userDomain.User) (*userDomain.User, error) {
 	s.Logger.Info("Creating new user", zap.String("email", newUser.Email))
 	hash, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
@@ -50,11 +55,6 @@ func (s *UserUseCase) Create(newUser *userDomain.User) (*userDomain.User, error)
 	newUser.Status = true
 
 	return s.userRepository.Create(newUser)
-}
-
-func (s *UserUseCase) GetOneByMap(userMap map[string]interface{}) (*userDomain.User, error) {
-	s.Logger.Info("Getting user by map", zap.Any("userMap", userMap))
-	return s.userRepository.GetOneByMap(userMap)
 }
 
 func (s *UserUseCase) Delete(id int) error {

@@ -10,12 +10,12 @@ import (
 )
 
 type mockUserService struct {
-	getAllFn      func() (*[]userDomain.User, error)
-	getByIDFn     func(id int) (*userDomain.User, error)
-	createFn      func(u *userDomain.User) (*userDomain.User, error)
-	getOneByMapFn func(m map[string]interface{}) (*userDomain.User, error)
-	deleteFn      func(id int) error
-	updateFn      func(id int, m map[string]interface{}) (*userDomain.User, error)
+	getAllFn     func() (*[]userDomain.User, error)
+	getByIDFn    func(id int) (*userDomain.User, error)
+	getByEmailFn func(email string) (*userDomain.User, error)
+	createFn     func(u *userDomain.User) (*userDomain.User, error)
+	deleteFn     func(id int) error
+	updateFn     func(id int, m map[string]interface{}) (*userDomain.User, error)
 }
 
 func (m *mockUserService) GetAll() (*[]userDomain.User, error) {
@@ -24,11 +24,11 @@ func (m *mockUserService) GetAll() (*[]userDomain.User, error) {
 func (m *mockUserService) GetByID(id int) (*userDomain.User, error) {
 	return m.getByIDFn(id)
 }
+func (m *mockUserService) GetByEmail(email string) (*userDomain.User, error) {
+	return m.getByEmailFn(email)
+}
 func (m *mockUserService) Create(newUser *userDomain.User) (*userDomain.User, error) {
 	return m.createFn(newUser)
-}
-func (m *mockUserService) GetOneByMap(userMap map[string]interface{}) (*userDomain.User, error) {
-	return m.getOneByMapFn(userMap)
 }
 func (m *mockUserService) Delete(id int) error {
 	return m.deleteFn(id)
@@ -84,6 +84,29 @@ func TestUserUseCase(t *testing.T) {
 		}
 	})
 
+	t.Run("Test GetByEmail", func(t *testing.T) {
+		mockRepo.getByEmailFn = func(email string) (*userDomain.User, error) {
+			if email == "notfound@example.com" {
+				return nil, errors.New("not found")
+			}
+			return &userDomain.User{ID: 123, Email: email}, nil
+		}
+		_, err := useCase.GetByEmail("notfound@example.com")
+		if err == nil {
+			t.Error("expected error, got nil")
+		}
+		u, err := useCase.GetByEmail("test@example.com")
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+		if u.ID != 123 {
+			t.Errorf("expected user ID=123, got %d", u.ID)
+		}
+		if u.Email != "test@example.com" {
+			t.Errorf("expected email=test@example.com, got %s", u.Email)
+		}
+	})
+
 	t.Run("Test Create (OK)", func(t *testing.T) {
 		mockRepo.createFn = func(newU *userDomain.User) (*userDomain.User, error) {
 			if !newU.Status {
@@ -111,26 +134,6 @@ func TestUserUseCase(t *testing.T) {
 		_, err := useCase.Create(&userDomain.User{Email: "", Password: "abc"})
 		if err == nil {
 			t.Error("expected error on create user with empty email")
-		}
-	})
-
-	t.Run("Test GetOneByMap", func(t *testing.T) {
-		mockRepo.getOneByMapFn = func(m map[string]interface{}) (*userDomain.User, error) {
-			if m["email"] == "no_exist" {
-				return nil, errors.New("not found")
-			}
-			return &userDomain.User{ID: 777}, nil
-		}
-		_, err := useCase.GetOneByMap(map[string]interface{}{"email": "no_exist"})
-		if err == nil {
-			t.Error("expected error for not found")
-		}
-		single, err := useCase.GetOneByMap(map[string]interface{}{"email": "yes_exist"})
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
-		if single.ID != 777 {
-			t.Error("expected ID=777")
 		}
 	})
 

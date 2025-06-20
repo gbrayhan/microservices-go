@@ -87,7 +87,6 @@ type IJWTService interface {
 type IUserRepository interface {
     GetAll() (*[]domainUser.User, error)
     Create(user *domainUser.User) (*domainUser.User, error)
-    GetOneByMap(userMap map[string]interface{}) (*domainUser.User, error)
     // ... more methods
 }
 ```

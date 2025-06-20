@@ -14,22 +14,25 @@ import (
 )
 
 type mockUserService struct {
-	getOneByMapFn         func(map[string]interface{}) (*domainUser.User, error)
-	callGetOneByMapCalled bool
+	getByEmailFn         func(string) (*domainUser.User, error)
+	getByIDFn            func(int) (*domainUser.User, error)
+	callGetByEmailCalled bool
+	callGetByIDCalled    bool
 }
 
 func (m *mockUserService) GetAll() (*[]domainUser.User, error) {
 	return nil, nil
 }
 func (m *mockUserService) GetByID(id int) (*domainUser.User, error) {
-	return nil, nil
+	m.callGetByIDCalled = true
+	return m.getByIDFn(id)
+}
+func (m *mockUserService) GetByEmail(email string) (*domainUser.User, error) {
+	m.callGetByEmailCalled = true
+	return m.getByEmailFn(email)
 }
 func (m *mockUserService) Create(newUser *domainUser.User) (*domainUser.User, error) {
 	return nil, nil
-}
-func (m *mockUserService) GetOneByMap(userMap map[string]interface{}) (*domainUser.User, error) {
-	m.callGetOneByMapCalled = true
-	return m.getOneByMapFn(userMap)
 }
 func (m *mockUserService) Delete(id int) error {
 	return nil
@@ -86,7 +89,7 @@ func TestCheckPasswordHash(t *testing.T) {
 func TestAuthUseCase_Login(t *testing.T) {
 	tests := []struct {
 		name                   string
-		mockGetOneByMapFn      func(map[string]interface{}) (*domainUser.User, error)
+		mockGetByEmailFn       func(string) (*domainUser.User, error)
 		mockGenerateTokenFn    func(int, string) (*security.AppToken, error)
 		inputEmail             string
 		inputPassword          string
@@ -97,7 +100,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 	}{
 		{
 			name: "Error fetching user from DB",
-			mockGetOneByMapFn: func(m map[string]interface{}) (*domainUser.User, error) {
+			mockGetByEmailFn: func(email string) (*domainUser.User, error) {
 				return nil, errors.New("db error")
 			},
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
@@ -109,7 +112,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 		},
 		{
 			name: "User not found (ID=0)",
-			mockGetOneByMapFn: func(m map[string]interface{}) (*domainUser.User, error) {
+			mockGetByEmailFn: func(email string) (*domainUser.User, error) {
 				return &domainUser.User{ID: 0}, nil
 			},
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
@@ -122,7 +125,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 		},
 		{
 			name: "Incorrect password",
-			mockGetOneByMapFn: func(m map[string]interface{}) (*domainUser.User, error) {
+			mockGetByEmailFn: func(email string) (*domainUser.User, error) {
 				hashed, _ := HashPasswordForTest("someOtherPass")
 				return &domainUser.User{ID: 10, HashPassword: hashed}, nil
 			},
@@ -137,7 +140,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 		},
 		{
 			name: "Access token generation fails",
-			mockGetOneByMapFn: func(m map[string]interface{}) (*domainUser.User, error) {
+			mockGetByEmailFn: func(email string) (*domainUser.User, error) {
 				hashed, _ := HashPasswordForTest("somePass")
 				return &domainUser.User{ID: 10, HashPassword: hashed}, nil
 			},
@@ -150,7 +153,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 		},
 		{
 			name: "OK - everything correct",
-			mockGetOneByMapFn: func(m map[string]interface{}) (*domainUser.User, error) {
+			mockGetByEmailFn: func(email string) (*domainUser.User, error) {
 				hashed, _ := HashPasswordForTest("mySecretPass")
 				return &domainUser.User{
 					ID:           10,
@@ -174,7 +177,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			userRepoMock := &mockUserService{
-				getOneByMapFn: tt.mockGetOneByMapFn,
+				getByEmailFn: tt.mockGetByEmailFn,
 			}
 
 			jwtMock := &mockJWTService{
@@ -216,7 +219,7 @@ func TestAuthUseCase_AccessTokenByRefreshToken(t *testing.T) {
 	tests := []struct {
 		name                string
 		mockVerifyTokenFn   func(string, string) (jwt.MapClaims, error)
-		mockGetOneByMapFn   func(map[string]interface{}) (*domainUser.User, error)
+		mockGetByIDFn       func(int) (*domainUser.User, error)
 		mockGenerateTokenFn func(int, string) (*security.AppToken, error)
 		inputRefreshToken   string
 		wantErr             bool
@@ -228,7 +231,7 @@ func TestAuthUseCase_AccessTokenByRefreshToken(t *testing.T) {
 			mockVerifyTokenFn: func(token, tokenType string) (jwt.MapClaims, error) {
 				return nil, errors.New("invalid token")
 			},
-			mockGetOneByMapFn: func(m map[string]interface{}) (*domainUser.User, error) {
+			mockGetByIDFn: func(id int) (*domainUser.User, error) {
 				return &domainUser.User{ID: 10}, nil
 			},
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
@@ -242,7 +245,7 @@ func TestAuthUseCase_AccessTokenByRefreshToken(t *testing.T) {
 			mockVerifyTokenFn: func(token, tokenType string) (jwt.MapClaims, error) {
 				return jwt.MapClaims{"id": float64(999)}, nil
 			},
-			mockGetOneByMapFn: func(m map[string]interface{}) (*domainUser.User, error) {
+			mockGetByIDFn: func(id int) (*domainUser.User, error) {
 				return nil, errors.New("user not found")
 			},
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
@@ -256,7 +259,7 @@ func TestAuthUseCase_AccessTokenByRefreshToken(t *testing.T) {
 			mockVerifyTokenFn: func(token, tokenType string) (jwt.MapClaims, error) {
 				return jwt.MapClaims{"id": float64(10)}, nil
 			},
-			mockGetOneByMapFn: func(m map[string]interface{}) (*domainUser.User, error) {
+			mockGetByIDFn: func(id int) (*domainUser.User, error) {
 				return &domainUser.User{ID: 10}, nil
 			},
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
@@ -270,7 +273,7 @@ func TestAuthUseCase_AccessTokenByRefreshToken(t *testing.T) {
 			mockVerifyTokenFn: func(token, tokenType string) (jwt.MapClaims, error) {
 				return jwt.MapClaims{"id": float64(10), "exp": float64(time.Now().Add(time.Hour).Unix())}, nil
 			},
-			mockGetOneByMapFn: func(m map[string]interface{}) (*domainUser.User, error) {
+			mockGetByIDFn: func(id int) (*domainUser.User, error) {
 				return &domainUser.User{ID: 10, Email: "test@example.com"}, nil
 			},
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
@@ -285,7 +288,7 @@ func TestAuthUseCase_AccessTokenByRefreshToken(t *testing.T) {
 			mockVerifyTokenFn: func(token string, tokenType string) (jwt.MapClaims, error) {
 				return jwt.MapClaims{"id": float64(10), "type": "refresh"}, nil
 			},
-			mockGetOneByMapFn: func(m map[string]interface{}) (*domainUser.User, error) {
+			mockGetByIDFn: func(id int) (*domainUser.User, error) {
 				return &domainUser.User{ID: 10}, nil
 			},
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
@@ -299,7 +302,7 @@ func TestAuthUseCase_AccessTokenByRefreshToken(t *testing.T) {
 			mockVerifyTokenFn: func(token string, tokenType string) (jwt.MapClaims, error) {
 				return jwt.MapClaims{"id": float64(10), "type": "refresh", "exp": float64(time.Now().Add(time.Hour).Unix())}, nil
 			},
-			mockGetOneByMapFn: func(m map[string]interface{}) (*domainUser.User, error) {
+			mockGetByIDFn: func(id int) (*domainUser.User, error) {
 				return &domainUser.User{ID: 10}, nil
 			},
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
@@ -314,7 +317,7 @@ func TestAuthUseCase_AccessTokenByRefreshToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			userRepoMock := &mockUserService{
-				getOneByMapFn: tt.mockGetOneByMapFn,
+				getByIDFn: tt.mockGetByIDFn,
 			}
 
 			jwtMock := &mockJWTService{
