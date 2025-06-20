@@ -10,6 +10,7 @@ import (
 
 	useCaseAuth "github.com/gbrayhan/microservices-go/src/application/usecases/auth"
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/gin-gonic/gin"
 )
 
@@ -33,9 +34,18 @@ func (m *MockAuthUseCase) AccessTokenByRefreshToken(refreshToken string) (*userD
 	return nil, nil, nil
 }
 
+func setupLogger(t *testing.T) *logger.Logger {
+	loggerInstance, err := logger.NewLogger()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+	return loggerInstance
+}
+
 func TestNewAuthController(t *testing.T) {
 	mockUseCase := &MockAuthUseCase{}
-	controller := NewAuthController(mockUseCase)
+	logger := setupLogger(t)
+	controller := NewAuthController(mockUseCase, logger)
 
 	if controller == nil {
 		t.Error("Expected NewAuthController to return a non-nil controller")
@@ -68,7 +78,8 @@ func TestAuthController_Login_Success(t *testing.T) {
 	}
 
 	// Create controller
-	controller := NewAuthController(mockUseCase)
+	logger := setupLogger(t)
+	controller := NewAuthController(mockUseCase, logger)
 
 	// Create test request
 	loginRequest := LoginRequest{
@@ -104,7 +115,8 @@ func TestAuthController_Login_InvalidRequest(t *testing.T) {
 	mockUseCase := &MockAuthUseCase{}
 
 	// Create controller
-	controller := NewAuthController(mockUseCase)
+	logger := setupLogger(t)
+	controller := NewAuthController(mockUseCase, logger)
 
 	// Create invalid request (missing required fields)
 	requestBody := []byte(`{"email": "test@example.com"}`) // Missing password
@@ -153,7 +165,8 @@ func TestAuthController_GetAccessTokenByRefreshToken_Success(t *testing.T) {
 	}
 
 	// Create controller
-	controller := NewAuthController(mockUseCase)
+	logger := setupLogger(t)
+	controller := NewAuthController(mockUseCase, logger)
 
 	// Create test request
 	accessTokenRequest := AccessTokenRequest{
@@ -188,7 +201,8 @@ func TestAuthController_GetAccessTokenByRefreshToken_InvalidRequest(t *testing.T
 	mockUseCase := &MockAuthUseCase{}
 
 	// Create controller
-	controller := NewAuthController(mockUseCase)
+	logger := setupLogger(t)
+	controller := NewAuthController(mockUseCase, logger)
 
 	// Create invalid request (missing required fields)
 	requestBody := []byte(`{}`) // Missing refreshToken
@@ -225,12 +239,17 @@ func TestLoginRequest_Validation(t *testing.T) {
 	if validRequest.Password == "" {
 		t.Error("Password should not be empty")
 	}
+
+	// Test invalid email format (basic check)
+	if validRequest.Email == "invalid-email" {
+		t.Error("Email should be in valid format")
+	}
 }
 
 func TestAccessTokenRequest_Validation(t *testing.T) {
 	// Test valid request
 	validRequest := AccessTokenRequest{
-		RefreshToken: "test-refresh-token",
+		RefreshToken: "valid-refresh-token",
 	}
 
 	if validRequest.RefreshToken == "" {

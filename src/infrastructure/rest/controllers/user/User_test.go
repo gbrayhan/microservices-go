@@ -10,6 +10,7 @@ import (
 	"time"
 
 	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -50,12 +51,22 @@ func (m *MockUserService) Delete(id int) error {
 	return args.Error(0)
 }
 
+func setupLogger(t *testing.T) *logger.Logger {
+	loggerInstance, err := logger.NewLogger()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+	return loggerInstance
+}
+
 func TestNewUserController(t *testing.T) {
 	mockService := &MockUserService{}
-	controller := NewUserController(mockService)
+	loggerInstance := setupLogger(t)
+	controller := NewUserController(mockService, loggerInstance)
 
 	assert.NotNil(t, controller)
 	assert.Equal(t, mockService, controller.(*UserController).userService)
+	assert.Equal(t, loggerInstance, controller.(*UserController).Logger)
 }
 
 func TestDomainToResponseMapper(t *testing.T) {
@@ -208,231 +219,263 @@ func setupGinContext() (*gin.Context, *httptest.ResponseRecorder) {
 
 func TestUserController_NewUser(t *testing.T) {
 	mockService := &MockUserService{}
-	controller := NewUserController(mockService)
+	loggerInstance := setupLogger(t)
+	controller := NewUserController(mockService, loggerInstance)
 
-	// Test successful creation
-	request := NewUserRequest{
-		UserName:  "testuser",
-		Email:     "test@example.com",
-		FirstName: "Test",
-		LastName:  "User",
-		Password:  "password123",
-		Role:      "user",
-	}
+	t.Run("Success", func(t *testing.T) {
+		c, w := setupGinContext()
+		request := NewUserRequest{
+			UserName:  "testuser",
+			Email:     "test@example.com",
+			FirstName: "Test",
+			LastName:  "User",
+			Password:  "password123",
+			Role:      "user",
+		}
+		jsonData, _ := json.Marshal(request)
+		c.Request = httptest.NewRequest("POST", "/users", bytes.NewBuffer(jsonData))
+		c.Request.Header.Set("Content-Type", "application/json")
 
-	requestBody, _ := json.Marshal(request)
+		expectedUser := &domainUser.User{
+			ID:           1,
+			UserName:     "testuser",
+			Email:        "test@example.com",
+			FirstName:    "Test",
+			LastName:     "User",
+			Status:       true,
+			HashPassword: "hashedpassword",
+		}
 
-	c, w := setupGinContext()
-	c.Request = httptest.NewRequest("POST", "/users", bytes.NewBuffer(requestBody))
-	c.Request.Header.Set("Content-Type", "application/json")
+		mockService.On("Create", mock.Anything).Return(expectedUser, nil)
 
-	expectedUser := &domainUser.User{
-		ID:           1,
-		UserName:     "testuser",
-		Email:        "test@example.com",
-		FirstName:    "Test",
-		LastName:     "User",
-		Status:       true,
-		HashPassword: "hashedpassword",
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}
+		controller.NewUser(c)
 
-	mockService.On("Create", mock.Anything).Return(expectedUser, nil)
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockService.AssertExpectations(t)
+	})
 
-	controller.NewUser(c)
+	t.Run("Invalid JSON", func(t *testing.T) {
+		c, w := setupGinContext()
+		c.Request = httptest.NewRequest("POST", "/users", bytes.NewBufferString("invalid json"))
+		c.Request.Header.Set("Content-Type", "application/json")
 
-	assert.Equal(t, http.StatusOK, w.Code)
-	mockService.AssertExpectations(t)
+		controller.NewUser(c)
 
-	// Test invalid request
-	c, w = setupGinContext()
-	c.Request = httptest.NewRequest("POST", "/users", bytes.NewBuffer([]byte("invalid json")))
-	c.Request.Header.Set("Content-Type", "application/json")
+		assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on validation errors
+	})
 
-	controller.NewUser(c)
+	t.Run("Service Error", func(t *testing.T) {
+		c, w := setupGinContext()
+		request := NewUserRequest{
+			UserName:  "testuser",
+			Email:     "test@example.com",
+			FirstName: "Test",
+			LastName:  "User",
+			Password:  "password123",
+			Role:      "user",
+		}
+		jsonData, _ := json.Marshal(request)
+		c.Request = httptest.NewRequest("POST", "/users", bytes.NewBuffer(jsonData))
+		c.Request.Header.Set("Content-Type", "application/json")
 
-	assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on error in test mode
+		mockService.On("Create", mock.Anything).Return((*domainUser.User)(nil), errors.New("service error"))
+
+		controller.NewUser(c)
+
+		assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on errors
+		mockService.AssertExpectations(t)
+	})
 }
 
 func TestUserController_GetAllUsers(t *testing.T) {
 	mockService := &MockUserService{}
-	controller := NewUserController(mockService)
+	loggerInstance := setupLogger(t)
+	controller := NewUserController(mockService, loggerInstance)
 
-	c, w := setupGinContext()
-	c.Request = httptest.NewRequest("GET", "/users", nil)
+	t.Run("Success", func(t *testing.T) {
+		c, w := setupGinContext()
+		c.Request = httptest.NewRequest("GET", "/users", nil)
 
-	expectedUsers := &[]domainUser.User{
-		{
-			ID:           1,
-			UserName:     "user1",
-			Email:        "user1@example.com",
-			FirstName:    "User",
-			LastName:     "One",
-			Status:       true,
-			HashPassword: "hash1",
-			CreatedAt:    time.Now(),
-			UpdatedAt:    time.Now(),
-		},
-	}
+		expectedUsers := &[]domainUser.User{
+			{ID: 1, UserName: "user1", Email: "user1@example.com"},
+			{ID: 2, UserName: "user2", Email: "user2@example.com"},
+		}
 
-	mockService.On("GetAll").Return(expectedUsers, nil)
+		mockService.On("GetAll").Return(expectedUsers, nil)
 
-	controller.GetAllUsers(c)
+		controller.GetAllUsers(c)
 
-	assert.Equal(t, http.StatusOK, w.Code)
-	mockService.AssertExpectations(t)
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockService.AssertExpectations(t)
+	})
 
-	// Test error
-	c, w = setupGinContext()
-	c.Request = httptest.NewRequest("GET", "/users", nil)
+	t.Run("Service Error", func(t *testing.T) {
+		c, w := setupGinContext()
+		c.Request = httptest.NewRequest("GET", "/users", nil)
 
-	mockService.On("GetAll").Return((*[]domainUser.User)(nil), errors.New("database error"))
+		mockService.On("GetAll").Return((*[]domainUser.User)(nil), errors.New("service error"))
 
-	controller.GetAllUsers(c)
+		controller.GetAllUsers(c)
 
-	assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on error in test mode
+		assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on errors
+		mockService.AssertExpectations(t)
+	})
 }
 
 func TestUserController_GetUsersByID(t *testing.T) {
 	mockService := &MockUserService{}
-	controller := NewUserController(mockService)
+	loggerInstance := setupLogger(t)
+	controller := NewUserController(mockService, loggerInstance)
 
-	// Test successful retrieval
-	c, w := setupGinContext()
-	c.Request = httptest.NewRequest("GET", "/users/1", nil)
-	c.Params = gin.Params{{Key: "id", Value: "1"}}
+	t.Run("Success", func(t *testing.T) {
+		c, w := setupGinContext()
+		c.Request = httptest.NewRequest("GET", "/users/1", nil)
+		c.Params = gin.Params{{Key: "id", Value: "1"}}
 
-	expectedUser := &domainUser.User{
-		ID:           1,
-		UserName:     "testuser",
-		Email:        "test@example.com",
-		FirstName:    "Test",
-		LastName:     "User",
-		Status:       true,
-		HashPassword: "hashedpassword",
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}
+		expectedUser := &domainUser.User{
+			ID:       1,
+			UserName: "user1",
+			Email:    "user1@example.com",
+		}
 
-	mockService.On("GetByID", 1).Return(expectedUser, nil)
+		mockService.On("GetByID", 1).Return(expectedUser, nil)
 
-	controller.GetUsersByID(c)
+		controller.GetUsersByID(c)
 
-	assert.Equal(t, http.StatusOK, w.Code)
-	mockService.AssertExpectations(t)
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockService.AssertExpectations(t)
+	})
 
-	// Test invalid ID
-	c, w = setupGinContext()
-	c.Request = httptest.NewRequest("GET", "/users/invalid", nil)
-	c.Params = gin.Params{{Key: "id", Value: "invalid"}}
+	t.Run("Invalid ID", func(t *testing.T) {
+		c, w := setupGinContext()
+		c.Request = httptest.NewRequest("GET", "/users/invalid", nil)
+		c.Params = gin.Params{{Key: "id", Value: "invalid"}}
 
-	controller.GetUsersByID(c)
+		controller.GetUsersByID(c)
 
-	assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on error in test mode
+		assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on validation errors
+	})
 
-	// Test service error
-	c, w = setupGinContext()
-	c.Request = httptest.NewRequest("GET", "/users/1", nil)
-	c.Params = gin.Params{{Key: "id", Value: "1"}}
+	t.Run("Service Error", func(t *testing.T) {
+		c, w := setupGinContext()
+		c.Request = httptest.NewRequest("GET", "/users/1", nil)
+		c.Params = gin.Params{{Key: "id", Value: "1"}}
 
-	mockService.On("GetByID", 1).Return((*domainUser.User)(nil), errors.New("user not found"))
+		mockService.On("GetByID", 1).Return(nil, errors.New("service error"))
 
-	controller.GetUsersByID(c)
+		controller.GetUsersByID(c)
 
-	assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on error in test mode
+		assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on errors
+		mockService.AssertExpectations(t)
+	})
 }
 
 func TestUserController_UpdateUser(t *testing.T) {
 	mockService := &MockUserService{}
-	controller := NewUserController(mockService)
+	loggerInstance := setupLogger(t)
+	controller := NewUserController(mockService, loggerInstance)
 
-	// Test successful update
-	request := map[string]any{
-		"firstName": "Updated",
-		"lastName":  "User",
-	}
+	t.Run("Success", func(t *testing.T) {
+		c, w := setupGinContext()
+		updateData := map[string]any{
+			"user_name": "updateduser",
+			"email":     "updated@example.com",
+		}
+		jsonData, _ := json.Marshal(updateData)
+		c.Request = httptest.NewRequest("PUT", "/users/1", bytes.NewBuffer(jsonData))
+		c.Request.Header.Set("Content-Type", "application/json")
+		c.Params = gin.Params{{Key: "id", Value: "1"}}
 
-	requestBody, _ := json.Marshal(request)
+		expectedUser := &domainUser.User{
+			ID:       1,
+			UserName: "updateduser",
+			Email:    "updated@example.com",
+		}
 
-	c, w := setupGinContext()
-	c.Request = httptest.NewRequest("PUT", "/users/1", bytes.NewBuffer(requestBody))
-	c.Request.Header.Set("Content-Type", "application/json")
-	c.Params = gin.Params{{Key: "id", Value: "1"}}
+		mockService.On("Update", 1, updateData).Return(expectedUser, nil)
 
-	expectedUser := &domainUser.User{
-		ID:           1,
-		UserName:     "testuser",
-		Email:        "test@example.com",
-		FirstName:    "Updated",
-		LastName:     "User",
-		Status:       true,
-		HashPassword: "hashedpassword",
-		CreatedAt:    time.Now(),
-		UpdatedAt:    time.Now(),
-	}
+		controller.UpdateUser(c)
 
-	mockService.On("Update", 1, request).Return(expectedUser, nil)
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockService.AssertExpectations(t)
+	})
 
-	controller.UpdateUser(c)
+	t.Run("Invalid ID", func(t *testing.T) {
+		c, w := setupGinContext()
+		c.Request = httptest.NewRequest("PUT", "/users/invalid", nil)
+		c.Params = gin.Params{{Key: "id", Value: "invalid"}}
 
-	assert.Equal(t, http.StatusOK, w.Code)
-	mockService.AssertExpectations(t)
+		controller.UpdateUser(c)
 
-	// Test invalid ID
-	c, w = setupGinContext()
-	c.Request = httptest.NewRequest("PUT", "/users/invalid", bytes.NewBuffer(requestBody))
-	c.Request.Header.Set("Content-Type", "application/json")
-	c.Params = gin.Params{{Key: "id", Value: "invalid"}}
+		assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on validation errors
+	})
 
-	controller.UpdateUser(c)
+	t.Run("Invalid JSON", func(t *testing.T) {
+		c, w := setupGinContext()
+		c.Request = httptest.NewRequest("PUT", "/users/1", bytes.NewBufferString("invalid json"))
+		c.Request.Header.Set("Content-Type", "application/json")
+		c.Params = gin.Params{{Key: "id", Value: "1"}}
 
-	assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on error in test mode
+		controller.UpdateUser(c)
 
-	// Test invalid request body
-	c, w = setupGinContext()
-	c.Request = httptest.NewRequest("PUT", "/users/1", bytes.NewBuffer([]byte("invalid json")))
-	c.Request.Header.Set("Content-Type", "application/json")
-	c.Params = gin.Params{{Key: "id", Value: "1"}}
+		assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on validation errors
+	})
 
-	controller.UpdateUser(c)
+	t.Run("Service Error", func(t *testing.T) {
+		c, w := setupGinContext()
+		updateData := map[string]any{"user_name": "updateduser"}
+		jsonData, _ := json.Marshal(updateData)
+		c.Request = httptest.NewRequest("PUT", "/users/1", bytes.NewBuffer(jsonData))
+		c.Request.Header.Set("Content-Type", "application/json")
+		c.Params = gin.Params{{Key: "id", Value: "1"}}
 
-	assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on error in test mode
+		mockService.On("Update", 1, updateData).Return((*domainUser.User)(nil), errors.New("service error"))
+
+		controller.UpdateUser(c)
+
+		assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on errors
+		mockService.AssertExpectations(t)
+	})
 }
 
 func TestUserController_DeleteUser(t *testing.T) {
 	mockService := &MockUserService{}
-	controller := NewUserController(mockService)
+	loggerInstance := setupLogger(t)
+	controller := NewUserController(mockService, loggerInstance)
 
-	// Test successful deletion
-	c, w := setupGinContext()
-	c.Request = httptest.NewRequest("DELETE", "/users/1", nil)
-	c.Params = gin.Params{{Key: "id", Value: "1"}}
+	t.Run("Success", func(t *testing.T) {
+		c, w := setupGinContext()
+		c.Request = httptest.NewRequest("DELETE", "/users/1", nil)
+		c.Params = gin.Params{{Key: "id", Value: "1"}}
 
-	mockService.On("Delete", 1).Return(nil)
+		mockService.On("Delete", 1).Return(nil)
 
-	controller.DeleteUser(c)
+		controller.DeleteUser(c)
 
-	assert.Equal(t, http.StatusOK, w.Code)
-	mockService.AssertExpectations(t)
+		assert.Equal(t, http.StatusOK, w.Code)
+		mockService.AssertExpectations(t)
+	})
 
-	// Test invalid ID
-	c, w = setupGinContext()
-	c.Request = httptest.NewRequest("DELETE", "/users/invalid", nil)
-	c.Params = gin.Params{{Key: "id", Value: "invalid"}}
+	t.Run("Invalid ID", func(t *testing.T) {
+		c, w := setupGinContext()
+		c.Request = httptest.NewRequest("DELETE", "/users/invalid", nil)
+		c.Params = gin.Params{{Key: "id", Value: "invalid"}}
 
-	controller.DeleteUser(c)
+		controller.DeleteUser(c)
 
-	assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on error in test mode
+		assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on validation errors
+	})
 
-	// Test service error
-	c, w = setupGinContext()
-	c.Request = httptest.NewRequest("DELETE", "/users/1", nil)
-	c.Params = gin.Params{{Key: "id", Value: "1"}}
+	t.Run("Service Error", func(t *testing.T) {
+		c, w := setupGinContext()
+		c.Request = httptest.NewRequest("DELETE", "/users/1", nil)
+		c.Params = gin.Params{{Key: "id", Value: "1"}}
 
-	mockService.On("Delete", 1).Return(errors.New("user not found"))
+		mockService.On("Delete", 1).Return(errors.New("service error"))
 
-	controller.DeleteUser(c)
+		controller.DeleteUser(c)
 
-	assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on error in test mode
+		assert.Equal(t, http.StatusOK, w.Code) // Gin returns 200 even on errors
+		mockService.AssertExpectations(t)
+	})
 }

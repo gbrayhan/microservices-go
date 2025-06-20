@@ -1,9 +1,12 @@
 package di
 
 import (
+	"sync"
+
 	authUseCase "github.com/gbrayhan/microservices-go/src/application/usecases/auth"
 	medicineUseCase "github.com/gbrayhan/microservices-go/src/application/usecases/medicine"
 	userUseCase "github.com/gbrayhan/microservices-go/src/application/usecases/user"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/medicine"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/user"
@@ -17,6 +20,7 @@ import (
 // ApplicationContext holds all application dependencies and services
 type ApplicationContext struct {
 	DB                 *gorm.DB
+	Logger             *logger.Logger
 	AuthController     authController.IAuthController
 	UserController     userController.IUserController
 	MedicineController medicineController.IMedicineController
@@ -28,10 +32,22 @@ type ApplicationContext struct {
 	MedicineUseCase    medicineUseCase.IMedicineUseCase
 }
 
+var (
+	loggerInstance *logger.Logger
+	loggerOnce     sync.Once
+)
+
+func GetLogger() *logger.Logger {
+	loggerOnce.Do(func() {
+		loggerInstance, _ = logger.NewLogger()
+	})
+	return loggerInstance
+}
+
 // SetupDependencies creates a new application context with all dependencies
-func SetupDependencies() (*ApplicationContext, error) {
-	// Initialize database
-	db, err := psql.InitPSQLDB()
+func SetupDependencies(loggerInstance *logger.Logger) (*ApplicationContext, error) {
+	// Initialize database with logger
+	db, err := psql.InitPSQLDB(loggerInstance)
 	if err != nil {
 		return nil, err
 	}
@@ -39,22 +55,23 @@ func SetupDependencies() (*ApplicationContext, error) {
 	// Initialize JWT service (manages its own configuration)
 	jwtService := security.NewJWTService()
 
-	// Initialize repositories
-	userRepo := user.NewUserRepository(db)
-	medicineRepo := medicine.NewMedicineRepository(db)
+	// Initialize repositories with logger
+	userRepo := user.NewUserRepository(db, loggerInstance)
+	medicineRepo := medicine.NewMedicineRepository(db, loggerInstance)
 
-	// Initialize use cases
-	authUC := authUseCase.NewAuthUseCase(userRepo, jwtService)
-	userUC := userUseCase.NewUserUseCase(userRepo)
-	medicineUC := medicineUseCase.NewMedicineUseCase(medicineRepo)
+	// Initialize use cases with logger
+	authUC := authUseCase.NewAuthUseCase(userRepo, jwtService, loggerInstance)
+	userUC := userUseCase.NewUserUseCase(userRepo, loggerInstance)
+	medicineUC := medicineUseCase.NewMedicineUseCase(medicineRepo, loggerInstance)
 
-	// Initialize controllers
-	authController := authController.NewAuthController(authUC)
-	userController := userController.NewUserController(userUC)
-	medicineController := medicineController.NewMedicineController(medicineUC)
+	// Initialize controllers with logger
+	authController := authController.NewAuthController(authUC, loggerInstance)
+	userController := userController.NewUserController(userUC, loggerInstance)
+	medicineController := medicineController.NewMedicineController(medicineUC, loggerInstance)
 
 	return &ApplicationContext{
 		DB:                 db,
+		Logger:             loggerInstance,
 		AuthController:     authController,
 		UserController:     userController,
 		MedicineController: medicineController,
@@ -72,18 +89,20 @@ func NewTestApplicationContext(
 	mockUserRepo user.UserRepositoryInterface,
 	mockMedicineRepo medicine.MedicineRepositoryInterface,
 	mockJWTService security.IJWTService,
+	loggerInstance *logger.Logger,
 ) *ApplicationContext {
-	// Initialize use cases with mocked repositories
-	authUC := authUseCase.NewAuthUseCase(mockUserRepo, mockJWTService)
-	userUC := userUseCase.NewUserUseCase(mockUserRepo)
-	medicineUC := medicineUseCase.NewMedicineUseCase(mockMedicineRepo)
+	// Initialize use cases with mocked repositories and logger
+	authUC := authUseCase.NewAuthUseCase(mockUserRepo, mockJWTService, loggerInstance)
+	userUC := userUseCase.NewUserUseCase(mockUserRepo, loggerInstance)
+	medicineUC := medicineUseCase.NewMedicineUseCase(mockMedicineRepo, loggerInstance)
 
-	// Initialize controllers
-	authController := authController.NewAuthController(authUC)
-	userController := userController.NewUserController(userUC)
-	medicineController := medicineController.NewMedicineController(medicineUC)
+	// Initialize controllers with logger
+	authController := authController.NewAuthController(authUC, loggerInstance)
+	userController := userController.NewUserController(userUC, loggerInstance)
+	medicineController := medicineController.NewMedicineController(medicineUC, loggerInstance)
 
 	return &ApplicationContext{
+		Logger:             loggerInstance,
 		AuthController:     authController,
 		UserController:     userController,
 		MedicineController: medicineController,

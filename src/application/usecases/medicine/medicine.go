@@ -2,56 +2,67 @@ package medicine
 
 import (
 	"github.com/gbrayhan/microservices-go/src/domain"
-	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
+	medicineDomain "github.com/gbrayhan/microservices-go/src/domain/medicine"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/medicine"
+	"go.uber.org/zap"
 )
 
 type IMedicineUseCase interface {
 	GetData(page int64, limit int64, sortBy string, sortDirection string,
-		filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error)
-	GetByID(id int) (*domainMedicine.Medicine, error)
-	Create(medicine *domainMedicine.Medicine) (*domainMedicine.Medicine, error)
-	GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error)
+		filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*medicineDomain.DataMedicine, error)
+	GetByID(id int) (*medicineDomain.Medicine, error)
+	Create(medicine *medicineDomain.Medicine) (*medicineDomain.Medicine, error)
+	GetByMap(medicineMap map[string]any) (*medicineDomain.Medicine, error)
 	Delete(id int) error
-	Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error)
-	GetAll() (*[]domainMedicine.Medicine, error)
+	Update(id int, medicineMap map[string]any) (*medicineDomain.Medicine, error)
+	GetAll() (*[]medicineDomain.Medicine, error)
 }
 
 type MedicineUseCase struct {
-	MedicineRepository medicine.MedicineRepositoryInterface
+	medicineRepository medicine.MedicineRepositoryInterface
+	Logger             *logger.Logger
 }
 
-func NewMedicineUseCase(medicineRepository medicine.MedicineRepositoryInterface) IMedicineUseCase {
+func NewMedicineUseCase(medicineRepository medicine.MedicineRepositoryInterface, loggerInstance *logger.Logger) IMedicineUseCase {
 	return &MedicineUseCase{
-		MedicineRepository: medicineRepository,
+		medicineRepository: medicineRepository,
+		Logger:             loggerInstance,
 	}
 }
 
 func (s *MedicineUseCase) GetData(page int64, limit int64, sortBy string, sortDirection string,
-	filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error) {
-	return s.MedicineRepository.GetData(page, limit, sortBy, sortDirection, filters, searchText, dateRangeFilters)
+	filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*medicineDomain.DataMedicine, error) {
+	s.Logger.Info("Getting medicine data", zap.Int64("page", page), zap.Int64("limit", limit))
+	return s.medicineRepository.GetData(page, limit, sortBy, sortDirection, filters, searchText, dateRangeFilters)
 }
 
-func (s *MedicineUseCase) GetByID(id int) (*domainMedicine.Medicine, error) {
-	return s.MedicineRepository.GetByID(id)
+func (s *MedicineUseCase) GetByID(id int) (*medicineDomain.Medicine, error) {
+	s.Logger.Info("Getting medicine by ID", zap.Int("id", id))
+	return s.medicineRepository.GetByID(id)
 }
 
-func (s *MedicineUseCase) Create(medicine *domainMedicine.Medicine) (*domainMedicine.Medicine, error) {
-	return s.MedicineRepository.Create(medicine)
+func (s *MedicineUseCase) Create(medicine *medicineDomain.Medicine) (*medicineDomain.Medicine, error) {
+	s.Logger.Info("Creating new medicine", zap.String("name", medicine.Name))
+	return s.medicineRepository.Create(medicine)
 }
 
-func (s *MedicineUseCase) GetByMap(medicineMap map[string]any) (*domainMedicine.Medicine, error) {
-	return s.MedicineRepository.GetByMap(medicineMap)
+func (s *MedicineUseCase) GetByMap(medicineMap map[string]any) (*medicineDomain.Medicine, error) {
+	s.Logger.Info("Getting medicine by map", zap.Any("medicineMap", medicineMap))
+	return s.medicineRepository.GetByMap(medicineMap)
 }
 
 func (s *MedicineUseCase) Delete(id int) error {
-	return s.MedicineRepository.Delete(id)
+	s.Logger.Info("Deleting medicine", zap.Int("id", id))
+	return s.medicineRepository.Delete(id)
 }
 
-func (s *MedicineUseCase) Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error) {
-	return s.MedicineRepository.Update(id, medicineMap)
+func (s *MedicineUseCase) Update(id int, medicineMap map[string]any) (*medicineDomain.Medicine, error) {
+	s.Logger.Info("Updating medicine", zap.Int("id", id))
+	return s.medicineRepository.Update(id, medicineMap)
 }
 
-func (s *MedicineUseCase) GetAll() (*[]domainMedicine.Medicine, error) {
-	return s.MedicineRepository.GetAll()
+func (s *MedicineUseCase) GetAll() (*[]medicineDomain.Medicine, error) {
+	s.Logger.Info("Getting all medicines")
+	return s.medicineRepository.GetAll()
 }

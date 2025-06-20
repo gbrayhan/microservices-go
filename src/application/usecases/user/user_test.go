@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 )
 
 type mockUserService struct {
@@ -36,10 +37,19 @@ func (m *mockUserService) Update(id int, userMap map[string]interface{}) (*userD
 	return m.updateFn(id, userMap)
 }
 
+func setupLogger(t *testing.T) *logger.Logger {
+	loggerInstance, err := logger.NewLogger()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+	return loggerInstance
+}
+
 func TestUserUseCase(t *testing.T) {
 
 	mockRepo := &mockUserService{}
-	useCase := NewUserUseCase(mockRepo)
+	logger := setupLogger(t)
+	useCase := NewUserUseCase(mockRepo, logger)
 
 	t.Run("Test GetAll", func(t *testing.T) {
 		mockRepo.getAllFn = func() (*[]userDomain.User, error) {
@@ -164,8 +174,9 @@ func TestUserUseCase(t *testing.T) {
 
 func TestNewUserUseCase(t *testing.T) {
 	mockRepo := &mockUserService{}
-	uc := NewUserUseCase(mockRepo)
-	if reflect.TypeOf(uc).String() != "*user.UserUseCase" {
+	loggerInstance := setupLogger(t)
+	useCase := NewUserUseCase(mockRepo, loggerInstance)
+	if reflect.TypeOf(useCase).String() != "*user.UserUseCase" {
 		t.Error("expected *user.UserUseCase type")
 	}
 }

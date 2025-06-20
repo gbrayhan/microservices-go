@@ -7,6 +7,7 @@ import (
 	"github.com/gbrayhan/microservices-go/src/domain"
 	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
 	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/security"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/assert"
@@ -101,12 +102,21 @@ func (m *MockJWTService) GetClaimsAndVerifyToken(tokenString string, tokenType s
 	return args.Get(0).(jwt.MapClaims), args.Error(1)
 }
 
+func setupLogger(t *testing.T) *logger.Logger {
+	loggerInstance, err := logger.NewLogger()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+	return loggerInstance
+}
+
 func TestNewTestApplicationContext(t *testing.T) {
 	mockUserRepo := &MockUserRepository{}
 	mockMedicineRepo := &MockMedicineRepository{}
 	mockJWTService := &MockJWTService{}
+	logger := setupLogger(t)
 
-	appContext := NewTestApplicationContext(mockUserRepo, mockMedicineRepo, mockJWTService)
+	appContext := NewTestApplicationContext(mockUserRepo, mockMedicineRepo, mockJWTService, logger)
 
 	assert.NotNil(t, appContext)
 	assert.Equal(t, mockUserRepo, appContext.UserRepository)
@@ -131,7 +141,8 @@ func TestSetupDependencies(t *testing.T) {
 	os.Setenv("DB_HOST", "")
 	defer os.Setenv("DB_HOST", originalHost)
 
-	appContext, err := SetupDependencies()
+	logger := setupLogger(t)
+	appContext, err := SetupDependencies(logger)
 
 	assert.Error(t, err)
 	assert.Nil(t, appContext)
@@ -141,8 +152,9 @@ func TestApplicationContextStructure(t *testing.T) {
 	mockUserRepo := &MockUserRepository{}
 	mockMedicineRepo := &MockMedicineRepository{}
 	mockJWTService := &MockJWTService{}
+	logger := setupLogger(t)
 
-	appContext := NewTestApplicationContext(mockUserRepo, mockMedicineRepo, mockJWTService)
+	appContext := NewTestApplicationContext(mockUserRepo, mockMedicineRepo, mockJWTService, logger)
 
 	// Test that all fields are properly set
 	assert.NotNil(t, appContext.AuthController)

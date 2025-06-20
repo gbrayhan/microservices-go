@@ -4,29 +4,31 @@ import (
 	"errors"
 	"time"
 
-	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/user"
-
-	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
-
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
+	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/user"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/security"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
 type IAuthUseCase interface {
-	Login(email, password string) (*userDomain.User, *AuthTokens, error)
-	AccessTokenByRefreshToken(refreshToken string) (*userDomain.User, *AuthTokens, error)
+	Login(email, password string) (*domainUser.User, *AuthTokens, error)
+	AccessTokenByRefreshToken(refreshToken string) (*domainUser.User, *AuthTokens, error)
 }
 
 type AuthUseCase struct {
-	userRepository user.UserRepositoryInterface
-	jwtService     security.IJWTService
+	UserRepository user.UserRepositoryInterface
+	JWTService     security.IJWTService
+	Logger         *logger.Logger
 }
 
-func NewAuthUseCase(userRepository user.UserRepositoryInterface, jwtService security.IJWTService) IAuthUseCase {
+func NewAuthUseCase(userRepository user.UserRepositoryInterface, jwtService security.IJWTService, loggerInstance *logger.Logger) IAuthUseCase {
 	return &AuthUseCase{
-		userRepository: userRepository,
-		jwtService:     jwtService,
+		UserRepository: userRepository,
+		JWTService:     jwtService,
+		Logger:         loggerInstance,
 	}
 }
 
@@ -37,27 +39,33 @@ type AuthTokens struct {
 	ExpirationRefreshDateTime time.Time
 }
 
-func (s *AuthUseCase) Login(email, password string) (*userDomain.User, *AuthTokens, error) {
+func (s *AuthUseCase) Login(email, password string) (*domainUser.User, *AuthTokens, error) {
+	s.Logger.Info("User login attempt", zap.String("email", email))
 	userMap := map[string]interface{}{"email": email}
-	domainUser, err := s.userRepository.GetOneByMap(userMap)
+	user, err := s.UserRepository.GetOneByMap(userMap)
 	if err != nil {
+		s.Logger.Error("Error getting user for login", zap.Error(err), zap.String("email", email))
 		return nil, nil, err
 	}
-	if domainUser.ID == 0 {
+	if user.ID == 0 {
+		s.Logger.Warn("Login failed: user not found", zap.String("email", email))
 		return nil, nil, domainErrors.NewAppError(errors.New("email or password does not match"), domainErrors.NotAuthorized)
 	}
 
-	isAuthenticated := checkPasswordHash(password, domainUser.HashPassword)
+	isAuthenticated := checkPasswordHash(password, user.HashPassword)
 	if !isAuthenticated {
+		s.Logger.Warn("Login failed: invalid password", zap.String("email", email))
 		return nil, nil, domainErrors.NewAppError(errors.New("email or password does not match"), domainErrors.NotAuthorized)
 	}
 
-	accessTokenClaims, err := s.jwtService.GenerateJWTToken(domainUser.ID, "access")
+	accessTokenClaims, err := s.JWTService.GenerateJWTToken(user.ID, "access")
 	if err != nil {
+		s.Logger.Error("Error generating access token", zap.Error(err), zap.Int("userID", user.ID))
 		return nil, nil, err
 	}
-	refreshTokenClaims, err := s.jwtService.GenerateJWTToken(domainUser.ID, "refresh")
+	refreshTokenClaims, err := s.JWTService.GenerateJWTToken(user.ID, "refresh")
 	if err != nil {
+		s.Logger.Error("Error generating refresh token", zap.Error(err), zap.Int("userID", user.ID))
 		return nil, nil, err
 	}
 
@@ -68,22 +76,27 @@ func (s *AuthUseCase) Login(email, password string) (*userDomain.User, *AuthToke
 		ExpirationRefreshDateTime: refreshTokenClaims.ExpirationTime,
 	}
 
-	return domainUser, authTokens, nil
+	s.Logger.Info("User login successful", zap.String("email", email), zap.Int("userID", user.ID))
+	return user, authTokens, nil
 }
 
-func (s *AuthUseCase) AccessTokenByRefreshToken(refreshToken string) (*userDomain.User, *AuthTokens, error) {
-	claimsMap, err := s.jwtService.GetClaimsAndVerifyToken(refreshToken, "refresh")
+func (s *AuthUseCase) AccessTokenByRefreshToken(refreshToken string) (*domainUser.User, *AuthTokens, error) {
+	s.Logger.Info("Refreshing access token")
+	claimsMap, err := s.JWTService.GetClaimsAndVerifyToken(refreshToken, "refresh")
 	if err != nil {
+		s.Logger.Error("Error verifying refresh token", zap.Error(err))
 		return nil, nil, err
 	}
 	userMap := map[string]interface{}{"id": claimsMap["id"]}
-	domainUser, err := s.userRepository.GetOneByMap(userMap)
+	user, err := s.UserRepository.GetOneByMap(userMap)
 	if err != nil {
+		s.Logger.Error("Error getting user for token refresh", zap.Error(err), zap.Any("userID", claimsMap["id"]))
 		return nil, nil, err
 	}
 
-	accessTokenClaims, err := s.jwtService.GenerateJWTToken(domainUser.ID, "access")
+	accessTokenClaims, err := s.JWTService.GenerateJWTToken(user.ID, "access")
 	if err != nil {
+		s.Logger.Error("Error generating new access token", zap.Error(err), zap.Int("userID", user.ID))
 		return nil, nil, err
 	}
 
@@ -96,7 +109,8 @@ func (s *AuthUseCase) AccessTokenByRefreshToken(refreshToken string) (*userDomai
 		ExpirationRefreshDateTime: time.Unix(expTime, 0),
 	}
 
-	return domainUser, authTokens, nil
+	s.Logger.Info("Access token refreshed successfully", zap.Int("userID", user.ID))
+	return user, authTokens, nil
 }
 
 func checkPasswordHash(password, hash string) bool {

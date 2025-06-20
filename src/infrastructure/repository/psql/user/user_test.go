@@ -7,6 +7,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
@@ -24,6 +25,14 @@ func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 	return gormDB, mock, cleanup
 }
 
+func setupLogger(t *testing.T) *logger.Logger {
+	loggerInstance, err := logger.NewLogger()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+	return loggerInstance
+}
+
 func TestTableName(t *testing.T) {
 	u := &User{}
 	assert.Equal(t, "users", u.TableName())
@@ -32,7 +41,8 @@ func TestTableName(t *testing.T) {
 func TestNewUserRepository(t *testing.T) {
 	db, _, cleanup := setupMockDB(t)
 	defer cleanup()
-	repo := NewUserRepository(db)
+	logger := setupLogger(t)
+	repo := NewUserRepository(db, logger)
 	assert.NotNil(t, repo)
 }
 
@@ -83,7 +93,8 @@ func TestIsZeroValue(t *testing.T) {
 func TestRepository_GetAll(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
-	repo := NewUserRepository(db)
+	logger := setupLogger(t)
+	repo := NewUserRepository(db, logger)
 	rows := sqlmock.NewRows([]string{"id", "user_name", "email", "first_name", "last_name", "status", "hash_password"}).
 		AddRow(1, "user1", "a@a.com", "A", "B", true, "hash1").
 		AddRow(2, "user2", "b@b.com", "C", "D", false, "hash2")
@@ -97,7 +108,8 @@ func TestRepository_GetAll(t *testing.T) {
 func TestRepository_GetByID(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
-	repo := NewUserRepository(db)
+	logger := setupLogger(t)
+	repo := NewUserRepository(db, logger)
 	rows := sqlmock.NewRows([]string{"id", "user_name", "email", "first_name", "last_name", "status", "hash_password"}).
 		AddRow(1, "user1", "a@a.com", "A", "B", true, "hash1")
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE id = $1 ORDER BY "users"."id" LIMIT $2`)).
@@ -118,7 +130,8 @@ func TestRepository_GetByID(t *testing.T) {
 func TestRepository_Create(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
-	repo := NewUserRepository(db)
+	logger := setupLogger(t)
+	repo := NewUserRepository(db, logger)
 	domainU := &domainUser.User{
 		UserName:     "user1",
 		Email:        "a@a.com",
@@ -140,7 +153,8 @@ func TestRepository_Create(t *testing.T) {
 func TestRepository_Delete(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
-	repo := NewUserRepository(db)
+	logger := setupLogger(t)
+	repo := NewUserRepository(db, logger)
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "users" WHERE "users"."id" = $1`)).
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))

@@ -11,6 +11,8 @@ import (
 
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -61,12 +63,15 @@ var ColumnsMedicineMapping = map[string]string{
 }
 
 type Repository struct {
-	DB *gorm.DB
+	DB     *gorm.DB
+	Logger *logger.Logger
 }
 
-func NewMedicineRepository(DB *gorm.DB) MedicineRepositoryInterface {
+func NewMedicineRepository(DB *gorm.DB, loggerInstance *logger.Logger) MedicineRepositoryInterface {
 	return &Repository{
-		DB: DB}
+		DB:     DB,
+		Logger: loggerInstance,
+	}
 }
 
 func (r *Repository) GetData(page int64, limit int64, sortBy string, sortDirection string, filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error) {
@@ -112,12 +117,15 @@ func (r *Repository) GetData(page int64, limit int64, sortBy string, sortDirecti
 	}
 
 	if countErr != nil {
+		r.Logger.Error("Error counting medicines", zap.Error(countErr))
 		return &domainMedicine.DataMedicine{}, countErr
 	}
 	if queryErr != nil {
+		r.Logger.Error("Error querying medicines", zap.Error(queryErr))
 		return &domainMedicine.DataMedicine{}, queryErr
 	}
 
+	r.Logger.Info("Successfully retrieved medicines data", zap.Int64("total", total), zap.Int("count", len(medicines)))
 	return &domainMedicine.DataMedicine{
 		Data:  arrayToDomainMapper(&medicines),
 		Total: total,
@@ -134,6 +142,7 @@ func (r *Repository) Create(newMedicine *domainMedicine.Medicine) (*domainMedici
 
 	tx := r.DB.Create(medicine)
 	if tx.Error != nil {
+		r.Logger.Error("Error creating medicine", zap.Error(tx.Error), zap.String("name", newMedicine.Name))
 		byteErr, _ := json.Marshal(tx.Error)
 		var newError domainErrors.GormErr
 		err := json.Unmarshal(byteErr, &newError)
@@ -147,6 +156,7 @@ func (r *Repository) Create(newMedicine *domainMedicine.Medicine) (*domainMedici
 			return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 		}
 	}
+	r.Logger.Info("Successfully created medicine", zap.String("name", newMedicine.Name), zap.Int("id", medicine.ID))
 	return medicine.toDomainMapper(), nil
 }
 
@@ -155,10 +165,13 @@ func (r *Repository) GetByID(id int) (*domainMedicine.Medicine, error) {
 	err := r.DB.Where("id = ?", id).First(&medicine).Error
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
+			r.Logger.Warn("Medicine not found", zap.Int("id", id))
 			return nil, domainErrors.NewAppErrorWithType(domainErrors.NotFound)
 		}
+		r.Logger.Error("Error getting medicine by ID", zap.Error(err), zap.Int("id", id))
 		return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
+	r.Logger.Info("Successfully retrieved medicine by ID", zap.Int("id", id))
 	return medicine.toDomainMapper(), nil
 }
 
@@ -172,8 +185,10 @@ func (r *Repository) GetByMap(medicineMap map[string]any) (*domainMedicine.Medic
 	}
 	err := tx.Find(&medicine).Error
 	if err != nil {
+		r.Logger.Error("Error getting medicine by map", zap.Error(err), zap.Any("medicineMap", medicineMap))
 		return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
+	r.Logger.Info("Successfully retrieved medicine by map", zap.Any("medicineMap", medicineMap))
 	return medicine.toDomainMapper(), nil
 }
 
@@ -184,6 +199,7 @@ func (r *Repository) Update(id int, medicineMap map[string]any) (*domainMedicine
 		Select("name", "description", "ean_code", "laboratory").
 		Updates(medicineMap).Error
 	if err != nil {
+		r.Logger.Error("Error updating medicine", zap.Error(err), zap.Int("id", id))
 		byteErr, _ := json.Marshal(err)
 		var newError domainErrors.GormErr
 		errUnmarshal := json.Unmarshal(byteErr, &newError)
@@ -198,26 +214,35 @@ func (r *Repository) Update(id int, medicineMap map[string]any) (*domainMedicine
 		}
 	}
 	err = r.DB.Where("id = ?", id).First(&med).Error
-	return med.toDomainMapper(), err
+	if err != nil {
+		r.Logger.Error("Error retrieving updated medicine", zap.Error(err), zap.Int("id", id))
+		return nil, err
+	}
+	r.Logger.Info("Successfully updated medicine", zap.Int("id", id))
+	return med.toDomainMapper(), nil
 }
 
 func (r *Repository) Delete(id int) error {
 	tx := r.DB.Delete(&Medicine{}, id)
 	if tx.Error != nil {
+		r.Logger.Error("Error deleting medicine", zap.Error(tx.Error), zap.Int("id", id))
 		return domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
 	if tx.RowsAffected == 0 {
+		r.Logger.Warn("Medicine not found for deletion", zap.Int("id", id))
 		return domainErrors.NewAppErrorWithType(domainErrors.NotFound)
 	}
+	r.Logger.Info("Successfully deleted medicine", zap.Int("id", id))
 	return nil
 }
 
 func (r *Repository) GetAll() (*[]domainMedicine.Medicine, error) {
 	var medicines []Medicine
-	err := r.DB.Find(&medicines).Error
-	if err != nil {
+	if err := r.DB.Find(&medicines).Error; err != nil {
+		r.Logger.Error("Error getting all medicines", zap.Error(err))
 		return nil, domainErrors.NewAppErrorWithType(domainErrors.UnknownError)
 	}
+	r.Logger.Info("Successfully retrieved all medicines", zap.Int("count", len(medicines)))
 	return arrayToDomainMapper(&medicines), nil
 }
 

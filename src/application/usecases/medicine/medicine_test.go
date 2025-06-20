@@ -6,34 +6,35 @@ import (
 	"testing"
 
 	"github.com/gbrayhan/microservices-go/src/domain"
-	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
+	medicineDomain "github.com/gbrayhan/microservices-go/src/domain/medicine"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 )
 
 type mockMedicineService struct {
 	getDataFn func(page int64, limit int64, sortBy string, sortDirection string,
-		filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error)
-	getByIDFn  func(id int) (*domainMedicine.Medicine, error)
-	createFn   func(m *domainMedicine.Medicine) (*domainMedicine.Medicine, error)
-	getByMapFn func(m map[string]any) (*domainMedicine.Medicine, error)
+		filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*medicineDomain.DataMedicine, error)
+	getByIDFn  func(id int) (*medicineDomain.Medicine, error)
+	createFn   func(m *medicineDomain.Medicine) (*medicineDomain.Medicine, error)
+	getByMapFn func(m map[string]any) (*medicineDomain.Medicine, error)
 	deleteFn   func(id int) error
-	updateFn   func(id int, m map[string]any) (*domainMedicine.Medicine, error)
-	getAllFn   func() (*[]domainMedicine.Medicine, error)
+	updateFn   func(id int, m map[string]any) (*medicineDomain.Medicine, error)
+	getAllFn   func() (*[]medicineDomain.Medicine, error)
 }
 
 func (m *mockMedicineService) GetData(page int64, limit int64, sortBy string, sortDirection string,
-	filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error) {
+	filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*medicineDomain.DataMedicine, error) {
 	return m.getDataFn(page, limit, sortBy, sortDirection, filters, searchText, dateRangeFilters)
 }
 
-func (m *mockMedicineService) GetByID(id int) (*domainMedicine.Medicine, error) {
+func (m *mockMedicineService) GetByID(id int) (*medicineDomain.Medicine, error) {
 	return m.getByIDFn(id)
 }
 
-func (m *mockMedicineService) Create(med *domainMedicine.Medicine) (*domainMedicine.Medicine, error) {
+func (m *mockMedicineService) Create(med *medicineDomain.Medicine) (*medicineDomain.Medicine, error) {
 	return m.createFn(med)
 }
 
-func (m *mockMedicineService) GetByMap(med map[string]any) (*domainMedicine.Medicine, error) {
+func (m *mockMedicineService) GetByMap(med map[string]any) (*medicineDomain.Medicine, error) {
 	return m.getByMapFn(med)
 }
 
@@ -41,25 +42,34 @@ func (m *mockMedicineService) Delete(id int) error {
 	return m.deleteFn(id)
 }
 
-func (m *mockMedicineService) Update(id int, med map[string]any) (*domainMedicine.Medicine, error) {
+func (m *mockMedicineService) Update(id int, med map[string]any) (*medicineDomain.Medicine, error) {
 	return m.updateFn(id, med)
 }
 
-func (m *mockMedicineService) GetAll() (*[]domainMedicine.Medicine, error) {
+func (m *mockMedicineService) GetAll() (*[]medicineDomain.Medicine, error) {
 	return m.getAllFn()
+}
+
+func setupLogger(t *testing.T) *logger.Logger {
+	loggerInstance, err := logger.NewLogger()
+	if err != nil {
+		t.Fatalf("Failed to create logger: %v", err)
+	}
+	return loggerInstance
 }
 
 func TestMedicineUseCase(t *testing.T) {
 	mockRepo := &mockMedicineService{}
-	useCase := NewMedicineUseCase(mockRepo)
+	loggerInstance := setupLogger(t)
+	useCase := NewMedicineUseCase(mockRepo, loggerInstance)
 
 	mockRepo.getDataFn = func(page int64, limit int64, sortBy string, sortDirection string,
-		filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*domainMedicine.DataMedicine, error) {
+		filters map[string][]string, searchText string, dateRangeFilters []domain.DateRangeFilter) (*medicineDomain.DataMedicine, error) {
 		if page == 0 {
 			return nil, errors.New("error in repository")
 		}
-		return &domainMedicine.DataMedicine{
-			Data:  &[]domainMedicine.Medicine{{ID: 1, Name: "Med1"}},
+		return &medicineDomain.DataMedicine{
+			Data:  &[]medicineDomain.Medicine{{ID: 1, Name: "Med1"}},
 			Total: 1,
 		}, nil
 	}
@@ -75,9 +85,9 @@ func TestMedicineUseCase(t *testing.T) {
 		t.Error("expected one medicine in data")
 	}
 
-	mockRepo.getByIDFn = func(id int) (*domainMedicine.Medicine, error) {
+	mockRepo.getByIDFn = func(id int) (*medicineDomain.Medicine, error) {
 		if id == 123 {
-			return &domainMedicine.Medicine{ID: 123}, nil
+			return &medicineDomain.Medicine{ID: 123}, nil
 		}
 		return nil, errors.New("not found")
 	}
@@ -93,18 +103,18 @@ func TestMedicineUseCase(t *testing.T) {
 		t.Error("expected medicine ID=123")
 	}
 
-	mockRepo.createFn = func(m *domainMedicine.Medicine) (*domainMedicine.Medicine, error) {
+	mockRepo.createFn = func(m *medicineDomain.Medicine) (*medicineDomain.Medicine, error) {
 		if m.Name == "" {
 			return nil, errors.New("validation error")
 		}
 		m.ID = 999
 		return m, nil
 	}
-	_, err = useCase.Create(&domainMedicine.Medicine{Name: ""})
+	_, err = useCase.Create(&medicineDomain.Medicine{Name: ""})
 	if err == nil {
 		t.Error("expected create error on empty name")
 	}
-	newMed, err := useCase.Create(&domainMedicine.Medicine{Name: "Aspirin"})
+	newMed, err := useCase.Create(&medicineDomain.Medicine{Name: "Aspirin"})
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -112,11 +122,11 @@ func TestMedicineUseCase(t *testing.T) {
 		t.Error("expected created medicine ID=999")
 	}
 
-	mockRepo.getByMapFn = func(mm map[string]any) (*domainMedicine.Medicine, error) {
+	mockRepo.getByMapFn = func(mm map[string]any) (*medicineDomain.Medicine, error) {
 		if mm["ean"] == "not_found" {
 			return nil, errors.New("not found")
 		}
-		return &domainMedicine.Medicine{ID: 55}, nil
+		return &medicineDomain.Medicine{ID: 55}, nil
 	}
 	_, err = useCase.GetByMap(map[string]any{"ean": "not_found"})
 	if err == nil {
@@ -145,11 +155,11 @@ func TestMedicineUseCase(t *testing.T) {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	mockRepo.updateFn = func(id int, mm map[string]any) (*domainMedicine.Medicine, error) {
+	mockRepo.updateFn = func(id int, mm map[string]any) (*medicineDomain.Medicine, error) {
 		if id != 1000 {
 			return nil, errors.New("not found for update")
 		}
-		return &domainMedicine.Medicine{ID: 1000, Name: "UpdatedName"}, nil
+		return &medicineDomain.Medicine{ID: 1000, Name: "UpdatedName"}, nil
 	}
 	_, err = useCase.Update(999, map[string]any{"name": "whatever"})
 	if err == nil {
@@ -163,8 +173,8 @@ func TestMedicineUseCase(t *testing.T) {
 		t.Error("expected updated name to be UpdatedName")
 	}
 
-	mockRepo.getAllFn = func() (*[]domainMedicine.Medicine, error) {
-		return &[]domainMedicine.Medicine{
+	mockRepo.getAllFn = func() (*[]medicineDomain.Medicine, error) {
+		return &[]medicineDomain.Medicine{
 			{ID: 1, Name: "M1"}, {ID: 2, Name: "M2"},
 		}, nil
 	}
@@ -179,7 +189,8 @@ func TestMedicineUseCase(t *testing.T) {
 
 func TestNewMedicineUseCase(t *testing.T) {
 	mockRepo := &mockMedicineService{}
-	uc := NewMedicineUseCase(mockRepo)
+	loggerInstance := setupLogger(t)
+	uc := NewMedicineUseCase(mockRepo, loggerInstance)
 	if reflect.TypeOf(uc).String() != "*medicine.MedicineUseCase" {
 		t.Error("expected *medicine.MedicineUseCase type")
 	}

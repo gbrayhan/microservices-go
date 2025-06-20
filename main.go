@@ -8,10 +8,12 @@ import (
 	"time"
 
 	"github.com/gbrayhan/microservices-go/src/infrastructure/di"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/middlewares"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // ServerConfig holds server-related configuration
@@ -27,29 +29,45 @@ func loadServerConfig() ServerConfig {
 }
 
 func main() {
+	// Initialize logger first
+	loggerInstance, err := logger.NewLogger()
+	if err != nil {
+		panic(fmt.Errorf("error initializing logger: %w", err))
+	}
+	defer func() {
+		if err := loggerInstance.Log.Sync(); err != nil {
+			loggerInstance.Log.Error("Failed to sync logger", zap.Error(err))
+		}
+	}()
+
+	loggerInstance.Info("Starting microservices application")
+
 	// Load server configuration
 	serverConfig := loadServerConfig()
 
-	// Initialize application context with dependencies
-	appContext, err := di.SetupDependencies()
+	// Initialize application context with dependencies and logger
+	appContext, err := di.SetupDependencies(loggerInstance)
 	if err != nil {
+		loggerInstance.Error("Error initializing application context", zap.Error(err))
 		panic(fmt.Errorf("error initializing application context: %w", err))
 	}
 
 	// Setup router
-	router := setupRouter(appContext)
+	router := setupRouter(appContext, loggerInstance)
 
 	// Setup server
 	server := setupServer(router, serverConfig.Port)
 
 	// Start server
+	loggerInstance.Info("Server starting", zap.String("port", serverConfig.Port))
 	fmt.Printf("Server running at http://localhost:%s\n", serverConfig.Port)
 	if err := server.ListenAndServe(); err != nil {
+		loggerInstance.Error("Server failed to start", zap.Error(err))
 		panic(strings.ToLower(err.Error()))
 	}
 }
 
-func setupRouter(appContext *di.ApplicationContext) *gin.Engine {
+func setupRouter(appContext *di.ApplicationContext, logger *logger.Logger) *gin.Engine {
 	router := gin.Default()
 	router.Use(cors.Default())
 
@@ -57,6 +75,9 @@ func setupRouter(appContext *di.ApplicationContext) *gin.Engine {
 	router.Use(middlewares.ErrorHandler())
 	router.Use(middlewares.GinBodyLogMiddleware)
 	router.Use(middlewares.CommonHeaders)
+
+	// Add logger middleware
+	router.Use(logger.GinZapLogger())
 
 	// Setup routes
 	routes.ApplicationRouter(router, appContext)

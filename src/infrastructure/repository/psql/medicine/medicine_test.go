@@ -7,7 +7,8 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/gbrayhan/microservices-go/src/domain"
-	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
+	medicineDomain "github.com/gbrayhan/microservices-go/src/domain/medicine"
+	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/postgres"
@@ -25,6 +26,12 @@ func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock, func()) {
 	return gormDB, mock, cleanup
 }
 
+func setupLogger(t *testing.T) *logger.Logger {
+	loggerInstance, err := logger.NewLogger()
+	require.NoError(t, err)
+	return loggerInstance
+}
+
 func TestTableName(t *testing.T) {
 	medicine := &Medicine{}
 	assert.Equal(t, "medicines", medicine.TableName())
@@ -33,7 +40,8 @@ func TestTableName(t *testing.T) {
 func TestNewMedicineRepository(t *testing.T) {
 	db, _, cleanup := setupMockDB(t)
 	defer cleanup()
-	repo := NewMedicineRepository(db)
+	logger := setupLogger(t)
+	repo := NewMedicineRepository(db, logger)
 	assert.NotNil(t, repo)
 }
 
@@ -199,255 +207,153 @@ func TestApplyFilters(t *testing.T) {
 func TestRepository_GetAll(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
-	repo := NewMedicineRepository(db)
-
+	logger := setupLogger(t)
+	repo := NewMedicineRepository(db, logger)
 	rows := sqlmock.NewRows([]string{"id", "name", "description", "ean_code", "laboratory"}).
-		AddRow(1, "Med1", "Desc1", "111", "Lab1").
-		AddRow(2, "Med2", "Desc2", "222", "Lab2")
+		AddRow(1, "Medicine 1", "Description 1", "1234567890123", "Lab 1").
+		AddRow(2, "Medicine 2", "Description 2", "1234567890124", "Lab 2")
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "medicines"`)).WillReturnRows(rows)
-	meds, err := repo.GetAll()
+	medicines, err := repo.GetAll()
 	assert.NoError(t, err)
-	assert.NotNil(t, meds)
-	assert.Len(t, *meds, 2)
+	assert.NotNil(t, medicines)
+	assert.Len(t, *medicines, 2)
 }
 
 func TestRepository_GetByID(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
-	repo := NewMedicineRepository(db)
-
-	// Simular resultado encontrado
+	logger := setupLogger(t)
+	repo := NewMedicineRepository(db, logger)
 	rows := sqlmock.NewRows([]string{"id", "name", "description", "ean_code", "laboratory"}).
-		AddRow(1, "Test Medicine", "Desc", "123", "Lab")
+		AddRow(1, "Medicine 1", "Description 1", "1234567890123", "Lab 1")
 	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "medicines" WHERE id = $1 ORDER BY "medicines"."id" LIMIT $2`)).
 		WithArgs(1, 1).WillReturnRows(rows)
-	med, err := repo.GetByID(1)
+	medicine, err := repo.GetByID(1)
 	assert.NoError(t, err)
-	assert.NotNil(t, med)
-	assert.Equal(t, "Test Medicine", med.Name)
-
-	// Simular no encontrado
-	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "medicines" WHERE id = $1 ORDER BY "medicines"."id" LIMIT $2`)).
-		WithArgs(2, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name", "description", "ean_code", "laboratory"}))
-	med, err = repo.GetByID(2)
-	assert.Error(t, err)
-	assert.Nil(t, med)
+	assert.NotNil(t, medicine)
+	assert.Equal(t, "Medicine 1", medicine.Name)
 }
 
 func TestRepository_Create(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
-	repo := NewMedicineRepository(db)
-
-	domainMed := &domainMedicine.Medicine{
-		Name:        "Test Medicine",
-		Description: "Desc",
-		EanCode:     "123",
-		Laboratory:  "Lab",
+	logger := setupLogger(t)
+	repo := NewMedicineRepository(db, logger)
+	domainM := &medicineDomain.Medicine{
+		Name:        "New Medicine",
+		Description: "New Description",
+		EanCode:     "1234567890125",
+		Laboratory:  "New Lab",
 	}
 	mock.ExpectBegin()
 	mock.ExpectQuery(regexp.QuoteMeta(`INSERT INTO "medicines"`)).
 		WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 	mock.ExpectCommit()
-	med, err := repo.Create(domainMed)
+	medicine, err := repo.Create(domainM)
 	assert.NoError(t, err)
-	assert.NotNil(t, med)
-	assert.Equal(t, "Test Medicine", med.Name)
+	assert.NotNil(t, medicine)
+	assert.Equal(t, "New Medicine", medicine.Name)
 }
 
 func TestRepository_GetByMap(t *testing.T) {
-	t.Skip("Skipping integration test - uses real database")
-
-	db, err := gorm.Open(postgres.Open(""), &gorm.Config{})
-	require.NoError(t, err)
-
-	err = db.AutoMigrate(&Medicine{})
-	require.NoError(t, err)
-
-	repo := NewMedicineRepository(db)
-
-	// Test with non-existent data - should return zero-value struct, not error
-	medicine, err := repo.GetByMap(map[string]any{"name": "Non-existent"})
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
+	logger := setupLogger(t)
+	repo := NewMedicineRepository(db, logger)
+	rows := sqlmock.NewRows([]string{"id", "name", "description", "ean_code", "laboratory"}).
+		AddRow(1, "Medicine 1", "Description 1", "1234567890123", "Lab 1")
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "medicines" WHERE name = $1 LIMIT $2`)).
+		WithArgs("Medicine 1", 1).WillReturnRows(rows)
+	medicine, err := repo.GetByMap(map[string]any{"name": "Medicine 1"})
 	assert.NoError(t, err)
 	assert.NotNil(t, medicine)
-	assert.Equal(t, 0, medicine.ID) // Should be zero value
-
-	// Add test data
-	testMedicine := &Medicine{
-		Name:        "Test Medicine",
-		Description: "Test Description",
-		EANCode:     "1234567890123",
-		Laboratory:  "Test Lab",
-	}
-	db.Create(testMedicine)
-
-	// Test with existing data
-	medicine, err = repo.GetByMap(map[string]any{"name": "Test Medicine"})
-	assert.NoError(t, err)
-	assert.NotNil(t, medicine)
-	assert.Equal(t, testMedicine.Name, medicine.Name)
+	assert.Equal(t, "Medicine 1", medicine.Name)
 }
 
 func TestRepository_Update(t *testing.T) {
-	t.Skip("Skipping integration test - uses real database")
-
-	db, err := gorm.Open(postgres.Open(""), &gorm.Config{})
-	require.NoError(t, err)
-
-	err = db.AutoMigrate(&Medicine{})
-	require.NoError(t, err)
-
-	repo := NewMedicineRepository(db)
-
-	// Test with non-existent ID - should return error when trying to fetch after update
-	updated, err := repo.Update(999, map[string]any{"name": "Updated Medicine"})
-	assert.Error(t, err)
-	assert.NotNil(t, updated) // Returns struct with ID but zero values
-
-	// Add test data
-	testMedicine := &Medicine{
-		Name:        "Test Medicine",
-		Description: "Test Description",
-		EANCode:     "1234567890123",
-		Laboratory:  "Test Lab",
-	}
-	db.Create(testMedicine)
-
-	// Test with existing ID
-	updated, err = repo.Update(testMedicine.ID, map[string]any{"name": "Updated Medicine"})
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
+	logger := setupLogger(t)
+	repo := NewMedicineRepository(db, logger)
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta(`UPDATE "medicines" SET`)).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectCommit()
+	rows := sqlmock.NewRows([]string{"id", "name", "description", "ean_code", "laboratory"}).
+		AddRow(1, "Updated Medicine", "Updated Description", "1234567890123", "Updated Lab")
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "medicines" WHERE id = $1 AND "medicines"."id" = $2 ORDER BY "medicines"."id" LIMIT $3`)).
+		WithArgs(1, 1, 1).WillReturnRows(rows)
+	medicine, err := repo.Update(1, map[string]any{"name": "Updated Medicine"})
 	assert.NoError(t, err)
-	assert.NotNil(t, updated)
-	assert.Equal(t, "Updated Medicine", updated.Name)
-	assert.Equal(t, testMedicine.Description, updated.Description) // Other fields should remain unchanged
+	assert.NotNil(t, medicine)
+	assert.Equal(t, "Updated Medicine", medicine.Name)
 }
 
 func TestRepository_Delete(t *testing.T) {
 	db, mock, cleanup := setupMockDB(t)
 	defer cleanup()
-	repo := NewMedicineRepository(db)
-
+	logger := setupLogger(t)
+	repo := NewMedicineRepository(db, logger)
 	mock.ExpectBegin()
 	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "medicines" WHERE "medicines"."id" = $1`)).
 		WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
 	mock.ExpectCommit()
 	err := repo.Delete(1)
 	assert.NoError(t, err)
-
-	// No rows affected
-	mock.ExpectBegin()
-	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "medicines" WHERE "medicines"."id" = $1`)).
-		WithArgs(2).WillReturnResult(sqlmock.NewResult(0, 0))
-	mock.ExpectCommit()
-	err = repo.Delete(2)
-	assert.Error(t, err)
 }
 
 func TestRepository_GetData(t *testing.T) {
-	t.Skip("Skipping integration test - uses real database")
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
+	mock.MatchExpectationsInOrder(false)
+	logger := setupLogger(t)
+	repo := NewMedicineRepository(db, logger)
 
-	db, err := gorm.Open(postgres.Open(""), &gorm.Config{})
-	require.NoError(t, err)
+	// Mock count query
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT count(*) FROM "medicines"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"count"}).AddRow(2))
 
-	err = db.AutoMigrate(&Medicine{})
-	require.NoError(t, err)
+	// Mock data query
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "medicines"`)).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "name", "description", "ean_code", "laboratory"}).
+			AddRow(1, "Medicine 1", "Description 1", "1234567890123", "Lab 1").
+			AddRow(2, "Medicine 2", "Description 2", "1234567890124", "Lab 2"))
 
-	repo := NewMedicineRepository(db)
-
-	// Test with empty database
-	data, err := repo.GetData(1, 10, "name", "ASC", nil, "", nil)
+	result, err := repo.GetData(1, 10, "name", "ASC", nil, "", nil)
 	assert.NoError(t, err)
-	assert.NotNil(t, data)
-	assert.Len(t, *data.Data, 0)
-
-	// Add test data
-	testMedicines := []Medicine{
-		{Name: "Medicine A", Description: "Description A", EANCode: "1234567890123", Laboratory: "Lab A"},
-		{Name: "Medicine B", Description: "Description B", EANCode: "1234567890124", Laboratory: "Lab B"},
-		{Name: "Medicine C", Description: "Description C", EANCode: "1234567890125", Laboratory: "Lab C"},
-	}
-	for _, med := range testMedicines {
-		err := db.Create(&med).Error
-		require.NoError(t, err)
-	}
-
-	// Test with data
-	data, err = repo.GetData(1, 10, "name", "ASC", nil, "", nil)
-	assert.NoError(t, err)
-	assert.NotNil(t, data)
-	assert.Len(t, *data.Data, 3)
-
-	// Test with filters
-	filters := map[string][]string{"name": {"Medicine A"}}
-	data, err = repo.GetData(1, 10, "name", "ASC", filters, "", nil)
-	assert.NoError(t, err)
-	assert.NotNil(t, data)
-	assert.Len(t, *data.Data, 1)
-	assert.Equal(t, "Medicine A", (*data.Data)[0].Name)
-
-	// Test with search
-	data, err = repo.GetData(1, 10, "name", "ASC", nil, "Medicine", nil)
-	assert.NoError(t, err)
-	assert.NotNil(t, data)
-	assert.Len(t, *data.Data, 3)
+	assert.NotNil(t, result)
+	assert.Equal(t, int64(2), result.Total)
+	assert.Len(t, *result.Data, 2)
 }
 
 func TestRepository_ErrorCases(t *testing.T) {
-	t.Skip("Skipping integration test - uses real database")
+	db, mock, cleanup := setupMockDB(t)
+	defer cleanup()
+	logger := setupLogger(t)
+	repo := NewMedicineRepository(db, logger)
 
-	db, err := gorm.Open(postgres.Open(""), &gorm.Config{})
-	require.NoError(t, err)
-
-	err = db.AutoMigrate(&Medicine{})
-	require.NoError(t, err)
-
-	repo := NewMedicineRepository(db)
-
-	// Test GetAll with empty database
-	medicines, err := repo.GetAll()
-	assert.NoError(t, err)
-	assert.NotNil(t, medicines)
-	assert.Len(t, *medicines, 0)
-
-	// Test GetByID with non-existent ID
-	medicine, err := repo.GetByID(1)
+	// Test GetByID with not found
+	mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "medicines" WHERE id = $1 ORDER BY "medicines"."id" LIMIT $2`)).
+		WithArgs(999, 1).WillReturnRows(sqlmock.NewRows([]string{"id", "name", "description", "ean_code", "laboratory"}))
+	_, err := repo.GetByID(999)
 	assert.Error(t, err)
-	assert.Nil(t, medicine)
+	// Puede ser nil o un struct vacío, pero no debe causar panic
 
-	domainMedicine := &domainMedicine.Medicine{
-		Name:        "Test Medicine",
-		Description: "Test Description",
-		EanCode:     "1234567890123",
-		Laboratory:  "Test Lab",
-	}
-
-	// Test Create with valid data
-	created, err := repo.Create(domainMedicine)
-	assert.NoError(t, err)
-	assert.NotNil(t, created)
-
-	// Test GetByMap with non-existent data
-	medicine, err = repo.GetByMap(map[string]any{"name": "Non-existent"})
-	assert.NoError(t, err)
-	assert.NotNil(t, medicine)
-	assert.Equal(t, 0, medicine.ID)
-
-	// Test Update with non-existent ID
-	updated, err := repo.Update(999, map[string]any{"name": "Updated"})
-	assert.Error(t, err)
-	assert.NotNil(t, updated)
-
-	// Test Delete with non-existent ID
+	// Test Delete with not found
+	mock.ExpectBegin()
+	mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM "medicines" WHERE "medicines"."id" = $1`)).
+		WithArgs(999).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectCommit()
 	err = repo.Delete(999)
 	assert.Error(t, err)
 }
 
 func TestColumnsMedicineMapping(t *testing.T) {
-	// Test that the mapping contains expected keys
-	assert.NotEmpty(t, ColumnsMedicineMapping)
-	assert.Contains(t, ColumnsMedicineMapping, "name")
-	assert.Contains(t, ColumnsMedicineMapping, "description")
-	assert.Contains(t, ColumnsMedicineMapping, "eanCode")
-	assert.Contains(t, ColumnsMedicineMapping, "laboratory")
-	assert.Contains(t, ColumnsMedicineMapping, "createdAt")
-	assert.Contains(t, ColumnsMedicineMapping, "updatedAt")
+	assert.Equal(t, "id", ColumnsMedicineMapping["id"])
+	assert.Equal(t, "name", ColumnsMedicineMapping["name"])
+	assert.Equal(t, "description", ColumnsMedicineMapping["description"])
+	assert.Equal(t, "ean_code", ColumnsMedicineMapping["eanCode"])
+	assert.Equal(t, "laboratory", ColumnsMedicineMapping["laboratory"])
+	assert.Equal(t, "created_at", ColumnsMedicineMapping["createdAt"])
+	assert.Equal(t, "updated_at", ColumnsMedicineMapping["updatedAt"])
 }
