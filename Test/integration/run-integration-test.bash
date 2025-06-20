@@ -36,13 +36,13 @@ echo "🔧 Exporting environment variables (if not already set)..."
 # Server Configuration
 export SERVER_PORT="${SERVER_PORT:-8080}"
 
-# Database Configuration
+# Database Configuration - Updated to match Docker container
 export DB_HOST="${DB_HOST:-127.0.0.1}"
-export DB_NAME="${DB_NAME:-boilerplate_go}"
-export DB_PASSWORD="${DB_PASSWORD:-devPassword123}"
+export DB_NAME="${DB_NAME:-microservices_go}"
+export DB_PASSWORD="${DB_PASSWORD:-password}"
 export DB_PORT="${DB_PORT:-5432}"
 export DB_SSLMODE="${DB_SSLMODE:-disable}"
-export DB_USER="${DB_USER:-appuser}"
+export DB_USER="${DB_USER:-postgres}"
 
 # Database Connection Pool Configuration
 export DB_MAX_IDLE_CONNS="${DB_MAX_IDLE_CONNS:-10}"
