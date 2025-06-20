@@ -144,10 +144,31 @@ func (s *JWTService) GetClaimsAndVerifyToken(tokenString string, tokenType strin
 	if claims["type"] != tokenType {
 		return nil, domainErrors.NewAppError(errors.New("invalid token type"), domainErrors.NotAuthenticated)
 	}
-	var timeExpire = claims["exp"].(float64)
+
+	expVal, ok := claims["exp"]
+	if !ok || expVal == nil {
+		return nil, errors.New("token missing expiration (exp) claim")
+	}
+	timeExpire, ok := expVal.(float64)
+	if !ok {
+		return nil, errors.New("token expiration (exp) claim is not a float64")
+	}
 	if time.Now().Unix() > int64(timeExpire) {
 		return nil, domainErrors.NewAppError(errors.New("token expired"), domainErrors.NotAuthenticated)
 	}
+
+	idVal, ok := claims["id"]
+	if !ok || idVal == nil {
+		return nil, errors.New("token missing id claim")
+	}
+	// Accept float64 or int64 for id
+	switch idVal.(type) {
+	case float64, int64, int:
+		// ok
+	default:
+		return nil, errors.New("token id claim is not a number")
+	}
+
 	return claims, nil
 }
 

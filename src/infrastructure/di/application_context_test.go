@@ -1,6 +1,7 @@
 package di
 
 import (
+	"os"
 	"testing"
 
 	"github.com/gbrayhan/microservices-go/src/domain"
@@ -12,7 +13,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// Mock implementations for testing
+// Mock repositories and services
 type MockUserRepository struct {
 	mock.Mock
 }
@@ -22,18 +23,18 @@ func (m *MockUserRepository) GetAll() (*[]domainUser.User, error) {
 	return args.Get(0).(*[]domainUser.User), args.Error(1)
 }
 
-func (m *MockUserRepository) Create(userDomain *domainUser.User) (*domainUser.User, error) {
-	args := m.Called(userDomain)
+func (m *MockUserRepository) GetByID(id int) (*domainUser.User, error) {
+	args := m.Called(id)
+	return args.Get(0).(*domainUser.User), args.Error(1)
+}
+
+func (m *MockUserRepository) Create(user *domainUser.User) (*domainUser.User, error) {
+	args := m.Called(user)
 	return args.Get(0).(*domainUser.User), args.Error(1)
 }
 
 func (m *MockUserRepository) GetOneByMap(userMap map[string]interface{}) (*domainUser.User, error) {
 	args := m.Called(userMap)
-	return args.Get(0).(*domainUser.User), args.Error(1)
-}
-
-func (m *MockUserRepository) GetByID(id int) (*domainUser.User, error) {
-	args := m.Called(id)
 	return args.Get(0).(*domainUser.User), args.Error(1)
 }
 
@@ -76,14 +77,14 @@ func (m *MockMedicineRepository) GetByMap(medicineMap map[string]any) (*domainMe
 	return args.Get(0).(*domainMedicine.Medicine), args.Error(1)
 }
 
-func (m *MockMedicineRepository) Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error) {
-	args := m.Called(id, medicineMap)
-	return args.Get(0).(*domainMedicine.Medicine), args.Error(1)
-}
-
 func (m *MockMedicineRepository) Delete(id int) error {
 	args := m.Called(id)
 	return args.Error(0)
+}
+
+func (m *MockMedicineRepository) Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error) {
+	args := m.Called(id, medicineMap)
+	return args.Get(0).(*domainMedicine.Medicine), args.Error(1)
 }
 
 type MockJWTService struct {
@@ -95,53 +96,65 @@ func (m *MockJWTService) GenerateJWTToken(userID int, tokenType string) (*securi
 	return args.Get(0).(*security.AppToken), args.Error(1)
 }
 
-func (m *MockJWTService) GetClaimsAndVerifyToken(token string, tokenType string) (jwt.MapClaims, error) {
-	args := m.Called(token, tokenType)
+func (m *MockJWTService) GetClaimsAndVerifyToken(tokenString string, tokenType string) (jwt.MapClaims, error) {
+	args := m.Called(tokenString, tokenType)
 	return args.Get(0).(jwt.MapClaims), args.Error(1)
 }
 
 func TestNewTestApplicationContext(t *testing.T) {
-	// Create mock dependencies
 	mockUserRepo := &MockUserRepository{}
 	mockMedicineRepo := &MockMedicineRepository{}
 	mockJWTService := &MockJWTService{}
 
-	// Create test application context
 	appContext := NewTestApplicationContext(mockUserRepo, mockMedicineRepo, mockJWTService)
 
-	// Assert that all dependencies are properly set
 	assert.NotNil(t, appContext)
+	assert.Equal(t, mockUserRepo, appContext.UserRepository)
+	assert.Equal(t, mockMedicineRepo, appContext.MedicineRepository)
 	assert.Equal(t, mockJWTService, appContext.JWTService)
+
+	// Test that controllers are created
 	assert.NotNil(t, appContext.AuthController)
 	assert.NotNil(t, appContext.UserController)
 	assert.NotNil(t, appContext.MedicineController)
+
+	// Test that use cases are created
+	assert.NotNil(t, appContext.AuthUseCase)
+	assert.NotNil(t, appContext.UserUseCase)
+	assert.NotNil(t, appContext.MedicineUseCase)
 }
 
-func TestNewTestApplicationContext_ControllerDependencies(t *testing.T) {
-	// Create mock dependencies
+func TestSetupDependencies(t *testing.T) {
+	// This test will fail in CI/CD without a real database connection
+	// We'll test the error path by setting invalid environment variables
+	originalHost := os.Getenv("DB_HOST")
+	os.Setenv("DB_HOST", "")
+	defer os.Setenv("DB_HOST", originalHost)
+
+	appContext, err := SetupDependencies()
+
+	assert.Error(t, err)
+	assert.Nil(t, appContext)
+}
+
+func TestApplicationContextStructure(t *testing.T) {
 	mockUserRepo := &MockUserRepository{}
 	mockMedicineRepo := &MockMedicineRepository{}
 	mockJWTService := &MockJWTService{}
 
-	// Create test application context
 	appContext := NewTestApplicationContext(mockUserRepo, mockMedicineRepo, mockJWTService)
 
-	// Test that controllers are properly initialized
-	// This is an indirect test - we're verifying the structure is correct
+	// Test that all fields are properly set
 	assert.NotNil(t, appContext.AuthController)
 	assert.NotNil(t, appContext.UserController)
 	assert.NotNil(t, appContext.MedicineController)
-}
+	assert.NotNil(t, appContext.JWTService)
+	assert.NotNil(t, appContext.UserRepository)
+	assert.NotNil(t, appContext.MedicineRepository)
+	assert.NotNil(t, appContext.AuthUseCase)
+	assert.NotNil(t, appContext.UserUseCase)
+	assert.NotNil(t, appContext.MedicineUseCase)
 
-func TestNewTestApplicationContext_JWTServiceDependency(t *testing.T) {
-	// Create mock dependencies
-	mockUserRepo := &MockUserRepository{}
-	mockMedicineRepo := &MockMedicineRepository{}
-	mockJWTService := &MockJWTService{}
-
-	// Create test application context
-	appContext := NewTestApplicationContext(mockUserRepo, mockMedicineRepo, mockJWTService)
-
-	// Test that JWT service is properly set
-	assert.Equal(t, mockJWTService, appContext.JWTService)
+	// Test that DB is nil in test context (as expected)
+	assert.Nil(t, appContext.DB)
 }

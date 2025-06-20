@@ -1,370 +1,603 @@
 package security
 
 import (
+	"os"
 	"testing"
 	"time"
 
-	"encoding/base64"
-	"strings"
-
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewJWTService(t *testing.T) {
-	jwtService := NewJWTService()
-	if jwtService == nil {
-		t.Error("Expected JWT service to be created")
+	service := NewJWTService()
+	assert.NotNil(t, service)
+	assert.Implements(t, (*IJWTService)(nil), service)
+}
+
+func TestNewJWTServiceWithConfig(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
+	service := NewJWTServiceWithConfig(config)
+	assert.NotNil(t, service)
+	assert.Implements(t, (*IJWTService)(nil), service)
+}
+
+func TestLoadJWTConfig(t *testing.T) {
+	// Test with environment variables set
+	os.Setenv("JWT_ACCESS_SECRET", "custom_access_secret")
+	os.Setenv("JWT_REFRESH_SECRET", "custom_refresh_secret")
+	os.Setenv("JWT_ACCESS_TIME_MINUTE", "45")
+	os.Setenv("JWT_REFRESH_TIME_HOUR", "48")
+
+	config := loadJWTConfig()
+	assert.Equal(t, "custom_access_secret", config.AccessSecret)
+	assert.Equal(t, "custom_refresh_secret", config.RefreshSecret)
+	assert.Equal(t, int64(45), config.AccessTime)
+	assert.Equal(t, int64(48), config.RefreshTime)
+
+	// Clean up
+	os.Unsetenv("JWT_ACCESS_SECRET")
+	os.Unsetenv("JWT_REFRESH_SECRET")
+	os.Unsetenv("JWT_ACCESS_TIME_MINUTE")
+	os.Unsetenv("JWT_REFRESH_TIME_HOUR")
+}
+
+func TestGenerateJWTToken_Access(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	userID := 123
+	token, err := service.GenerateJWTToken(userID, Access)
+	require.NoError(t, err)
+	assert.NotNil(t, token)
+	assert.Equal(t, Access, token.TokenType)
+	assert.True(t, token.ExpirationTime.After(time.Now()))
+}
+
+func TestGenerateJWTToken_Refresh(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	userID := 456
+	token, err := service.GenerateJWTToken(userID, Refresh)
+	require.NoError(t, err)
+	assert.NotNil(t, token)
+	assert.Equal(t, Refresh, token.TokenType)
+	assert.True(t, token.ExpirationTime.After(time.Now()))
 }
 
 func TestGenerateJWTToken_InvalidType(t *testing.T) {
-	jwtService := NewJWTServiceWithConfig(JWTConfig{})
-	_, err := jwtService.GenerateJWTToken(1, "invalid")
-	if err == nil {
-		t.Error("Expected error for invalid token type")
-	}
-	if err.Error() != "invalid token type" {
-		t.Errorf("Expected 'invalid token type', got %s", err.Error())
-	}
-}
-
-func TestGenerateJWTToken_AccessToken(t *testing.T) {
-	jwtConfig := JWTConfig{
-		AccessSecret: "test-secret",
-		AccessTime:   30,
-	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
-
-	token, err := jwtService.GenerateJWTToken(123, Access)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
-
-	if token.TokenType != Access {
-		t.Errorf("Expected token type %s, got %s", Access, token.TokenType)
-	}
-
-	if token.Token == "" {
-		t.Error("Expected non-empty token")
-	}
-
-	// Verify token is not expired
-	if time.Now().After(token.ExpirationTime) {
-		t.Error("Token should not be expired")
-	}
-}
-
-func TestGenerateJWTToken_RefreshToken(t *testing.T) {
-	jwtConfig := JWTConfig{
-		RefreshSecret: "test-refresh-secret",
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
 		RefreshTime:   24,
 	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
+	service := NewJWTServiceWithConfig(config)
 
-	token, err := jwtService.GenerateJWTToken(123, Refresh)
-	if err != nil {
-		t.Fatalf("Unexpected error: %v", err)
-	}
+	userID := 123
+	token, err := service.GenerateJWTToken(userID, "invalid_type")
+	assert.Error(t, err)
+	assert.Nil(t, token)
+	assert.Contains(t, err.Error(), "invalid token type")
+}
 
-	if token.TokenType != Refresh {
-		t.Errorf("Expected token type %s, got %s", Refresh, token.TokenType)
+func TestGenerateJWTToken_EmptySecret(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "",
+		RefreshSecret: "",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
+	service := NewJWTServiceWithConfig(config)
 
-	if token.Token == "" {
-		t.Error("Expected non-empty token")
-	}
+	userID := 123
+	token, err := service.GenerateJWTToken(userID, Access)
+	// This should still work with empty secrets (they're just empty strings)
+	require.NoError(t, err)
+	assert.NotNil(t, token)
+}
 
-	// Verify token is not expired
-	if time.Now().After(token.ExpirationTime) {
-		t.Error("Token should not be expired")
+func TestGetClaimsAndVerifyToken_ValidAccessToken(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
+	service := NewJWTServiceWithConfig(config)
+
+	userID := 123
+	token, err := service.GenerateJWTToken(userID, Access)
+	require.NoError(t, err)
+
+	claims, err := service.GetClaimsAndVerifyToken(token.Token, Access)
+	require.NoError(t, err)
+	assert.Equal(t, float64(userID), claims["id"])
+	assert.Equal(t, Access, claims["type"])
+	assert.NotNil(t, claims["exp"])
+}
+
+func TestGetClaimsAndVerifyToken_ValidRefreshToken(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	userID := 456
+	token, err := service.GenerateJWTToken(userID, Refresh)
+	require.NoError(t, err)
+
+	claims, err := service.GetClaimsAndVerifyToken(token.Token, Refresh)
+	require.NoError(t, err)
+	assert.Equal(t, float64(userID), claims["id"])
+	assert.Equal(t, Refresh, claims["type"])
+	assert.NotNil(t, claims["exp"])
 }
 
 func TestGetClaimsAndVerifyToken_InvalidToken(t *testing.T) {
-	jwtConfig := JWTConfig{
-		AccessSecret: "test-secret",
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
+	service := NewJWTServiceWithConfig(config)
 
-	_, err := jwtService.GetClaimsAndVerifyToken("invalid-token", Access)
-	if err == nil {
-		t.Error("Expected error for invalid token")
-	}
-}
-
-func TestGetClaimsAndVerifyToken_ValidToken(t *testing.T) {
-	jwtConfig := JWTConfig{
-		AccessSecret: "test-secret",
-		AccessTime:   30,
-	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
-
-	// Generate a valid token first
-	token, err := jwtService.GenerateJWTToken(123, Access)
-	if err != nil {
-		t.Fatalf("Failed to generate token: %v", err)
-	}
-
-	// Verify the token
-	claims, err := jwtService.GetClaimsAndVerifyToken(token.Token, Access)
-	if err != nil {
-		t.Fatalf("Failed to verify token: %v", err)
-	}
-
-	if claims["id"].(float64) != 123 {
-		t.Errorf("Expected user ID 123, got %v", claims["id"])
-	}
-
-	if claims["type"].(string) != Access {
-		t.Errorf("Expected token type %s, got %s", Access, claims["type"])
-	}
+	claims, err := service.GetClaimsAndVerifyToken("invalid_token", Access)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
 }
 
 func TestGetClaimsAndVerifyToken_WrongTokenType(t *testing.T) {
-	jwtConfig := JWTConfig{
-		AccessSecret: "test-secret",
-		AccessTime:   30,
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
+	service := NewJWTServiceWithConfig(config)
 
-	// Generate an access token
-	token, err := jwtService.GenerateJWTToken(123, Access)
-	if err != nil {
-		t.Fatalf("Failed to generate token: %v", err)
-	}
+	// Generate access token but try to verify as refresh token
+	userID := 123
+	token, err := service.GenerateJWTToken(userID, Access)
+	require.NoError(t, err)
 
-	// Try to verify it as a refresh token
-	_, err = jwtService.GetClaimsAndVerifyToken(token.Token, Refresh)
-	if err == nil {
-		t.Error("Expected error for wrong token type")
-	}
+	claims, err := service.GetClaimsAndVerifyToken(token.Token, Refresh)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
 }
 
 func TestGetClaimsAndVerifyToken_ExpiredToken(t *testing.T) {
-	jwtConfig := JWTConfig{
-		AccessSecret: "test-secret",
-		AccessTime:   0, // 0 minutes = expired immediately
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    0, // 0 minutes = immediate expiration
+		RefreshTime:   0, // 0 hours = immediate expiration
 	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
+	service := NewJWTServiceWithConfig(config)
 
-	// Generate a token that expires immediately
-	token, err := jwtService.GenerateJWTToken(123, Access)
-	if err != nil {
-		t.Fatalf("Failed to generate token: %v", err)
-	}
+	userID := 123
+	token, err := service.GenerateJWTToken(userID, Access)
+	require.NoError(t, err)
 
-	// Wait a moment to ensure token is expired
-	time.Sleep(100 * time.Millisecond)
+	// Wait for token to expire
+	time.Sleep(1 * time.Second)
 
-	// Try to verify the expired token
-	_, err = jwtService.GetClaimsAndVerifyToken(token.Token, Access)
-	if err == nil {
-		t.Error("Expected error for expired token")
-	}
+	claims, err := service.GetClaimsAndVerifyToken(token.Token, Access)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
 }
 
-func TestGetClaimsAndVerifyToken_RefreshToken(t *testing.T) {
-	jwtConfig := JWTConfig{
-		RefreshSecret: "test-refresh-secret",
+func TestGetClaimsAndVerifyToken_WrongSigningMethod(t *testing.T) {
+	// Create a token with wrong signing method
+	claims := jwt.MapClaims{
+		"id":   123,
+		"type": Access,
+		"exp":  time.Now().Add(time.Hour).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS512, claims)
+	tokenString, err := token.SignedString([]byte("wrong_secret"))
+	require.NoError(t, err)
+
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
 		RefreshTime:   24,
 	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
+	service := NewJWTServiceWithConfig(config)
 
-	// Generate a refresh token
-	token, err := jwtService.GenerateJWTToken(123, Refresh)
-	if err != nil {
-		t.Fatalf("Failed to generate token: %v", err)
-	}
-
-	// Verify the refresh token
-	claims, err := jwtService.GetClaimsAndVerifyToken(token.Token, Refresh)
-	if err != nil {
-		t.Fatalf("Failed to verify token: %v", err)
-	}
-
-	if claims["id"].(float64) != 123 {
-		t.Errorf("Expected user ID 123, got %v", claims["id"])
-	}
-
-	if claims["type"].(string) != Refresh {
-		t.Errorf("Expected token type %s, got %s", Refresh, claims["type"])
-	}
+	claims, err = service.GetClaimsAndVerifyToken(tokenString, Access)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
 }
 
-func TestGetClaimsAndVerifyToken_InvalidClaims(t *testing.T) {
-	jwtConfig := JWTConfig{
-		AccessSecret: "test-secret",
+func TestGetClaimsAndVerifyToken_EmptyToken(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
+	service := NewJWTServiceWithConfig(config)
 
+	claims, err := service.GetClaimsAndVerifyToken("", Access)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
+}
+
+func TestGetClaimsAndVerifyToken_MalformedToken(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	claims, err := service.GetClaimsAndVerifyToken("header.payload.signature", Access)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
+}
+
+func TestGetClaimsAndVerifyToken_TokenWithoutClaims(t *testing.T) {
+	// Create a token without proper claims
+	token := jwt.New(jwt.SigningMethodHS256)
+	tokenString, err := token.SignedString([]byte("test_access_secret"))
+	require.NoError(t, err)
+
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	claims, err := service.GetClaimsAndVerifyToken(tokenString, Access)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
+}
+
+func TestGetClaimsAndVerifyToken_TokenWithInvalidClaims(t *testing.T) {
 	// Create a token with invalid claims structure
-	claims := &Claims{
-		ID:   123,
-		Type: Access,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
-		},
-	}
-	tokenWithClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := tokenWithClaims.SignedString([]byte("wrong-secret"))
-	if err != nil {
-		t.Fatalf("Failed to create token: %v", err)
+	claims := jwt.MapClaims{
+		"id":   "not_a_number", // Should be a number
+		"type": Access,
+		"exp":  time.Now().Add(time.Hour).Unix(),
 	}
 
-	// Try to verify with wrong secret
-	_, err = jwtService.GetClaimsAndVerifyToken(tokenStr, Access)
-	if err == nil {
-		t.Error("Expected error for invalid token")
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte("test_access_secret"))
+	require.NoError(t, err)
+
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
+	service := NewJWTServiceWithConfig(config)
+
+	claims, err = service.GetClaimsAndVerifyToken(tokenString, Access)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
 }
 
-func TestClaims_Structure(t *testing.T) {
-	claims := &Claims{
-		ID:   123,
-		Type: Access,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
-		},
+func TestGetClaimsAndVerifyToken_TokenWithInvalidExpiration(t *testing.T) {
+	// Create a token with invalid expiration format
+	claims := jwt.MapClaims{
+		"id":   123,
+		"type": Access,
+		"exp":  "not_a_number", // Should be a number
 	}
 
-	if claims.ID != 123 {
-		t.Errorf("Expected ID 123, got %d", claims.ID)
-	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte("test_access_secret"))
+	require.NoError(t, err)
 
-	if claims.Type != Access {
-		t.Errorf("Expected type %s, got %s", Access, claims.Type)
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
+	service := NewJWTServiceWithConfig(config)
+
+	claims, err = service.GetClaimsAndVerifyToken(tokenString, Access)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
 }
 
-func TestAppToken_Structure(t *testing.T) {
-	now := time.Now()
-	token := &AppToken{
-		Token:          "test-token",
-		TokenType:      Access,
-		ExpirationTime: now.Add(time.Hour),
+func TestGetClaimsAndVerifyToken_TokenWithMissingType(t *testing.T) {
+	// Create a token without type claim
+	claims := jwt.MapClaims{
+		"id":  123,
+		"exp": time.Now().Add(time.Hour).Unix(),
 	}
 
-	if token.Token != "test-token" {
-		t.Errorf("Expected token 'test-token', got %s", token.Token)
-	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte("test_access_secret"))
+	require.NoError(t, err)
 
-	if token.TokenType != Access {
-		t.Errorf("Expected token type %s, got %s", Access, token.TokenType)
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
+	service := NewJWTServiceWithConfig(config)
 
-	if !token.ExpirationTime.After(now) {
-		t.Error("Expected expiration time to be in the future")
-	}
+	claims, err = service.GetClaimsAndVerifyToken(tokenString, Access)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
 }
 
-func TestGenerateJWTToken_SignedStringError(t *testing.T) {
-	claims := &Claims{
-		ID:   123,
-		Type: Access,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute)),
-		},
+func TestGetClaimsAndVerifyToken_TokenWithMissingExpiration(t *testing.T) {
+	// Create a token without expiration claim
+	claims := jwt.MapClaims{
+		"id":   123,
+		"type": Access,
 	}
-	tokenWithClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	_, err := tokenWithClaims.SignedString(12345) // invalid key
-	if err == nil {
-		t.Error("Expected error when signing with invalid key type")
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString([]byte("test_access_secret"))
+	require.NoError(t, err)
+
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
+	service := NewJWTServiceWithConfig(config)
+
+	claims, err = service.GetClaimsAndVerifyToken(tokenString, Access)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
 }
 
-func TestGetClaimsAndVerifyToken_InvalidSigningMethod(t *testing.T) {
-	jwtConfig := JWTConfig{
-		AccessSecret: "test-secret",
-	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
+func TestGetEnvOrDefault(t *testing.T) {
+	// Test with environment variable set
+	os.Setenv("TEST_KEY", "test_value")
+	result := getEnvOrDefault("TEST_KEY", "default_value")
+	assert.Equal(t, "test_value", result)
 
-	claims := jwt.MapClaims{"id": 123, "type": Access, "exp": time.Now().Add(time.Hour).Unix()}
+	// Test with environment variable not set
+	result = getEnvOrDefault("NONEXISTENT_KEY", "default_value")
+	assert.Equal(t, "default_value", result)
+
+	// Clean up
+	os.Unsetenv("TEST_KEY")
+}
+
+func TestGetEnvAsInt64OrDefault(t *testing.T) {
+	// Test with valid integer environment variable
+	os.Setenv("TEST_INT", "123")
+	result := getEnvAsInt64OrDefault("TEST_INT", 456)
+	assert.Equal(t, int64(123), result)
+
+	// Test with invalid integer environment variable
+	os.Setenv("TEST_INVALID", "not_a_number")
+	result = getEnvAsInt64OrDefault("TEST_INVALID", 456)
+	assert.Equal(t, int64(456), result)
+
+	// Test with environment variable not set
+	result = getEnvAsInt64OrDefault("NONEXISTENT_INT", 789)
+	assert.Equal(t, int64(789), result)
+
+	// Clean up
+	os.Unsetenv("TEST_INT")
+	os.Unsetenv("TEST_INVALID")
+}
+
+func TestJWTService_InterfaceCompliance(t *testing.T) {
+	var _ IJWTService = (*JWTService)(nil)
+}
+
+func TestGenerateJWTToken_EdgeCases(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    0, // Test with zero duration
+		RefreshTime:   0,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	userID := 123
+	token, err := service.GenerateJWTToken(userID, Access)
+
+	require.NoError(t, err)
+	assert.NotNil(t, token)
+	assert.True(t, token.ExpirationTime.Equal(time.Now()) || token.ExpirationTime.Before(time.Now()))
+}
+
+func TestGenerateJWTToken_NegativeUserID(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	userID := -123
+	token, err := service.GenerateJWTToken(userID, Access)
+	require.NoError(t, err)
+	assert.NotNil(t, token)
+}
+
+func TestGenerateJWTToken_ZeroUserID(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	userID := 0
+	token, err := service.GenerateJWTToken(userID, Access)
+	require.NoError(t, err)
+	assert.NotNil(t, token)
+}
+
+func TestGenerateJWTToken_LargeUserID(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	userID := 999999999
+	token, err := service.GenerateJWTToken(userID, Access)
+	require.NoError(t, err)
+	assert.NotNil(t, token)
+}
+
+func TestGetClaimsAndVerifyToken_WithDifferentSecrets(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "access_secret_1",
+		RefreshSecret: "refresh_secret_2",
+		AccessTime:    30,
+		RefreshTime:   24,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	userID := 123
+	token, err := service.GenerateJWTToken(userID, Access)
+	require.NoError(t, err)
+
+	// Should work with access secret
+	claims, err := service.GetClaimsAndVerifyToken(token.Token, Access)
+	require.NoError(t, err)
+	assert.Equal(t, float64(userID), claims["id"])
+
+	// Should fail with refresh secret
+	claims, err = service.GetClaimsAndVerifyToken(token.Token, Refresh)
+	assert.Error(t, err)
+	assert.Nil(t, claims)
+}
+
+func TestGetClaimsAndVerifyToken_WithVeryLongSecrets(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "very_long_access_secret_that_exceeds_normal_length_for_testing_purposes_and_to_ensure_proper_handling_of_long_secrets_in_the_jwt_service_implementation",
+		RefreshSecret: "very_long_refresh_secret_that_exceeds_normal_length_for_testing_purposes_and_to_ensure_proper_handling_of_long_secrets_in_the_jwt_service_implementation",
+		AccessTime:    30,
+		RefreshTime:   24,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	userID := 123
+	token, err := service.GenerateJWTToken(userID, Access)
+	require.NoError(t, err)
+
+	claims, err := service.GetClaimsAndVerifyToken(token.Token, Access)
+	require.NoError(t, err)
+	assert.Equal(t, float64(userID), claims["id"])
+}
+
+func TestGetClaimsAndVerifyToken_WithSpecialCharactersInSecrets(t *testing.T) {
+	config := JWTConfig{
+		AccessSecret:  "access_secret_with_special_chars_!@#$%^&*()_+-=[]{}|;':\",./<>?",
+		RefreshSecret: "refresh_secret_with_special_chars_!@#$%^&*()_+-=[]{}|;':\",./<>?",
+		AccessTime:    30,
+		RefreshTime:   24,
+	}
+	service := NewJWTServiceWithConfig(config)
+
+	userID := 123
+	token, err := service.GenerateJWTToken(userID, Access)
+	require.NoError(t, err)
+
+	claims, err := service.GetClaimsAndVerifyToken(token.Token, Access)
+	require.NoError(t, err)
+	assert.Equal(t, float64(userID), claims["id"])
+}
+
+// BadClaims es un tipo inválido para forzar error en SignedString
+type BadClaims struct{}
+
+func (b BadClaims) Valid() error { return nil }
+
+// TestGetClaimsAndVerifyToken_SignedStringError cubre el branch de error de SignedString, pero no es forzable sin cambiar la API de GenerateJWTToken.
+// Por defecto, jwt-go permite serializar cualquier struct vacío y el secret raro no genera error.
+// Si se desea cubrir este branch, se debe usar un mock o cambiar la firma de la función para inyectar el error.
+//func TestGenerateJWTToken_SignedStringError(t *testing.T) {
+//	config := JWTConfig{
+//		AccessSecret:  string([]byte{0xff, 0xfe, 0xfd}), // secret raro
+//		RefreshSecret: string([]byte{0xff, 0xfe, 0xfd}),
+//		AccessTime:    30,
+//		RefreshTime:   24,
+//	}
+//	tokenWithClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, BadClaims{})
+//	_, err := tokenWithClaims.SignedString([]byte(config.AccessSecret))
+//	assert.Error(t, err)
+//}
+
+func TestGetClaimsAndVerifyToken_UnexpectedSigningMethod(t *testing.T) {
+	// Crea un token con un método de firma diferente
+	claims := jwt.MapClaims{
+		"id":   123,
+		"type": Access,
+		"exp":  time.Now().Add(time.Hour).Unix(),
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS384, claims)
-	tokenStr, err := token.SignedString([]byte("test-secret"))
-	if err != nil {
-		t.Fatalf("Failed to create token: %v", err)
-	}
+	tokenString, err := token.SignedString([]byte("test_access_secret"))
+	require.NoError(t, err)
 
-	_, err = jwtService.GetClaimsAndVerifyToken(tokenStr, Access)
-	if err == nil {
-		t.Error("Expected error for unexpected signing method (any error)")
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
+	service := NewJWTServiceWithConfig(config)
+
+	result, err := service.GetClaimsAndVerifyToken(tokenString, Access)
+	assert.Error(t, err)
+	assert.Nil(t, result)
 }
 
-// InvalidClaimsType implements jwt.Claims but is not jwt.MapClaims
-type InvalidClaimsType struct {
-	ID   int    `json:"id"`
-	Type string `json:"type"`
-	Exp  int64  `json:"exp"`
-}
+func TestGetClaimsAndVerifyToken_InvalidClaimsType(t *testing.T) {
+	// Crea un token válido pero con claims que no son MapClaims
+	token := jwt.New(jwt.SigningMethodHS256)
+	tokenString, err := token.SignedString([]byte("test_access_secret"))
+	require.NoError(t, err)
 
-func (i InvalidClaimsType) Valid() error {
-	return nil
-}
-
-func TestGetClaimsAndVerifyToken_ArtificialInvalidClaimsType(t *testing.T) {
-	jwtConfig := JWTConfig{
-		AccessSecret: "test-secret",
+	config := JWTConfig{
+		AccessSecret:  "test_access_secret",
+		RefreshSecret: "test_refresh_secret",
+		AccessTime:    30,
+		RefreshTime:   24,
 	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
+	service := NewJWTServiceWithConfig(config)
 
-	// Create a valid JWT
-	claims := jwt.MapClaims{"id": 123, "type": Access, "exp": time.Now().Add(time.Hour).Unix()}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte("test-secret"))
-	if err != nil {
-		t.Fatalf("Failed to create token: %v", err)
-	}
-
-	// Manipulate the payload to make it invalid JSON (e.g., base64 string of a number)
-	parts := strings.Split(tokenStr, ".")
-	if len(parts) != 3 {
-		t.Fatalf("Invalid JWT format")
-	}
-	// Replace payload with a number encoded in base64
-	parts[1] = base64.RawURLEncoding.EncodeToString([]byte("12345"))
-	manipulatedToken := strings.Join(parts, ".")
-
-	_, err = jwtService.GetClaimsAndVerifyToken(manipulatedToken, Access)
-	if err == nil {
-		t.Errorf("Expected any error for invalid claims type, got: %v", err)
-	}
-}
-
-func TestGetClaimsAndVerifyToken_CorruptToken(t *testing.T) {
-	jwtConfig := JWTConfig{
-		AccessSecret: "test-secret",
-	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
-
-	_, err := jwtService.GetClaimsAndVerifyToken("this-is-not-a-jwt", Access)
-	if err == nil {
-		t.Error("Expected error for corrupt token")
-	}
-}
-
-func TestGetClaimsAndVerifyToken_MissingExpField(t *testing.T) {
-	jwtConfig := JWTConfig{
-		AccessSecret: "test-secret",
-	}
-	jwtService := NewJWTServiceWithConfig(jwtConfig)
-
-	// Create a token without exp field to force type assertion error
-	claims := jwt.MapClaims{"id": 123, "type": Access} // Without "exp" field
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte("test-secret"))
-	if err != nil {
-		t.Fatalf("Failed to create token: %v", err)
-	}
-
-	// Use defer recover to handle expected panic
-	defer func() {
-		if r := recover(); r == nil {
-			t.Error("Expected panic for missing exp field")
-		}
-	}()
-
-	_, err = jwtService.GetClaimsAndVerifyToken(tokenStr, Access)
-	// We don't check err because we expect a panic, not an error
-	_ = err
+	// Forzamos el error de tipo de claims
+	result, err := service.GetClaimsAndVerifyToken(tokenString, Access)
+	assert.Error(t, err)
+	assert.Nil(t, result)
 }

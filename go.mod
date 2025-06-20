@@ -3,6 +3,7 @@ module github.com/gbrayhan/microservices-go
 go 1.24.2
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/cucumber/godog v0.15.0
 	github.com/gin-contrib/cors v1.7.5
 	github.com/gin-gonic/gin v1.10.0
@@ -11,7 +12,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.37.0
 	gorm.io/driver/postgres v1.5.11
-	gorm.io/gorm v1.26.0
+	gorm.io/gorm v1.30.0
 )
 
 require (
