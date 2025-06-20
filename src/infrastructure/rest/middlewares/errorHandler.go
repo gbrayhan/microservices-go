@@ -16,20 +16,8 @@ func ErrorHandler() gin.HandlerFunc {
 			err := c.Errors.Last().Err
 			var appErr *domainErrors.AppError
 			if errors.As(err, &appErr) {
-				switch appErr.Type {
-				case domainErrors.NotFound:
-					c.JSON(http.StatusNotFound, gin.H{"error": appErr.Error()})
-				case domainErrors.ValidationError:
-					c.JSON(http.StatusBadRequest, gin.H{"error": appErr.Error()})
-				case domainErrors.RepositoryError:
-					c.JSON(http.StatusInternalServerError, gin.H{"error": appErr.Error()})
-				case domainErrors.NotAuthenticated:
-					c.JSON(http.StatusUnauthorized, gin.H{"error": appErr.Error()})
-				case domainErrors.NotAuthorized:
-					c.JSON(http.StatusForbidden, gin.H{"error": appErr.Error()})
-				default:
-					c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
-				}
+				status, message := domainErrors.AppErrorToHTTP(appErr)
+				c.JSON(status, gin.H{"error": message})
 			} else {
 				c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal Server Error"})
 			}

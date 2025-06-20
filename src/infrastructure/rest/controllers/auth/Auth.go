@@ -31,16 +31,31 @@ func (c *AuthController) Login(ctx *gin.Context) {
 		_ = ctx.Error(appError)
 		return
 	}
-	userLogin := useCaseAuth.LoginUser{
-		Email:    request.Email,
-		Password: request.Password,
-	}
-	authDataUser, err := c.authUsecase.Login(userLogin)
+
+	domainUser, authTokens, err := c.authUsecase.Login(request.Email, request.Password)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, authDataUser)
+
+	response := LoginResponse{
+		Data: UserData{
+			UserName:  domainUser.UserName,
+			Email:     domainUser.Email,
+			FirstName: domainUser.FirstName,
+			LastName:  domainUser.LastName,
+			Status:    domainUser.Status,
+			ID:        domainUser.ID,
+		},
+		Security: SecurityData{
+			JWTAccessToken:            authTokens.AccessToken,
+			JWTRefreshToken:           authTokens.RefreshToken,
+			ExpirationAccessDateTime:  authTokens.ExpirationAccessDateTime,
+			ExpirationRefreshDateTime: authTokens.ExpirationRefreshDateTime,
+		},
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }
 
 func (c *AuthController) GetAccessTokenByRefreshToken(ctx *gin.Context) {
@@ -50,10 +65,29 @@ func (c *AuthController) GetAccessTokenByRefreshToken(ctx *gin.Context) {
 		_ = ctx.Error(appError)
 		return
 	}
-	authDataUser, err := c.authUsecase.AccessTokenByRefreshToken(request.RefreshToken)
+
+	domainUser, authTokens, err := c.authUsecase.AccessTokenByRefreshToken(request.RefreshToken)
 	if err != nil {
 		_ = ctx.Error(err)
 		return
 	}
-	ctx.JSON(http.StatusOK, authDataUser)
+
+	response := LoginResponse{
+		Data: UserData{
+			UserName:  domainUser.UserName,
+			Email:     domainUser.Email,
+			FirstName: domainUser.FirstName,
+			LastName:  domainUser.LastName,
+			Status:    domainUser.Status,
+			ID:        domainUser.ID,
+		},
+		Security: SecurityData{
+			JWTAccessToken:            authTokens.AccessToken,
+			JWTRefreshToken:           authTokens.RefreshToken,
+			ExpirationAccessDateTime:  authTokens.ExpirationAccessDateTime,
+			ExpirationRefreshDateTime: authTokens.ExpirationRefreshDateTime,
+		},
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }

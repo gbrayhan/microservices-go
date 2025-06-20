@@ -1,9 +1,7 @@
 package psql
 
 import (
-	"crypto/rand"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 
@@ -121,81 +119,6 @@ func (r *PSQLRepository) SeedInitialUser() error {
 	// Note: This will be handled by the user repository
 	r.Logger.Println("User seeding should be handled by the user repository")
 	return nil
-}
-
-// Error types and AppError struct
-const (
-	NotFound                     = "NotFound"
-	notFoundMessage              = "record not found"
-	ValidationError              = "ValidationError"
-	validationErrorMessage       = "validation error"
-	ResourceAlreadyExists        = "ResourceAlreadyExists"
-	alreadyExistsErrorMessage    = "resource already exists"
-	RepositoryError              = "RepositoryError"
-	repositoryErrorMessage       = "error in repository operation"
-	NotAuthenticated             = "NotAuthenticated"
-	notAuthenticatedErrorMessage = "not authenticated"
-	TokenGeneratorError          = "TokenGeneratorError"
-	tokenGeneratorErrorMessage   = "error in token generation"
-	NotAuthorized                = "NotAuthorized"
-	notAuthorizedErrorMessage    = "not authorized"
-	UnknownError                 = "UnknownError"
-	unknownErrorMessage          = "something went wrong"
-)
-
-type AppError struct {
-	Err  error
-	Type string
-}
-
-func NewAppError(err error, errType string) *AppError {
-	return &AppError{
-		Err:  err,
-		Type: errType,
-	}
-}
-
-func NewAppErrorWithType(errType string) *AppError {
-	return &AppError{
-		Err:  errors.New(getErrorMessage(errType)),
-		Type: errType,
-	}
-}
-
-func getErrorMessage(errType string) string {
-	switch errType {
-	case NotFound:
-		return notFoundMessage
-	case ValidationError:
-		return validationErrorMessage
-	case ResourceAlreadyExists:
-		return alreadyExistsErrorMessage
-	case RepositoryError:
-		return repositoryErrorMessage
-	case NotAuthenticated:
-		return notAuthenticatedErrorMessage
-	case TokenGeneratorError:
-		return tokenGeneratorErrorMessage
-	case NotAuthorized:
-		return notAuthorizedErrorMessage
-	case UnknownError:
-		return unknownErrorMessage
-	default:
-		return unknownErrorMessage
-	}
-}
-
-func (appErr *AppError) Error() string {
-	return appErr.Err.Error()
-}
-
-func GenerateNewUUID() (string, error) {
-	b := make([]byte, 16)
-	_, err := rand.Read(b)
-	if err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:]), nil
 }
 
 // InitPSQLDB initializes the database connection

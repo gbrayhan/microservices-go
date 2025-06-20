@@ -55,14 +55,3 @@ func (s *UserUseCase) Delete(id int) error {
 func (s *UserUseCase) Update(id int, userMap map[string]interface{}) (*userDomain.User, error) {
 	return s.userRepository.Update(id, userMap)
 }
-
-// Structures
-type PaginationResultUser struct {
-	Data       []userDomain.User
-	Total      int64
-	Limit      int64
-	Current    int64
-	NextCursor uint
-	PrevCursor uint
-	NumPages   int64
-}

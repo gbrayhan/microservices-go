@@ -9,27 +9,28 @@ import (
 	"time"
 
 	useCaseAuth "github.com/gbrayhan/microservices-go/src/application/usecases/auth"
+	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
 	"github.com/gin-gonic/gin"
 )
 
 // MockAuthUseCase implements IAuthUseCase for testing
 type MockAuthUseCase struct {
-	loginFunc                func(useCaseAuth.LoginUser) (*useCaseAuth.SecurityAuthenticatedUser, error)
-	accessTokenByRefreshFunc func(string) (*useCaseAuth.SecurityAuthenticatedUser, error)
+	loginFunc                func(string, string) (*userDomain.User, *useCaseAuth.AuthTokens, error)
+	accessTokenByRefreshFunc func(string) (*userDomain.User, *useCaseAuth.AuthTokens, error)
 }
 
-func (m *MockAuthUseCase) Login(user useCaseAuth.LoginUser) (*useCaseAuth.SecurityAuthenticatedUser, error) {
+func (m *MockAuthUseCase) Login(email, password string) (*userDomain.User, *useCaseAuth.AuthTokens, error) {
 	if m.loginFunc != nil {
-		return m.loginFunc(user)
+		return m.loginFunc(email, password)
 	}
-	return nil, nil
+	return nil, nil, nil
 }
 
-func (m *MockAuthUseCase) AccessTokenByRefreshToken(refreshToken string) (*useCaseAuth.SecurityAuthenticatedUser, error) {
+func (m *MockAuthUseCase) AccessTokenByRefreshToken(refreshToken string) (*userDomain.User, *useCaseAuth.AuthTokens, error) {
 	if m.accessTokenByRefreshFunc != nil {
 		return m.accessTokenByRefreshFunc(refreshToken)
 	}
-	return nil, nil
+	return nil, nil, nil
 }
 
 func TestNewAuthController(t *testing.T) {
@@ -47,23 +48,22 @@ func TestAuthController_Login_Success(t *testing.T) {
 
 	// Create mock use case
 	mockUseCase := &MockAuthUseCase{
-		loginFunc: func(user useCaseAuth.LoginUser) (*useCaseAuth.SecurityAuthenticatedUser, error) {
-			return &useCaseAuth.SecurityAuthenticatedUser{
-				Data: useCaseAuth.DataUserAuthenticated{
-					UserName:  "testuser",
-					Email:     "test@example.com",
-					FirstName: "Test",
-					LastName:  "User",
-					Status:    true,
-					ID:        1,
-				},
-				Security: useCaseAuth.DataSecurityAuthenticated{
-					JWTAccessToken:            "test-access-token",
-					JWTRefreshToken:           "test-refresh-token",
-					ExpirationAccessDateTime:  time.Now().Add(time.Hour),
-					ExpirationRefreshDateTime: time.Now().Add(24 * time.Hour),
-				},
-			}, nil
+		loginFunc: func(email, password string) (*userDomain.User, *useCaseAuth.AuthTokens, error) {
+			user := &userDomain.User{
+				UserName:  "testuser",
+				Email:     "test@example.com",
+				FirstName: "Test",
+				LastName:  "User",
+				Status:    true,
+				ID:        1,
+			}
+			authTokens := &useCaseAuth.AuthTokens{
+				AccessToken:               "test-access-token",
+				RefreshToken:              "test-refresh-token",
+				ExpirationAccessDateTime:  time.Now().Add(time.Hour),
+				ExpirationRefreshDateTime: time.Now().Add(24 * time.Hour),
+			}
+			return user, authTokens, nil
 		},
 	}
 
@@ -133,23 +133,22 @@ func TestAuthController_GetAccessTokenByRefreshToken_Success(t *testing.T) {
 
 	// Create mock use case
 	mockUseCase := &MockAuthUseCase{
-		accessTokenByRefreshFunc: func(refreshToken string) (*useCaseAuth.SecurityAuthenticatedUser, error) {
-			return &useCaseAuth.SecurityAuthenticatedUser{
-				Data: useCaseAuth.DataUserAuthenticated{
-					UserName:  "testuser",
-					Email:     "test@example.com",
-					FirstName: "Test",
-					LastName:  "User",
-					Status:    true,
-					ID:        1,
-				},
-				Security: useCaseAuth.DataSecurityAuthenticated{
-					JWTAccessToken:            "new-access-token",
-					JWTRefreshToken:           "new-refresh-token",
-					ExpirationAccessDateTime:  time.Now().Add(time.Hour),
-					ExpirationRefreshDateTime: time.Now().Add(24 * time.Hour),
-				},
-			}, nil
+		accessTokenByRefreshFunc: func(refreshToken string) (*userDomain.User, *useCaseAuth.AuthTokens, error) {
+			user := &userDomain.User{
+				UserName:  "testuser",
+				Email:     "test@example.com",
+				FirstName: "Test",
+				LastName:  "User",
+				Status:    true,
+				ID:        1,
+			}
+			authTokens := &useCaseAuth.AuthTokens{
+				AccessToken:               "new-access-token",
+				RefreshToken:              "new-refresh-token",
+				ExpirationAccessDateTime:  time.Now().Add(time.Hour),
+				ExpirationRefreshDateTime: time.Now().Add(24 * time.Hour),
+			}
+			return user, authTokens, nil
 		},
 	}
 

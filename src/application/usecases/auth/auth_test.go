@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	errorsDomain "github.com/gbrayhan/microservices-go/src/domain/errors"
+	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/security"
 	"github.com/golang-jwt/jwt/v4"
@@ -79,9 +79,10 @@ func TestAuthUseCase_Login(t *testing.T) {
 		name                   string
 		mockGetOneByMapFn      func(map[string]interface{}) (*userDomain.User, error)
 		mockGenerateTokenFn    func(int, string) (*security.AppToken, error)
-		inputLogin             LoginUser
+		inputEmail             string
+		inputPassword          string
 		wantErr                bool
-		wantErrType            string
+		wantErrType            domainErrors.ErrorType
 		wantEmptySecurity      bool
 		wantSuccessAccessToken bool
 	}{
@@ -93,8 +94,9 @@ func TestAuthUseCase_Login(t *testing.T) {
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
 				return &security.AppToken{Token: "test_token"}, nil
 			},
-			inputLogin: LoginUser{Email: "test@example.com", Password: "123456"},
-			wantErr:    true,
+			inputEmail:    "test@example.com",
+			inputPassword: "123456",
+			wantErr:       true,
 		},
 		{
 			name: "User not found (ID=0)",
@@ -104,9 +106,10 @@ func TestAuthUseCase_Login(t *testing.T) {
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
 				return &security.AppToken{Token: "test_token"}, nil
 			},
-			inputLogin:  LoginUser{Email: "test@example.com", Password: "123456"},
-			wantErr:     true,
-			wantErrType: errorsDomain.NotAuthorized,
+			inputEmail:    "test@example.com",
+			inputPassword: "123456",
+			wantErr:       true,
+			wantErrType:   domainErrors.NotAuthorized,
 		},
 		{
 			name: "Incorrect password",
@@ -117,9 +120,10 @@ func TestAuthUseCase_Login(t *testing.T) {
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
 				return &security.AppToken{Token: "test_token"}, nil
 			},
-			inputLogin:        LoginUser{Email: "test@example.com", Password: "wrong"},
+			inputEmail:        "test@example.com",
+			inputPassword:     "wrong",
 			wantErr:           true,
-			wantErrType:       errorsDomain.NotAuthorized,
+			wantErrType:       domainErrors.NotAuthorized,
 			wantEmptySecurity: true,
 		},
 		{
@@ -131,8 +135,9 @@ func TestAuthUseCase_Login(t *testing.T) {
 			mockGenerateTokenFn: func(userID int, tokenType string) (*security.AppToken, error) {
 				return nil, errors.New("token generation failed")
 			},
-			inputLogin: LoginUser{Email: "test@example.com", Password: "somePass"},
-			wantErr:    true,
+			inputEmail:    "test@example.com",
+			inputPassword: "somePass",
+			wantErr:       true,
 		},
 		{
 			name: "OK - everything correct",
@@ -150,7 +155,8 @@ func TestAuthUseCase_Login(t *testing.T) {
 					ExpirationTime: time.Now().Add(time.Hour),
 				}, nil
 			},
-			inputLogin:             LoginUser{Email: "test@example.com", Password: "mySecretPass"},
+			inputEmail:             "test@example.com",
+			inputPassword:          "mySecretPass",
 			wantErr:                false,
 			wantSuccessAccessToken: true,
 		},
@@ -168,24 +174,27 @@ func TestAuthUseCase_Login(t *testing.T) {
 
 			uc := NewAuthUseCase(userRepoMock, jwtMock)
 
-			result, err := uc.Login(tt.inputLogin)
+			user, authTokens, err := uc.Login(tt.inputEmail, tt.inputPassword)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("[%s] got err = %v, wantErr = %v", tt.name, err, tt.wantErr)
 			}
 
 			if tt.wantErrType != "" && err != nil {
-				appErr, ok := err.(*errorsDomain.AppError)
+				appErr, ok := err.(*domainErrors.AppError)
 				if !ok || appErr.Type != tt.wantErrType {
 					t.Errorf("[%s] expected error type = %s, got = %v", tt.name, tt.wantErrType, err)
 				}
 			}
 
 			if !tt.wantErr && tt.wantSuccessAccessToken {
-				if result.Security.JWTAccessToken == "" {
+				if authTokens.AccessToken == "" {
 					t.Errorf("[%s] expected a non-empty AccessToken, got empty", tt.name)
 				}
+				if user == nil {
+					t.Errorf("[%s] expected a non-nil user, got nil", tt.name)
+				}
 			} else if tt.wantErr && tt.wantEmptySecurity {
-				if result.Security.JWTAccessToken != "" {
+				if authTokens != nil && authTokens.AccessToken != "" {
 					t.Errorf("[%s] expected empty AccessToken, but got a non-empty one", tt.name)
 				}
 			}
@@ -201,7 +210,7 @@ func TestAuthUseCase_AccessTokenByRefreshToken(t *testing.T) {
 		mockGenerateTokenFn func(int, string) (*security.AppToken, error)
 		inputToken          string
 		wantErr             bool
-		wantErrType         string
+		wantErrType         domainErrors.ErrorType
 	}{
 		{
 			name: "Invalid token string -> claims error",
@@ -257,21 +266,24 @@ func TestAuthUseCase_AccessTokenByRefreshToken(t *testing.T) {
 
 			uc := NewAuthUseCase(userRepoMock, jwtMock)
 
-			result, err := uc.AccessTokenByRefreshToken(tt.inputToken)
+			user, authTokens, err := uc.AccessTokenByRefreshToken(tt.inputToken)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("[%s] got err = %v, wantErr = %v", tt.name, err, tt.wantErr)
 			}
 
 			if tt.wantErrType != "" && err != nil {
-				appErr, ok := err.(*errorsDomain.AppError)
+				appErr, ok := err.(*domainErrors.AppError)
 				if !ok || appErr.Type != tt.wantErrType {
 					t.Errorf("[%s] expected error type = %s, got = %v", tt.name, tt.wantErrType, err)
 				}
 			}
 
 			if !tt.wantErr {
-				if result.Security.JWTAccessToken == "" {
+				if authTokens.AccessToken == "" {
 					t.Errorf("[%s] expected a non-empty AccessToken, got empty", tt.name)
+				}
+				if user == nil {
+					t.Errorf("[%s] expected a non-nil user, got nil", tt.name)
 				}
 			}
 		})

@@ -1,65 +1,71 @@
 package errors
 
-import "errors"
+import (
+	"errors"
+	"net/http"
+)
+
+type ErrorType string
+type ErrorMessage string
 
 const (
-	NotFound        = "NotFound"
-	notFoundMessage = "record not found"
+	NotFound        ErrorType    = "NotFound"
+	notFoundMessage ErrorMessage = "record not found"
 
-	ValidationError        = "ValidationError"
-	validationErrorMessage = "validation error"
+	ValidationError        ErrorType    = "ValidationError"
+	validationErrorMessage ErrorMessage = "validation error"
 
-	ResourceAlreadyExists     = "ResourceAlreadyExists"
-	alreadyExistsErrorMessage = "resource already exists"
+	ResourceAlreadyExists     ErrorType    = "ResourceAlreadyExists"
+	alreadyExistsErrorMessage ErrorMessage = "resource already exists"
 
-	RepositoryError        = "RepositoryError"
-	repositoryErrorMessage = "error in repository operation"
+	RepositoryError        ErrorType    = "RepositoryError"
+	repositoryErrorMessage ErrorMessage = "error in repository operation"
 
-	NotAuthenticated             = "NotAuthenticated"
-	notAuthenticatedErrorMessage = "not Authenticated"
+	NotAuthenticated             ErrorType    = "NotAuthenticated"
+	notAuthenticatedErrorMessage ErrorMessage = "not Authenticated"
 
-	TokenGeneratorError        = "TokenGeneratorError"
-	tokenGeneratorErrorMessage = "error in token generation"
+	TokenGeneratorError        ErrorType    = "TokenGeneratorError"
+	tokenGeneratorErrorMessage ErrorMessage = "error in token generation"
 
-	NotAuthorized             = "NotAuthorized"
-	notAuthorizedErrorMessage = "not authorized"
+	NotAuthorized             ErrorType    = "NotAuthorized"
+	notAuthorizedErrorMessage ErrorMessage = "not authorized"
 
-	UnknownError        = "UnknownError"
-	unknownErrorMessage = "something went wrong"
+	UnknownError        ErrorType    = "UnknownError"
+	unknownErrorMessage ErrorMessage = "something went wrong"
 )
 
 type AppError struct {
 	Err  error
-	Type string
+	Type ErrorType
 }
 
-func NewAppError(err error, errType string) *AppError {
+func NewAppError(err error, errType ErrorType) *AppError {
 	return &AppError{
 		Err:  err,
 		Type: errType,
 	}
 }
 
-func NewAppErrorWithType(errType string) *AppError {
+func NewAppErrorWithType(errType ErrorType) *AppError {
 	var err error
 
 	switch errType {
 	case NotFound:
-		err = errors.New(notFoundMessage)
+		err = errors.New(string(notFoundMessage))
 	case ValidationError:
-		err = errors.New(validationErrorMessage)
+		err = errors.New(string(validationErrorMessage))
 	case ResourceAlreadyExists:
-		err = errors.New(alreadyExistsErrorMessage)
+		err = errors.New(string(alreadyExistsErrorMessage))
 	case RepositoryError:
-		err = errors.New(repositoryErrorMessage)
+		err = errors.New(string(repositoryErrorMessage))
 	case NotAuthenticated:
-		err = errors.New(notAuthenticatedErrorMessage)
+		err = errors.New(string(notAuthenticatedErrorMessage))
 	case NotAuthorized:
-		err = errors.New(notAuthorizedErrorMessage)
+		err = errors.New(string(notAuthorizedErrorMessage))
 	case TokenGeneratorError:
-		err = errors.New(tokenGeneratorErrorMessage)
+		err = errors.New(string(tokenGeneratorErrorMessage))
 	default:
-		err = errors.New(unknownErrorMessage)
+		err = errors.New(string(unknownErrorMessage))
 	}
 
 	return &AppError{
@@ -70,4 +76,22 @@ func NewAppErrorWithType(errType string) *AppError {
 
 func (appErr *AppError) Error() string {
 	return appErr.Err.Error()
+}
+
+// AppErrorToHTTP maps an AppError to an HTTP status code and message
+func AppErrorToHTTP(appErr *AppError) (int, string) {
+	switch appErr.Type {
+	case NotFound:
+		return http.StatusNotFound, appErr.Error()
+	case ValidationError:
+		return http.StatusBadRequest, appErr.Error()
+	case RepositoryError:
+		return http.StatusInternalServerError, appErr.Error()
+	case NotAuthenticated:
+		return http.StatusUnauthorized, appErr.Error()
+	case NotAuthorized:
+		return http.StatusForbidden, appErr.Error()
+	default:
+		return http.StatusInternalServerError, "Internal Server Error"
+	}
 }
