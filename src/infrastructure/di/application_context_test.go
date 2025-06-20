@@ -49,6 +49,16 @@ func (m *MockUserRepository) Update(id int, userMap map[string]interface{}) (*do
 	return args.Get(0).(*domainUser.User), args.Error(1)
 }
 
+func (m *MockUserRepository) SearchPaginated(filters domain.DataFilters) (*domainUser.SearchResultUser, error) {
+	args := m.Called(filters)
+	return args.Get(0).(*domainUser.SearchResultUser), args.Error(1)
+}
+
+func (m *MockUserRepository) SearchByProperty(property string, searchText string) (*[]string, error) {
+	args := m.Called(property, searchText)
+	return args.Get(0).(*[]string), args.Error(1)
+}
+
 type MockMedicineRepository struct {
 	mock.Mock
 }
@@ -86,6 +96,16 @@ func (m *MockMedicineRepository) Delete(id int) error {
 func (m *MockMedicineRepository) Update(id int, medicineMap map[string]any) (*domainMedicine.Medicine, error) {
 	args := m.Called(id, medicineMap)
 	return args.Get(0).(*domainMedicine.Medicine), args.Error(1)
+}
+
+func (m *MockMedicineRepository) SearchPaginated(filters domain.DataFilters) (*domainMedicine.SearchResultMedicine, error) {
+	args := m.Called(filters)
+	return args.Get(0).(*domainMedicine.SearchResultMedicine), args.Error(1)
+}
+
+func (m *MockMedicineRepository) SearchByProperty(property string, searchText string) (*[]string, error) {
+	args := m.Called(property, searchText)
+	return args.Get(0).(*[]string), args.Error(1)
 }
 
 type MockJWTService struct {

@@ -1,6 +1,7 @@
 package user
 
 import (
+	"github.com/gbrayhan/microservices-go/src/domain"
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
 	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/user"
@@ -15,6 +16,8 @@ type IUserUseCase interface {
 	Create(newUser *userDomain.User) (*userDomain.User, error)
 	Delete(id int) error
 	Update(id int, userMap map[string]interface{}) (*userDomain.User, error)
+	SearchPaginated(filters domain.DataFilters) (*userDomain.SearchResultUser, error)
+	SearchByProperty(property string, searchText string) (*[]string, error)
 }
 
 type UserUseCase struct {
@@ -65,4 +68,18 @@ func (s *UserUseCase) Delete(id int) error {
 func (s *UserUseCase) Update(id int, userMap map[string]interface{}) (*userDomain.User, error) {
 	s.Logger.Info("Updating user", zap.Int("id", id))
 	return s.userRepository.Update(id, userMap)
+}
+
+func (s *UserUseCase) SearchPaginated(filters domain.DataFilters) (*userDomain.SearchResultUser, error) {
+	s.Logger.Info("Searching users with pagination",
+		zap.Int("page", filters.Page),
+		zap.Int("pageSize", filters.PageSize))
+	return s.userRepository.SearchPaginated(filters)
+}
+
+func (s *UserUseCase) SearchByProperty(property string, searchText string) (*[]string, error) {
+	s.Logger.Info("Searching users by property",
+		zap.String("property", property),
+		zap.String("searchText", searchText))
+	return s.userRepository.SearchByProperty(property, searchText)
 }

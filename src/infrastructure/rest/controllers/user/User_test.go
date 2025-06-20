@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gbrayhan/microservices-go/src/domain"
 	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
 	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/gin-gonic/gin"
@@ -49,6 +50,16 @@ func (m *MockUserService) Update(id int, userMap map[string]interface{}) (*domai
 func (m *MockUserService) Delete(id int) error {
 	args := m.Called(id)
 	return args.Error(0)
+}
+
+func (m *MockUserService) SearchPaginated(filters domain.DataFilters) (*domainUser.SearchResultUser, error) {
+	args := m.Called(filters)
+	return args.Get(0).(*domainUser.SearchResultUser), args.Error(1)
+}
+
+func (m *MockUserService) SearchByProperty(property string, searchText string) (*[]string, error) {
+	args := m.Called(property, searchText)
+	return args.Get(0).(*[]string), args.Error(1)
 }
 
 func setupLogger(t *testing.T) *logger.Logger {

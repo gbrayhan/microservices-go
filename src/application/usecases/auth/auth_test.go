@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gbrayhan/microservices-go/src/domain"
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
 	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
@@ -38,6 +39,12 @@ func (m *mockUserService) Delete(id int) error {
 	return nil
 }
 func (m *mockUserService) Update(id int, userMap map[string]interface{}) (*domainUser.User, error) {
+	return nil, nil
+}
+func (m *mockUserService) SearchPaginated(filters domain.DataFilters) (*domainUser.SearchResultUser, error) {
+	return nil, nil
+}
+func (m *mockUserService) SearchByProperty(property string, searchText string) (*[]string, error) {
 	return nil, nil
 }
 

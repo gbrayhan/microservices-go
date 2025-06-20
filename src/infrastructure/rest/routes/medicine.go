@@ -15,5 +15,7 @@ func MedicineRoutes(router *gin.RouterGroup, controller medicine.IMedicineContro
 		med.GET("/:id", controller.GetMedicinesByID)
 		med.PUT("/:id", controller.UpdateMedicine)
 		med.DELETE("/:id", controller.DeleteMedicine)
+		med.GET("/search", controller.SearchPaginated)
+		med.GET("/search-property", controller.SearchByProperty)
 	}
 }

@@ -78,6 +78,14 @@ func (m *MockMedicineService) GetByMap(medicineMap map[string]any) (*medicineDom
 	return nil, nil
 }
 
+func (m *MockMedicineService) SearchPaginated(filters domain.DataFilters) (*medicineDomain.SearchResultMedicine, error) {
+	return nil, nil
+}
+
+func (m *MockMedicineService) SearchByProperty(property string, searchText string) (*[]string, error) {
+	return nil, nil
+}
+
 func setupLogger(t *testing.T) *logger.Logger {
 	loggerInstance, err := logger.NewLogger()
 	if err != nil {

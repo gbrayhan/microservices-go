@@ -6,9 +6,11 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gbrayhan/microservices-go/src/domain"
 	domainError "github.com/gbrayhan/microservices-go/src/domain/errors"
 	medicineDomain "github.com/gbrayhan/microservices-go/src/domain/medicine"
 	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/medicine"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/controllers"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -57,6 +59,8 @@ type IMedicineController interface {
 	GetMedicinesByID(ctx *gin.Context)
 	UpdateMedicine(ctx *gin.Context)
 	DeleteMedicine(ctx *gin.Context)
+	SearchPaginated(ctx *gin.Context)
+	SearchByProperty(ctx *gin.Context)
 }
 
 type Controller struct {
@@ -174,6 +178,140 @@ func (c *Controller) DeleteMedicine(ctx *gin.Context) {
 	}
 	c.Logger.Info("Medicine deleted successfully", zap.Int("id", medicineID))
 	ctx.JSON(http.StatusOK, gin.H{"message": "resource deleted successfully"})
+}
+
+func (c *Controller) SearchPaginated(ctx *gin.Context) {
+	c.Logger.Info("Searching medicines with pagination")
+
+	// Parse query parameters
+	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	if page < 1 {
+		page = 1
+	}
+	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("pageSize", "10"))
+	if pageSize < 1 {
+		pageSize = 10
+	}
+
+	// Build filters
+	filters := domain.DataFilters{
+		Page:     page,
+		PageSize: pageSize,
+	}
+
+	// Parse like filters
+	likeFilters := make(map[string][]string)
+	for field := range medicine.ColumnsMedicineMapping {
+		if values := ctx.QueryArray(field + "_like"); len(values) > 0 {
+			likeFilters[field] = values
+		}
+	}
+	filters.LikeFilters = likeFilters
+
+	// Parse exact matches
+	matches := make(map[string][]string)
+	for field := range medicine.ColumnsMedicineMapping {
+		if values := ctx.QueryArray(field + "_match"); len(values) > 0 {
+			matches[field] = values
+		}
+	}
+	filters.Matches = matches
+
+	// Parse date range filters
+	var dateRanges []domain.DateRangeFilter
+	for field := range medicine.ColumnsMedicineMapping {
+		startStr := ctx.Query(field + "_start")
+		endStr := ctx.Query(field + "_end")
+
+		if startStr != "" || endStr != "" {
+			dateRange := domain.DateRangeFilter{Field: field}
+
+			if startStr != "" {
+				if startTime, err := time.Parse(time.RFC3339, startStr); err == nil {
+					dateRange.Start = &startTime
+				}
+			}
+
+			if endStr != "" {
+				if endTime, err := time.Parse(time.RFC3339, endStr); err == nil {
+					dateRange.End = &endTime
+				}
+			}
+
+			dateRanges = append(dateRanges, dateRange)
+		}
+	}
+	filters.DateRangeFilters = dateRanges
+
+	// Parse sorting
+	sortBy := ctx.QueryArray("sortBy")
+	if len(sortBy) > 0 {
+		filters.SortBy = sortBy
+	}
+
+	sortDirection := domain.SortDirection(ctx.DefaultQuery("sortDirection", "asc"))
+	if sortDirection.IsValid() {
+		filters.SortDirection = sortDirection
+	}
+
+	result, err := c.medicineService.SearchPaginated(filters)
+	if err != nil {
+		c.Logger.Error("Error searching medicines", zap.Error(err))
+		_ = ctx.Error(err)
+		return
+	}
+
+	response := gin.H{
+		"data":       arrayDomainToResponseMapper(result.Data),
+		"total":      result.Total,
+		"page":       result.Page,
+		"pageSize":   result.PageSize,
+		"totalPages": result.TotalPages,
+		"filters":    filters,
+	}
+
+	c.Logger.Info("Successfully searched medicines",
+		zap.Int64("total", result.Total),
+		zap.Int("page", result.Page))
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (c *Controller) SearchByProperty(ctx *gin.Context) {
+	property := ctx.Query("property")
+	searchText := ctx.Query("searchText")
+
+	if property == "" || searchText == "" {
+		c.Logger.Error("Missing property or searchText parameter")
+		appError := domainError.NewAppError(errors.New("missing property or searchText parameter"), domainError.ValidationError)
+		_ = ctx.Error(appError)
+		return
+	}
+
+	// Validate property
+	allowed := map[string]bool{
+		"name":        true,
+		"description": true,
+		"eanCode":     true,
+		"laboratory":  true,
+	}
+	if !allowed[property] {
+		c.Logger.Error("Invalid property for search", zap.String("property", property))
+		appError := domainError.NewAppError(errors.New("invalid property"), domainError.ValidationError)
+		_ = ctx.Error(appError)
+		return
+	}
+
+	coincidences, err := c.medicineService.SearchByProperty(property, searchText)
+	if err != nil {
+		c.Logger.Error("Error searching by property", zap.Error(err), zap.String("property", property))
+		_ = ctx.Error(err)
+		return
+	}
+
+	c.Logger.Info("Successfully searched by property",
+		zap.String("property", property),
+		zap.Int("results", len(*coincidences)))
+	ctx.JSON(http.StatusOK, coincidences)
 }
 
 // Mappers

@@ -15,5 +15,7 @@ func UserRoutes(router *gin.RouterGroup, controller user.IUserController) {
 		u.GET("/:id", controller.GetUsersByID)
 		u.PUT("/:id", controller.UpdateUser)
 		u.DELETE("/:id", controller.DeleteUser)
+		u.GET("/search", controller.SearchPaginated)
+		u.GET("/search-property", controller.SearchByProperty)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gbrayhan/microservices-go/src/domain"
 	medicineDomain "github.com/gbrayhan/microservices-go/src/domain/medicine"
 	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 )
@@ -35,6 +36,14 @@ func (m *mockMedicineService) Update(id int, med map[string]any) (*medicineDomai
 
 func (m *mockMedicineService) GetAll() (*[]medicineDomain.Medicine, error) {
 	return m.getAllFn()
+}
+
+func (m *mockMedicineService) SearchPaginated(filters domain.DataFilters) (*medicineDomain.SearchResultMedicine, error) {
+	return nil, nil
+}
+
+func (m *mockMedicineService) SearchByProperty(property string, searchText string) (*[]string, error) {
+	return nil, nil
 }
 
 func setupLogger(t *testing.T) *logger.Logger {

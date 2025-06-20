@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/gbrayhan/microservices-go/src/domain"
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
 	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 )
@@ -35,6 +36,12 @@ func (m *mockUserService) Delete(id int) error {
 }
 func (m *mockUserService) Update(id int, userMap map[string]interface{}) (*userDomain.User, error) {
 	return m.updateFn(id, userMap)
+}
+func (m *mockUserService) SearchPaginated(filters domain.DataFilters) (*userDomain.SearchResultUser, error) {
+	return nil, nil
+}
+func (m *mockUserService) SearchByProperty(property string, searchText string) (*[]string, error) {
+	return nil, nil
 }
 
 func setupLogger(t *testing.T) *logger.Logger {
