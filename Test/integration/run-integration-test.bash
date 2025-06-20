@@ -39,7 +39,7 @@ export SERVER_PORT="${SERVER_PORT:-8080}"
 # Database Configuration
 export DB_HOST="${DB_HOST:-127.0.0.1}"
 export DB_NAME="${DB_NAME:-boilerplate_go}"
-export DB_PASS="${DB_PASS:-devPassword123}"
+export DB_PASSWORD="${DB_PASSWORD:-devPassword123}"
 export DB_PORT="${DB_PORT:-5432}"
 export DB_SSLMODE="${DB_SSLMODE:-disable}"
 export DB_USER="${DB_USER:-appuser}"

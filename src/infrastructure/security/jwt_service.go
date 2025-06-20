@@ -3,10 +3,11 @@ package security
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strconv"
 	"time"
 
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
-	"github.com/gbrayhan/microservices-go/src/infrastructure/config"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -27,6 +28,14 @@ type Claims struct {
 	jwt.RegisteredClaims
 }
 
+// JWTConfig holds JWT-related configuration
+type JWTConfig struct {
+	AccessSecret  string
+	RefreshSecret string
+	AccessTime    int64
+	RefreshTime   int64
+}
+
 // IJWTService defines the interface for JWT operations
 type IJWTService interface {
 	GenerateJWTToken(userID int, tokenType string) (*AppToken, error)
@@ -35,21 +44,31 @@ type IJWTService interface {
 
 // JWTService implements IJWTService
 type JWTService struct {
-	config config.JWTConfig
+	config JWTConfig
 }
 
 // NewJWTService creates a new JWT service instance
 func NewJWTService() IJWTService {
-	cfg := config.LoadConfig()
+	config := loadJWTConfig()
 	return &JWTService{
-		config: cfg.JWT,
+		config: config,
 	}
 }
 
 // NewJWTServiceWithConfig creates a new JWT service with custom configuration
-func NewJWTServiceWithConfig(jwtConfig config.JWTConfig) IJWTService {
+func NewJWTServiceWithConfig(config JWTConfig) IJWTService {
 	return &JWTService{
-		config: jwtConfig,
+		config: config,
+	}
+}
+
+// loadJWTConfig loads JWT configuration from environment variables
+func loadJWTConfig() JWTConfig {
+	return JWTConfig{
+		AccessSecret:  getEnvOrDefault("JWT_ACCESS_SECRET", "default_access_secret"),
+		RefreshSecret: getEnvOrDefault("JWT_REFRESH_SECRET", "default_refresh_secret"),
+		AccessTime:    getEnvAsInt64OrDefault("JWT_ACCESS_TIME_MINUTE", 60),
+		RefreshTime:   getEnvAsInt64OrDefault("JWT_REFRESH_TIME_HOUR", 24),
 	}
 }
 
@@ -96,6 +115,7 @@ func (s *JWTService) GenerateJWTToken(userID int, tokenType string) (*AppToken, 
 // GetClaimsAndVerifyToken verifies a JWT token and returns its claims
 func (s *JWTService) GetClaimsAndVerifyToken(tokenString string, tokenType string) (jwt.MapClaims, error) {
 	var secretKey string
+
 	if tokenType == Refresh {
 		secretKey = s.config.RefreshSecret
 	} else {
@@ -129,4 +149,21 @@ func (s *JWTService) GetClaimsAndVerifyToken(tokenString string, tokenType strin
 		return nil, domainErrors.NewAppError(errors.New("token expired"), domainErrors.NotAuthenticated)
 	}
 	return claims, nil
+}
+
+// Helper functions
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
+func getEnvAsInt64OrDefault(key string, defaultValue int64) int64 {
+	if value := os.Getenv(key); value != "" {
+		if intValue, err := strconv.ParseInt(value, 10, 64); err == nil {
+			return intValue
+		}
+	}
+	return defaultValue
 }

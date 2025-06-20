@@ -1,4 +1,4 @@
-package repository
+package psql
 
 import (
 	"crypto/rand"
@@ -12,7 +12,29 @@ import (
 	gormlogger "gorm.io/gorm/logger"
 )
 
-type Repository struct {
+// DatabaseConfig holds database-related configuration
+type DatabaseConfig struct {
+	Host     string
+	Port     string
+	User     string
+	Password string
+	DBName   string
+	SSLMode  string
+}
+
+// loadDatabaseConfig loads database configuration from environment variables
+func loadDatabaseConfig() DatabaseConfig {
+	return DatabaseConfig{
+		Host:     getEnvOrDefault("DB_HOST", "localhost"),
+		Port:     getEnvOrDefault("DB_PORT", "5432"),
+		User:     getEnvOrDefault("DB_USER", "postgres"),
+		Password: getEnvOrDefault("DB_PASSWORD", "password"),
+		DBName:   getEnvOrDefault("DB_NAME", "microservices_go"),
+		SSLMode:  getEnvOrDefault("DB_SSLMODE", "disable"),
+	}
+}
+
+type PSQLRepository struct {
 	DB     *gorm.DB
 	Logger *log.Logger
 	Auth   AuthService
@@ -22,71 +44,43 @@ type AuthService interface {
 	HashPassword(password string) (string, error)
 }
 
-func NewRepository(db *gorm.DB, logger *log.Logger) *Repository {
-	return &Repository{
+func NewRepository(db *gorm.DB, logger *log.Logger) *PSQLRepository {
+	return &PSQLRepository{
 		DB:     db,
 		Logger: logger,
 	}
 }
 
-func (r *Repository) SetLogger(logger *log.Logger) {
+func (r *PSQLRepository) SetLogger(logger *log.Logger) {
 	r.Logger = logger
 }
 
-func (r *Repository) SetAuthService(auth AuthService) {
+func (r *PSQLRepository) SetAuthService(auth AuthService) {
 	r.Auth = auth
 }
 
-type Config struct {
-	DBHost     string
-	DBPort     string
-	DBUser     string
-	DBPassword string
-	DBName     string
-	SSLMode    string
-}
-
-func (r *Repository) LoadDBConfig() (Config, error) {
-	dbHost := loadEnvVar("DB_HOST")
-	dbPort := loadEnvVar("DB_PORT")
-	dbUser := loadEnvVar("DB_USER")
-	dbPassword := loadEnvVar("DB_PASS")
-	dbName := loadEnvVar("DB_NAME")
-	sslMode := loadEnvVar("DB_SSLMODE")
+func (r *PSQLRepository) LoadDBConfig() (DatabaseConfig, error) {
+	config := loadDatabaseConfig()
 
 	// Check if any required environment variables are missing
-	if dbHost == "" || dbPort == "" || dbUser == "" || dbPassword == "" || dbName == "" || sslMode == "" {
-		return Config{}, errors.New("missing required database environment variables")
+	if config.Host == "" || config.Port == "" || config.User == "" || config.Password == "" || config.DBName == "" || config.SSLMode == "" {
+		return DatabaseConfig{}, errors.New("missing required database environment variables")
 	}
 
-	return Config{
-		DBHost:     dbHost,
-		DBPort:     dbPort,
-		DBUser:     dbUser,
-		DBPassword: dbPassword,
-		DBName:     dbName,
-		SSLMode:    sslMode,
-	}, nil
+	return config, nil
 }
 
-func loadEnvVar(key string) string {
-	if value, exists := os.LookupEnv(key); exists {
-		return value
-	}
-	return ""
-}
-
-func (c Config) GetDSN() string {
-	return "host=" + c.DBHost +
-		" port=" + c.DBPort +
-		" user=" + c.DBUser +
-		" password=" + c.DBPassword +
+func (c DatabaseConfig) GetDSN() string {
+	return "host=" + c.Host +
+		" port=" + c.Port +
+		" user=" + c.User +
+		" password=" + c.Password +
 		" dbname=" + c.DBName +
 		" sslmode=" + c.SSLMode +
 		" TimeZone=America/Mexico_City"
 }
 
-func (r *Repository) InitDatabase() error {
+func (r *PSQLRepository) InitDatabase() error {
 	cfg, err := r.LoadDBConfig()
 	if err != nil {
 		return err
@@ -110,23 +104,13 @@ func (r *Repository) InitDatabase() error {
 	return nil
 }
 
-func (r *Repository) MigrateEntitiesGORM() error {
-	err := r.DB.AutoMigrate(&User{}, &Medicine{})
-	if err != nil {
-		r.Logger.Printf("Error migrating database entities: %v", err)
-		return err
-	}
-	r.Logger.Println("Database entities migrated successfully")
-
-	if err := r.SeedInitialUser(); err != nil {
-		r.Logger.Printf("Error seeding initial user: %v", err)
-		return err
-	}
-	r.Logger.Println("Seeding completed")
+func (r *PSQLRepository) MigrateEntitiesGORM() error {
+	// Note: This will be called from the main application after importing the models
+	r.Logger.Println("Database entities migration should be handled by the main application")
 	return nil
 }
 
-func (r *Repository) SeedInitialUser() error {
+func (r *PSQLRepository) SeedInitialUser() error {
 	email := os.Getenv("START_USER_EMAIL")
 	pw := os.Getenv("START_USER_PW")
 	if email == "" || pw == "" {
@@ -134,38 +118,8 @@ func (r *Repository) SeedInitialUser() error {
 		return nil
 	}
 
-	var count int64
-	if err := r.DB.Model(&User{}).
-		Where("email = ?", email).
-		Count(&count).Error; err != nil {
-		r.Logger.Printf("Error checking existing user: %v", err)
-		return err
-	}
-
-	if count == 0 {
-		hashed, err := r.Auth.HashPassword(pw)
-		if err != nil {
-			r.Logger.Printf("Error hashing initial user password: %v", err)
-			return err
-		}
-
-		user := User{
-			Email:        email,
-			HashPassword: hashed,
-			FirstName:    "John",
-			LastName:     "Doe",
-			UserName:     "admin",
-			Status:       true,
-		}
-		if err := r.DB.Create(&user).Error; err != nil {
-			r.Logger.Printf("Error creating initial user: %v", err)
-			return err
-		}
-		r.Logger.Printf("Created initial user: %s", email)
-	} else {
-		r.Logger.Printf("Initial user already exists: %s (count: %d)", email, count)
-	}
-
+	// Note: This will be handled by the user repository
+	r.Logger.Println("User seeding should be handled by the user repository")
 	return nil
 }
 
@@ -224,6 +178,8 @@ func getErrorMessage(errType string) string {
 		return tokenGeneratorErrorMessage
 	case NotAuthorized:
 		return notAuthorizedErrorMessage
+	case UnknownError:
+		return unknownErrorMessage
 	default:
 		return unknownErrorMessage
 	}
@@ -240,4 +196,26 @@ func GenerateNewUUID() (string, error) {
 		return "", err
 	}
 	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:]), nil
+}
+
+// InitPSQLDB initializes the database connection
+func InitPSQLDB() (*gorm.DB, error) {
+	repo := &PSQLRepository{
+		Logger: log.New(os.Stdout, "DB: ", log.LstdFlags),
+	}
+
+	err := repo.InitDatabase()
+	if err != nil {
+		return nil, err
+	}
+
+	return repo.DB, nil
+}
+
+// Helper function
+func getEnvOrDefault(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
 }

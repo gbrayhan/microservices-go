@@ -3,7 +3,7 @@ package medicine
 import (
 	"github.com/gbrayhan/microservices-go/src/domain"
 	domainMedicine "github.com/gbrayhan/microservices-go/src/domain/medicine"
-	"github.com/gbrayhan/microservices-go/src/infrastructure"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/medicine"
 )
 
 type IMedicineUseCase interface {
@@ -18,10 +18,10 @@ type IMedicineUseCase interface {
 }
 
 type MedicineUseCase struct {
-	MedicineRepository infrastructure.MedicineRepositoryInterface
+	MedicineRepository medicine.MedicineRepositoryInterface
 }
 
-func NewMedicineUseCase(medicineRepository infrastructure.MedicineRepositoryInterface) IMedicineUseCase {
+func NewMedicineUseCase(medicineRepository medicine.MedicineRepositoryInterface) IMedicineUseCase {
 	return &MedicineUseCase{
 		MedicineRepository: medicineRepository,
 	}
@@ -54,4 +54,22 @@ func (s *MedicineUseCase) Update(id int, medicineMap map[string]any) (*domainMed
 
 func (s *MedicineUseCase) GetAll() (*[]domainMedicine.Medicine, error) {
 	return s.MedicineRepository.GetAll()
+}
+
+// Structures
+type NewMedicine struct {
+	Name        string `json:"name" example:"Paracetamol"`
+	Description string `json:"description" example:"Some Description"`
+	EANCode     string `json:"ean_code" example:"9900000124"`
+	Laboratory  string `json:"laboratory" example:"Roche"`
+}
+
+type PaginationResultMedicine struct {
+	Data       *[]domainMedicine.Medicine
+	Total      int64
+	Limit      int64
+	Current    int64
+	NextCursor uint
+	PrevCursor uint
+	NumPages   int64
 }

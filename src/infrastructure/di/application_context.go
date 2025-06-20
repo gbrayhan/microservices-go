@@ -4,10 +4,9 @@ import (
 	authUseCase "github.com/gbrayhan/microservices-go/src/application/usecases/auth"
 	medicineUseCase "github.com/gbrayhan/microservices-go/src/application/usecases/medicine"
 	userUseCase "github.com/gbrayhan/microservices-go/src/application/usecases/user"
-	"github.com/gbrayhan/microservices-go/src/infrastructure"
-	"github.com/gbrayhan/microservices-go/src/infrastructure/repository"
-	medicineRepository "github.com/gbrayhan/microservices-go/src/infrastructure/repository/medicine"
-	userRepository "github.com/gbrayhan/microservices-go/src/infrastructure/repository/user"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/medicine"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/user"
 	authController "github.com/gbrayhan/microservices-go/src/infrastructure/rest/controllers/auth"
 	medicineController "github.com/gbrayhan/microservices-go/src/infrastructure/rest/controllers/medicine"
 	userController "github.com/gbrayhan/microservices-go/src/infrastructure/rest/controllers/user"
@@ -22,8 +21,8 @@ type ApplicationContext struct {
 	UserController     userController.IUserController
 	MedicineController medicineController.IMedicineController
 	JWTService         security.IJWTService
-	UserRepository     infrastructure.UserRepositoryInterface
-	MedicineRepository infrastructure.MedicineRepositoryInterface
+	UserRepository     user.UserRepositoryInterface
+	MedicineRepository medicine.MedicineRepositoryInterface
 	AuthUseCase        authUseCase.IAuthUseCase
 	UserUseCase        userUseCase.IUserUseCase
 	MedicineUseCase    medicineUseCase.IMedicineUseCase
@@ -32,17 +31,17 @@ type ApplicationContext struct {
 // SetupDependencies creates a new application context with all dependencies
 func SetupDependencies() (*ApplicationContext, error) {
 	// Initialize database
-	db, err := repository.InitDB()
+	db, err := psql.InitPSQLDB()
 	if err != nil {
 		return nil, err
 	}
 
-	// Initialize JWT service
+	// Initialize JWT service (manages its own configuration)
 	jwtService := security.NewJWTService()
 
 	// Initialize repositories
-	userRepo := userRepository.NewUserRepository(db)
-	medicineRepo := medicineRepository.NewMedicineRepository(db)
+	userRepo := user.NewUserRepository(db)
+	medicineRepo := medicine.NewMedicineRepository(db)
 
 	// Initialize use cases
 	authUC := authUseCase.NewAuthUseCase(userRepo, jwtService)
@@ -70,8 +69,8 @@ func SetupDependencies() (*ApplicationContext, error) {
 
 // NewTestApplicationContext creates an application context for testing with mocked dependencies
 func NewTestApplicationContext(
-	mockUserRepo infrastructure.UserRepositoryInterface,
-	mockMedicineRepo infrastructure.MedicineRepositoryInterface,
+	mockUserRepo user.UserRepositoryInterface,
+	mockMedicineRepo medicine.MedicineRepositoryInterface,
 	mockJWTService security.IJWTService,
 ) *ApplicationContext {
 	// Initialize use cases with mocked repositories

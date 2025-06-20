@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"github.com/gbrayhan/microservices-go/src/infrastructure/config"
 	"github.com/golang-jwt/jwt/v4"
 )
 
@@ -19,7 +18,7 @@ func TestNewJWTService(t *testing.T) {
 }
 
 func TestGenerateJWTToken_InvalidType(t *testing.T) {
-	jwtService := NewJWTServiceWithConfig(config.JWTConfig{})
+	jwtService := NewJWTServiceWithConfig(JWTConfig{})
 	_, err := jwtService.GenerateJWTToken(1, "invalid")
 	if err == nil {
 		t.Error("Expected error for invalid token type")
@@ -30,7 +29,7 @@ func TestGenerateJWTToken_InvalidType(t *testing.T) {
 }
 
 func TestGenerateJWTToken_AccessToken(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		AccessSecret: "test-secret",
 		AccessTime:   30,
 	}
@@ -56,7 +55,7 @@ func TestGenerateJWTToken_AccessToken(t *testing.T) {
 }
 
 func TestGenerateJWTToken_RefreshToken(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		RefreshSecret: "test-refresh-secret",
 		RefreshTime:   24,
 	}
@@ -82,7 +81,7 @@ func TestGenerateJWTToken_RefreshToken(t *testing.T) {
 }
 
 func TestGetClaimsAndVerifyToken_InvalidToken(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		AccessSecret: "test-secret",
 	}
 	jwtService := NewJWTServiceWithConfig(jwtConfig)
@@ -94,7 +93,7 @@ func TestGetClaimsAndVerifyToken_InvalidToken(t *testing.T) {
 }
 
 func TestGetClaimsAndVerifyToken_ValidToken(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		AccessSecret: "test-secret",
 		AccessTime:   30,
 	}
@@ -122,7 +121,7 @@ func TestGetClaimsAndVerifyToken_ValidToken(t *testing.T) {
 }
 
 func TestGetClaimsAndVerifyToken_WrongTokenType(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		AccessSecret: "test-secret",
 		AccessTime:   30,
 	}
@@ -142,7 +141,7 @@ func TestGetClaimsAndVerifyToken_WrongTokenType(t *testing.T) {
 }
 
 func TestGetClaimsAndVerifyToken_ExpiredToken(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		AccessSecret: "test-secret",
 		AccessTime:   0, // 0 minutes = expired immediately
 	}
@@ -165,7 +164,7 @@ func TestGetClaimsAndVerifyToken_ExpiredToken(t *testing.T) {
 }
 
 func TestGetClaimsAndVerifyToken_RefreshToken(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		RefreshSecret: "test-refresh-secret",
 		RefreshTime:   24,
 	}
@@ -193,7 +192,7 @@ func TestGetClaimsAndVerifyToken_RefreshToken(t *testing.T) {
 }
 
 func TestGetClaimsAndVerifyToken_InvalidClaims(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		AccessSecret: "test-secret",
 	}
 	jwtService := NewJWTServiceWithConfig(jwtConfig)
@@ -274,7 +273,7 @@ func TestGenerateJWTToken_SignedStringError(t *testing.T) {
 }
 
 func TestGetClaimsAndVerifyToken_InvalidSigningMethod(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		AccessSecret: "test-secret",
 	}
 	jwtService := NewJWTServiceWithConfig(jwtConfig)
@@ -304,7 +303,7 @@ func (i InvalidClaimsType) Valid() error {
 }
 
 func TestGetClaimsAndVerifyToken_ArtificialInvalidClaimsType(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		AccessSecret: "test-secret",
 	}
 	jwtService := NewJWTServiceWithConfig(jwtConfig)
@@ -333,7 +332,7 @@ func TestGetClaimsAndVerifyToken_ArtificialInvalidClaimsType(t *testing.T) {
 }
 
 func TestGetClaimsAndVerifyToken_CorruptToken(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		AccessSecret: "test-secret",
 	}
 	jwtService := NewJWTServiceWithConfig(jwtConfig)
@@ -345,7 +344,7 @@ func TestGetClaimsAndVerifyToken_CorruptToken(t *testing.T) {
 }
 
 func TestGetClaimsAndVerifyToken_MissingExpField(t *testing.T) {
-	jwtConfig := config.JWTConfig{
+	jwtConfig := JWTConfig{
 		AccessSecret: "test-secret",
 	}
 	jwtService := NewJWTServiceWithConfig(jwtConfig)

@@ -2,7 +2,7 @@ package user
 
 import (
 	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
-	"github.com/gbrayhan/microservices-go/src/infrastructure"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/user"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -16,10 +16,10 @@ type IUserUseCase interface {
 }
 
 type UserUseCase struct {
-	userRepository infrastructure.UserRepositoryInterface
+	userRepository user.UserRepositoryInterface
 }
 
-func NewUserUseCase(userRepository infrastructure.UserRepositoryInterface) IUserUseCase {
+func NewUserUseCase(userRepository user.UserRepositoryInterface) IUserUseCase {
 	return &UserUseCase{
 		userRepository: userRepository,
 	}
@@ -54,4 +54,15 @@ func (s *UserUseCase) Delete(id int) error {
 
 func (s *UserUseCase) Update(id int, userMap map[string]interface{}) (*userDomain.User, error) {
 	return s.userRepository.Update(id, userMap)
+}
+
+// Structures
+type PaginationResultUser struct {
+	Data       []userDomain.User
+	Total      int64
+	Limit      int64
+	Current    int64
+	NextCursor uint
+	PrevCursor uint
+	NumPages   int64
 }

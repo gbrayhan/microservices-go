@@ -12,6 +12,7 @@ config.json
 
 microservices-go
 app-microservice
+main
 
 coverage.html
 coverage.out

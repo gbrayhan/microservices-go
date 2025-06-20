@@ -4,11 +4,59 @@ import (
 	"errors"
 	"time"
 
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/user"
+
+	userDomain "github.com/gbrayhan/microservices-go/src/domain/user"
+
 	errorsDomain "github.com/gbrayhan/microservices-go/src/domain/errors"
-	"github.com/gbrayhan/microservices-go/src/infrastructure"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/security"
 	"golang.org/x/crypto/bcrypt"
 )
+
+type LoginUser struct {
+	Email    string
+	Password string
+}
+
+type DataUserAuthenticated struct {
+	UserName  string `json:"userName"`
+	Email     string `json:"email"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Status    bool   `json:"status"`
+	ID        int    `json:"id"`
+}
+
+type DataSecurityAuthenticated struct {
+	JWTAccessToken            string    `json:"jwtAccessToken"`
+	JWTRefreshToken           string    `json:"jwtRefreshToken"`
+	ExpirationAccessDateTime  time.Time `json:"expirationAccessDateTime"`
+	ExpirationRefreshDateTime time.Time `json:"expirationRefreshDateTime"`
+}
+
+type SecurityAuthenticatedUser struct {
+	Data     DataUserAuthenticated     `json:"data"`
+	Security DataSecurityAuthenticated `json:"security"`
+}
+
+func secAuthUserMapper(domainUser *userDomain.User, authInfo *Auth) *SecurityAuthenticatedUser {
+	return &SecurityAuthenticatedUser{
+		Data: DataUserAuthenticated{
+			UserName:  domainUser.UserName,
+			Email:     domainUser.Email,
+			FirstName: domainUser.FirstName,
+			LastName:  domainUser.LastName,
+			ID:        domainUser.ID,
+			Status:    domainUser.Status,
+		},
+		Security: DataSecurityAuthenticated{
+			JWTAccessToken:            authInfo.AccessToken,
+			JWTRefreshToken:           authInfo.RefreshToken,
+			ExpirationAccessDateTime:  authInfo.ExpirationAccessDateTime,
+			ExpirationRefreshDateTime: authInfo.ExpirationRefreshDateTime,
+		},
+	}
+}
 
 type IAuthUseCase interface {
 	Login(user LoginUser) (*SecurityAuthenticatedUser, error)
@@ -16,11 +64,11 @@ type IAuthUseCase interface {
 }
 
 type AuthUseCase struct {
-	userRepository infrastructure.UserRepositoryInterface
+	userRepository user.UserRepositoryInterface
 	jwtService     security.IJWTService
 }
 
-func NewAuthUseCase(userRepository infrastructure.UserRepositoryInterface, jwtService security.IJWTService) IAuthUseCase {
+func NewAuthUseCase(userRepository user.UserRepositoryInterface, jwtService security.IJWTService) IAuthUseCase {
 	return &AuthUseCase{
 		userRepository: userRepository,
 		jwtService:     jwtService,

@@ -83,7 +83,7 @@ type IJWTService interface {
     GetClaimsAndVerifyToken(tokenString string, tokenType string) (jwt.MapClaims, error)
 }
 
-// User Repository
+// User PSQLRepository
 type IUserRepository interface {
     GetAll() (*[]domainUser.User, error)
     Create(user *domainUser.User) (*domainUser.User, error)

@@ -4,12 +4,34 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	domainErrors "github.com/gbrayhan/microservices-go/src/domain/errors"
 	domainUser "github.com/gbrayhan/microservices-go/src/domain/user"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/controllers"
 	"github.com/gin-gonic/gin"
 )
+
+// Structures
+type NewUserRequest struct {
+	UserName  string `json:"user" binding:"required"`
+	Email     string `json:"email" binding:"required"`
+	FirstName string `json:"firstName" binding:"required"`
+	LastName  string `json:"lastName" binding:"required"`
+	Password  string `json:"password" binding:"required"`
+	Role      string `json:"role" binding:"required"`
+}
+
+type ResponseUser struct {
+	ID        int       `json:"id"`
+	UserName  string    `json:"user"`
+	Email     string    `json:"email"`
+	FirstName string    `json:"firstName"`
+	LastName  string    `json:"lastName"`
+	Status    bool      `json:"status"`
+	CreatedAt time.Time `json:"createdAt,omitempty"`
+	UpdatedAt time.Time `json:"updatedAt,omitempty"`
+}
 
 type IUserController interface {
 	NewUser(ctx *gin.Context)
@@ -108,4 +130,36 @@ func (c *UserController) DeleteUser(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "resource deleted successfully"})
+}
+
+// Mappers
+func domainToResponseMapper(domainUser *domainUser.User) *ResponseUser {
+	return &ResponseUser{
+		ID:        domainUser.ID,
+		UserName:  domainUser.UserName,
+		Email:     domainUser.Email,
+		FirstName: domainUser.FirstName,
+		LastName:  domainUser.LastName,
+		Status:    domainUser.Status,
+		CreatedAt: domainUser.CreatedAt,
+		UpdatedAt: domainUser.UpdatedAt,
+	}
+}
+
+func arrayDomainToResponseMapper(users *[]domainUser.User) *[]ResponseUser {
+	res := make([]ResponseUser, len(*users))
+	for i, u := range *users {
+		res[i] = *domainToResponseMapper(&u)
+	}
+	return &res
+}
+
+func toUsecaseMapper(req *NewUserRequest) *domainUser.User {
+	return &domainUser.User{
+		UserName:  req.UserName,
+		Email:     req.Email,
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Password:  req.Password,
+	}
 }

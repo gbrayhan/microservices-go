@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gbrayhan/microservices-go/src/domain"
 	domainError "github.com/gbrayhan/microservices-go/src/domain/errors"
@@ -11,6 +12,43 @@ import (
 	"github.com/gbrayhan/microservices-go/src/infrastructure/rest/controllers"
 	"github.com/gin-gonic/gin"
 )
+
+// Structures
+type NewMedicineRequest struct {
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description" binding:"required"`
+	Laboratory  string `json:"laboratory" binding:"required"`
+	EanCode     string `json:"eanCode" binding:"required"`
+}
+
+type DataMedicineRequest struct {
+	Limit           int64                                   `json:"limit" example:"10"`
+	Page            int64                                   `json:"page" example:"1"`
+	GlobalSearch    string                                  `json:"globalSearch" example:"John"`
+	Filters         map[string][]string                     `json:"filters"`
+	SorBy           controllers.SortByDataRequest           `json:"sortBy"`
+	FieldsDateRange []controllers.FieldDateRangeDataRequest `json:"fieldsDateRange"`
+}
+
+type ResponseMedicine struct {
+	ID          int       `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	EanCode     string    `json:"eanCode"`
+	Laboratory  string    `json:"laboratory"`
+	CreatedAt   time.Time `json:"createdAt,omitempty"`
+	UpdatedAt   time.Time `json:"updatedAt,omitempty"`
+}
+
+type PaginationResultMedicine struct {
+	Data       *[]ResponseMedicine `json:"data"`
+	Total      int64               `json:"total"`
+	Limit      int64               `json:"limit"`
+	Current    int64               `json:"current"`
+	NextCursor int64               `json:"nextCursor"`
+	PrevCursor int64               `json:"prevCursor"`
+	NumPages   int64               `json:"numPages"`
+}
 
 type IMedicineController interface {
 	NewMedicine(ctx *gin.Context)
@@ -151,4 +189,25 @@ func (c *Controller) DeleteMedicine(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "resource deleted successfully"})
+}
+
+// Mappers
+func domainToResponseMapper(m *domainMedicine.Medicine) *ResponseMedicine {
+	return &ResponseMedicine{
+		ID:          m.ID,
+		Name:        m.Name,
+		Description: m.Description,
+		EanCode:     m.EanCode,
+		Laboratory:  m.Laboratory,
+		CreatedAt:   m.CreatedAt,
+		UpdatedAt:   m.UpdatedAt,
+	}
+}
+
+func arrayDomainToResponseMapper(m *[]domainMedicine.Medicine) *[]ResponseMedicine {
+	res := make([]ResponseMedicine, len(*m))
+	for i, med := range *m {
+		res[i] = *domainToResponseMapper(&med)
+	}
+	return &res
 }
