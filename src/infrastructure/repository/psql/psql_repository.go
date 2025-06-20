@@ -1,8 +1,9 @@
 package psql
 
 import (
-	"errors"
+	"fmt"
 	"os"
+	"strings"
 
 	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
 	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/medicine"
@@ -25,15 +26,48 @@ type DatabaseConfig struct {
 }
 
 // loadDatabaseConfig loads database configuration from environment variables
-func loadDatabaseConfig() DatabaseConfig {
-	return DatabaseConfig{
-		Host:     getEnvOrDefault("DB_HOST", "localhost"),
-		Port:     getEnvOrDefault("DB_PORT", "5432"),
-		User:     getEnvOrDefault("DB_USER", "postgres"),
-		Password: getEnvOrDefault("DB_PASSWORD", "password"),
-		DBName:   getEnvOrDefault("DB_NAME", "microservices_go"),
-		SSLMode:  getEnvOrDefault("DB_SSLMODE", "disable"),
+// Returns error if any required environment variable is missing
+func loadDatabaseConfig() (DatabaseConfig, error) {
+	host := os.Getenv("DB_HOST")
+	port := os.Getenv("DB_PORT")
+	user := os.Getenv("DB_USER")
+	password := os.Getenv("DB_PASSWORD")
+	dbName := os.Getenv("DB_NAME")
+	sslMode := os.Getenv("DB_SSLMODE")
+
+	// Check for missing required environment variables
+	var missingVars []string
+	if host == "" {
+		missingVars = append(missingVars, "DB_HOST")
 	}
+	if port == "" {
+		missingVars = append(missingVars, "DB_PORT")
+	}
+	if user == "" {
+		missingVars = append(missingVars, "DB_USER")
+	}
+	if password == "" {
+		missingVars = append(missingVars, "DB_PASSWORD")
+	}
+	if dbName == "" {
+		missingVars = append(missingVars, "DB_NAME")
+	}
+	if sslMode == "" {
+		missingVars = append(missingVars, "DB_SSLMODE")
+	}
+
+	if len(missingVars) > 0 {
+		return DatabaseConfig{}, fmt.Errorf("missing required database environment variables: %s", strings.Join(missingVars, ", "))
+	}
+
+	return DatabaseConfig{
+		Host:     host,
+		Port:     port,
+		User:     user,
+		Password: password,
+		DBName:   dbName,
+		SSLMode:  sslMode,
+	}, nil
 }
 
 type PSQLRepository struct {
@@ -62,14 +96,7 @@ func (r *PSQLRepository) SetAuthService(auth AuthService) {
 }
 
 func (r *PSQLRepository) LoadDBConfig() (DatabaseConfig, error) {
-	config := loadDatabaseConfig()
-
-	// Check if any required environment variables are missing
-	if config.Host == "" || config.Port == "" || config.User == "" || config.Password == "" || config.DBName == "" || config.SSLMode == "" {
-		return DatabaseConfig{}, errors.New("missing required database environment variables")
-	}
-
-	return config, nil
+	return loadDatabaseConfig()
 }
 
 func (c DatabaseConfig) GetDSN() string {
@@ -83,9 +110,10 @@ func (c DatabaseConfig) GetDSN() string {
 }
 
 func (r *PSQLRepository) InitDatabase() error {
-	cfg, err := r.LoadDBConfig()
+	cfg, err := loadDatabaseConfig()
 	if err != nil {
-		return err
+		r.Logger.Error("Failed to load database configuration", zap.Error(err))
+		return fmt.Errorf("failed to load database configuration: %w", err)
 	}
 
 	// Create GORM logger with zap
@@ -182,12 +210,4 @@ func InitPSQLDB(loggerInstance *logger.Logger) (*gorm.DB, error) {
 	}
 
 	return repo.DB, nil
-}
-
-// Helper function
-func getEnvOrDefault(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
 }

@@ -32,43 +32,45 @@ else
   echo "✅ Port $APP_PORT was already free."
 fi
 
-echo "🔧 Exporting environment variables (if not already set)..."
-# Server Configuration
-export SERVER_PORT="${SERVER_PORT:-8080}"
+echo "🔧 Validating required environment variables..."
+# Array of required environment variables
+required_vars=(
+  "DB_HOST"
+  "DB_NAME"
+  "DB_PASSWORD"
+  "DB_PORT"
+  "DB_SSLMODE"
+  "DB_USER"
+  "JWT_ACCESS_SECRET"
+  "JWT_ACCESS_TIME_MINUTE"
+  "JWT_REFRESH_SECRET"
+  "JWT_REFRESH_TIME_HOUR"
+  "START_USER_EMAIL"
+  "START_USER_PW"
+)
 
-# Database Configuration - Updated to match Docker container
-export DB_HOST="${DB_HOST:-127.0.0.1}"
-export DB_NAME="${DB_NAME:-microservices_go}"
-export DB_PASSWORD="${DB_PASSWORD:-password}"
-export DB_PORT="${DB_PORT:-5432}"
-export DB_SSLMODE="${DB_SSLMODE:-disable}"
-export DB_USER="${DB_USER:-postgres}"
+# Check all required variables and collect missing ones
+missing_vars=()
+for var in "${required_vars[@]}"; do
+  if [[ -z "${!var:-}" ]]; then
+    missing_vars+=("$var")
+  fi
+done
 
-# Database Connection Pool Configuration
-export DB_MAX_IDLE_CONNS="${DB_MAX_IDLE_CONNS:-10}"
-export DB_MAX_OPEN_CONNS="${DB_MAX_OPEN_CONNS:-50}"
-export DB_CONN_MAX_LIFETIME="${DB_CONN_MAX_LIFETIME:-300}"
+# If there are missing variables, show them all and exit
+if [[ ${#missing_vars[@]} -gt 0 ]]; then
+  echo "❌ Error: The following required environment variables are not set:"
+  echo ""
+  for var in "${missing_vars[@]}"; do
+    echo "   • $var"
+  done
+  echo ""
+  echo "💡 Please set these variables before running integration tests."
+  echo ""
+  exit 1
+fi
 
-# JWT Configuration
-export JWT_ACCESS_SECRET="${JWT_ACCESS_SECRET:-devAccessSecretKey123456789}"
-export JWT_ACCESS_TIME_MINUTE="${JWT_ACCESS_TIME_MINUTE:-15}"
-export JWT_REFRESH_SECRET="${JWT_REFRESH_SECRET:-devRefreshSecretKey123456789}"
-export JWT_REFRESH_TIME_HOUR="${JWT_REFRESH_TIME_HOUR:-168}"
-
-# Initial User Configuration
-export START_USER_EMAIL="${START_USER_EMAIL:-gbrayhan@gmail.com}"
-export START_USER_PW="${START_USER_PW:-qweqwe}"
-
-# Optional External Services
-export IMGUR_CLIENT_ID="${IMGUR_CLIENT_ID:-yourImgurClientId}"
-export WKHTMLTOPDF_BIN="${WKHTMLTOPDF_BIN:-/usr/local/bin/wkhtmltopdf}"
-
-# Legacy JWT Configuration (for backward compatibility)
-export ACCESS_SECRET_KEY="${ACCESS_SECRET_KEY:-${JWT_ACCESS_SECRET}}"
-export ACCESS_TOKEN_TTL="${ACCESS_TOKEN_TTL:-15}"
-export REFRESH_SECRET_KEY="${REFRESH_SECRET_KEY:-${JWT_REFRESH_SECRET}}"
-export REFRESH_TOKEN_TTL="${REFRESH_TOKEN_TTL:-10080}"
-export JWT_ISSUER="${JWT_ISSUER:-aceso}"
+echo "✅ All required environment variables are set"
 
 echo "▶️ Starting the application (showing logs)…"
 "$PROJECT_ROOT/$BUILD_NAME" &
