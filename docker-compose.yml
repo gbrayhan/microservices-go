@@ -45,7 +45,7 @@ services:
       - DB_HOST=${DB_HOST:-postgres}
       - DB_PORT=${DB_PORT:-5432}
       - DB_USER=${DB_USER}
-      - DB_PASS=${DB_PASS}
+      - DB_PASSWORD=${DB_PASS}
       - DB_NAME=${DB_NAME}
       - DB_SSLMODE=${DB_SSLMODE:-disable}
       
@@ -61,8 +61,8 @@ services:
       - JWT_REFRESH_TIME_HOUR=${JWT_REFRESH_TIME_HOUR:-168}
       
       # Initial User Configuration
-      - START_USER_EMAIL=${START_USER_EMAIL:-admin@example.com}
-      - START_USER_PW=${START_USER_PW:-admin123}
+      - START_USER_EMAIL=${START_USER_EMAIL:-gbrayhan@gmail.com}
+      - START_USER_PW=${START_USER_PW:-qweqwe}
       
       # Optional External Services
       - IMGUR_CLIENT_ID=${IMGUR_CLIENT_ID:-}

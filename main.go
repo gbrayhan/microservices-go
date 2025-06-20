@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/gbrayhan/microservices-go/src/infrastructure/di"
@@ -29,8 +28,17 @@ func loadServerConfig() ServerConfig {
 }
 
 func main() {
-	// Initialize logger first
-	loggerInstance, err := logger.NewLogger()
+	// Initialize logger first based on environment
+	env := getEnvOrDefault("GO_ENV", "development")
+	var loggerInstance *logger.Logger
+	var err error
+
+	if env == "development" {
+		loggerInstance, err = logger.NewDevelopmentLogger()
+	} else {
+		loggerInstance, err = logger.NewLogger()
+	}
+
 	if err != nil {
 		panic(fmt.Errorf("error initializing logger: %w", err))
 	}
@@ -48,8 +56,7 @@ func main() {
 	// Initialize application context with dependencies and logger
 	appContext, err := di.SetupDependencies(loggerInstance)
 	if err != nil {
-		loggerInstance.Error("Error initializing application context", zap.Error(err))
-		panic(fmt.Errorf("error initializing application context: %w", err))
+		loggerInstance.Panic("Error initializing application context", zap.Error(err))
 	}
 
 	// Setup router
@@ -60,15 +67,25 @@ func main() {
 
 	// Start server
 	loggerInstance.Info("Server starting", zap.String("port", serverConfig.Port))
-	fmt.Printf("Server running at http://localhost:%s\n", serverConfig.Port)
 	if err := server.ListenAndServe(); err != nil {
-		loggerInstance.Error("Server failed to start", zap.Error(err))
-		panic(strings.ToLower(err.Error()))
+		loggerInstance.Panic("Server failed to start", zap.Error(err))
 	}
 }
 
 func setupRouter(appContext *di.ApplicationContext, logger *logger.Logger) *gin.Engine {
-	router := gin.Default()
+	// Configurar Gin para usar el logger de Zap basado en el entorno
+	env := getEnvOrDefault("GO_ENV", "development")
+	if env == "development" {
+		logger.SetupGinWithZapLoggerInDevelopment()
+	} else {
+		logger.SetupGinWithZapLogger()
+	}
+
+	// Crear el router después de configurar el logger
+	router := gin.New()
+
+	// Agregar middlewares de recuperación y logger personalizados
+	router.Use(gin.Recovery())
 	router.Use(cors.Default())
 
 	// Add middlewares

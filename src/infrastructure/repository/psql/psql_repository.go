@@ -5,7 +5,10 @@ import (
 	"os"
 
 	logger "github.com/gbrayhan/microservices-go/src/infrastructure/logger"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/medicine"
+	"github.com/gbrayhan/microservices-go/src/infrastructure/repository/psql/user"
 	"go.uber.org/zap"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -103,13 +106,29 @@ func (r *PSQLRepository) InitDatabase() error {
 		return err
 	}
 
+	err = r.SeedInitialUser()
+	if err != nil {
+		r.Logger.Error("Error seeding initial user", zap.Error(err))
+		return err
+	}
+
 	r.Logger.Info("Database connection and migrations successful")
 	return nil
 }
 
 func (r *PSQLRepository) MigrateEntitiesGORM() error {
-	// Note: This will be called from the main application after importing the models
-	r.Logger.Info("Database entities migration should be handled by the main application")
+	// Import the models to register them with GORM
+	userModel := &user.User{}
+	medicineModel := &medicine.Medicine{}
+
+	// Auto migrate the models to create/update tables
+	err := r.DB.AutoMigrate(userModel, medicineModel)
+	if err != nil {
+		r.Logger.Error("Error migrating database entities", zap.Error(err))
+		return err
+	}
+
+	r.Logger.Info("Database entities migration completed successfully")
 	return nil
 }
 
@@ -121,8 +140,33 @@ func (r *PSQLRepository) SeedInitialUser() error {
 		return nil
 	}
 
-	// Note: This will be handled by the user repository
-	r.Logger.Info("User seeding should be handled by the user repository")
+	// Check if user already exists
+	var existingUser user.User
+	err := r.DB.Where("email = ?", email).First(&existingUser).Error
+	if err == nil {
+		r.Logger.Info("Initial user already exists, skipping seed", zap.String("email", email))
+		return nil
+	}
+
+	// Create initial user
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(pw), bcrypt.DefaultCost)
+	if err != nil {
+		r.Logger.Error("Error hashing password for initial user", zap.Error(err))
+		return err
+	}
+
+	newUser := user.User{
+		Email:        email,
+		HashPassword: string(hashedPassword),
+	}
+
+	err = r.DB.Create(&newUser).Error
+	if err != nil {
+		r.Logger.Error("Error creating initial user", zap.Error(err))
+		return err
+	}
+
+	r.Logger.Info("Initial user created successfully", zap.String("email", email))
 	return nil
 }
 
