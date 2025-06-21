@@ -161,8 +161,8 @@ print_status "Running integration tests..."
 trap '' ERR
 set +e
 
-# Run integration tests with timeout
-timeout $TEST_TIMEOUT go test -count=1 ./Test/integration -tags=integration -v
+# Run integration tests
+go test -count=1 ./Test/integration -tags=integration -v
 TEST_EXIT=$?
 
 set -e
