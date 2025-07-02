@@ -133,9 +133,20 @@ func (r *Repository) GetByEmail(email string) (*domainUser.User, error) {
 func (r *Repository) Update(id int, userMap map[string]interface{}) (*domainUser.User, error) {
 	var userObj User
 	userObj.ID = id
+
+	// Map JSON field names to DB column names
+	updateData := make(map[string]interface{})
+	for k, v := range userMap {
+		if column, ok := ColumnsUserMapping[k]; ok {
+			updateData[column] = v
+		} else {
+			updateData[k] = v
+		}
+	}
+
 	err := r.DB.Model(&userObj).
 		Select("user_name", "email", "first_name", "last_name", "status", "role").
-		Updates(userMap).Error
+		Updates(updateData).Error
 	if err != nil {
 		r.Logger.Error("Error updating user", zap.Error(err), zap.Int("id", id))
 		byteErr, _ := json.Marshal(err)
