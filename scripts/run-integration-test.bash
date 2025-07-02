@@ -67,8 +67,8 @@ validate_required_env_vars() {
   [[ -z "${DB_SSLMODE:-}" ]] && missing_vars+=("DB_SSLMODE")
   
   # JWT variables
-  [[ -z "${ACCESS_SECRET_KEY:-}" ]] && missing_vars+=("ACCESS_SECRET_KEY")
-  [[ -z "${REFRESH_SECRET_KEY:-}" ]] && missing_vars+=("REFRESH_SECRET_KEY")
+  [[ -z "${JWT_ACCESS_SECRET_KEY:-}" ]] && missing_vars+=("JWT_ACCESS_SECRET_KEY")
+  [[ -z "${JWT_REFRESH_SECRET_KEY:-}" ]] && missing_vars+=("JWT_REFRESH_SECRET_KEY")
   [[ -z "${JWT_ISSUER:-}" ]] && missing_vars+=("JWT_ISSUER")
   
   # External services
@@ -81,8 +81,8 @@ validate_required_env_vars() {
   
   # Optional variables with defaults
   [[ -z "${APP_PORT:-}" ]] && export APP_PORT=8080
-  [[ -z "${ACCESS_TOKEN_TTL:-}" ]] && export ACCESS_TOKEN_TTL=15
-  [[ -z "${REFRESH_TOKEN_TTL:-}" ]] && export REFRESH_TOKEN_TTL=10080
+  [[ -z "${JWT_ACCESS_TOKEN_TTL:-}" ]] && export JWT_ACCESS_TOKEN_TTL=15
+  [[ -z "${JWT_REFRESH_TOKEN_TTL:-}" ]] && export JWT_REFRESH_TOKEN_TTL=10080
   
   if [[ ${#missing_vars[@]} -gt 0 ]]; then
     echo "❌ Error: The following required environment variables are not set:"
