@@ -388,6 +388,18 @@ func theJSONResponseShouldContainWithNumericValueUserID(field string) error {
 	return theJSONResponseShouldContainNumeric(field, id)
 }
 
+func theJSONResponseShouldContainWithNumericValueMedicineID(field string) error {
+	idStr, ok := savedVars["medicineID"]
+	if !ok {
+		return fmt.Errorf("medicineID not found in saved variables")
+	}
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return fmt.Errorf("medicineID is not numeric: %v", err)
+	}
+	return theJSONResponseShouldContainNumeric(field, id)
+}
+
 func iSaveTheJSONResponseKeyAs(key, varName string) error {
 	if body == nil {
 		return fmt.Errorf("response body is nil")
@@ -903,6 +915,7 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	ctx.Step(`^the JSON response should contain error message "([^"]*)"$`, theJSONResponseShouldContainErrorMessage)
 	ctx.Step(`^the JSON response should contain "([^"]*)" with numeric value (\d+)$`, theJSONResponseShouldContainNumeric)
 	ctx.Step(`^the JSON response should contain "([^"]*)" with numeric value  \$\{userID\}$`, theJSONResponseShouldContainWithNumericValueUserID)
+	ctx.Step(`^the JSON response should contain "([^"]*)" with numeric value  \$\{medicineID\}$`, theJSONResponseShouldContainWithNumericValueMedicineID)
 	ctx.Step(`^the JSON response should contain "([^"]*)" with boolean value (true|false)$`, theJSONResponseShouldContainBoolean)
 	ctx.Step(`^the JSON response should be an array$`, theJSONResponseShouldBeAnArray)
 	ctx.Step(`^the JSON response field "([^"]*)" should contain string "([^"]*)"$`, theJSONResponseFieldShouldContainString)
