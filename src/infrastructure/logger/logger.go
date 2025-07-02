@@ -43,7 +43,7 @@ func NewLogger() (*Logger, error) {
 	return &Logger{Log: logger}, nil
 }
 
-// NewDevelopmentLogger crea un logger para desarrollo con más información de debug
+// NewDevelopmentLogger creates a logger for development with more debug information
 func NewDevelopmentLogger() (*Logger, error) {
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "timestamp",
@@ -93,37 +93,37 @@ func (l *Logger) Debug(msg string, fields ...zap.Field) {
 	l.Log.Debug(msg, fields...)
 }
 
-// SetupGinWithZapLogger configura Gin para usar el logger de Zap
+// SetupGinWithZapLogger configures Gin to use the Zap logger
 func (l *Logger) SetupGinWithZapLogger() {
-	// Configurar Gin para usar el modo release por defecto
+	// Configure Gin to use release mode by default
 	gin.SetMode(gin.ReleaseMode)
 
-	// Crear un writer personalizado que use Zap
+	// Create a custom writer that uses Zap
 	gin.DefaultWriter = &ZapWriter{logger: l.Log}
 	gin.DefaultErrorWriter = &ZapErrorWriter{logger: l.Log}
 }
 
-// SetupGinWithZapLoggerInDevelopment configura Gin para usar el logger de Zap en modo desarrollo
+// SetupGinWithZapLoggerInDevelopment configures Gin to use the Zap logger in development mode
 func (l *Logger) SetupGinWithZapLoggerInDevelopment() {
-	// Configurar Gin para usar el modo debug en desarrollo
+	// Configure Gin to use debug mode in development
 	gin.SetMode(gin.DebugMode)
 
-	// Crear un writer personalizado que use Zap
+	// Create a custom writer that uses Zap
 	gin.DefaultWriter = &ZapWriter{logger: l.Log}
 	gin.DefaultErrorWriter = &ZapErrorWriter{logger: l.Log}
 }
 
-// SetupGinWithZapLoggerWithMode configura Gin para usar el logger de Zap con un modo específico
+// SetupGinWithZapLoggerWithMode configures Gin to use the Zap logger with a specific mode
 func (l *Logger) SetupGinWithZapLoggerWithMode(mode string) {
-	// Configurar Gin para usar el modo especificado
+	// Configure Gin to use the specified mode
 	gin.SetMode(mode)
 
-	// Crear un writer personalizado que use Zap
+	// Create a custom writer that uses Zap
 	gin.DefaultWriter = &ZapWriter{logger: l.Log}
 	gin.DefaultErrorWriter = &ZapErrorWriter{logger: l.Log}
 }
 
-// ZapWriter implementa io.Writer para usar con Gin
+// ZapWriter implements io.Writer for use with Gin
 type ZapWriter struct {
 	logger *zap.Logger
 }
@@ -133,7 +133,7 @@ func (w *ZapWriter) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-// ZapErrorWriter implementa io.Writer para errores de Gin
+// ZapErrorWriter implements io.Writer for Gin errors
 type ZapErrorWriter struct {
 	logger *zap.Logger
 }
@@ -162,9 +162,9 @@ func NewGormLogger(base *zap.Logger) *GormZapLogger {
 	return &GormZapLogger{
 		zap: sugar,
 		config: gormlogger.Config{
-			SlowThreshold:             time.Second, // umbral para destacar consultas lentas
+			SlowThreshold:             time.Second, // threshold to highlight slow queries
 			LogLevel:                  gormlogger.Error,
-			IgnoreRecordNotFoundError: true, // no loguear "record not found"
+			IgnoreRecordNotFoundError: true, // do not log "record not found"
 			Colorful:                  false,
 		},
 	}
