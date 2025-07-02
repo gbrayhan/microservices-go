@@ -48,13 +48,13 @@ func (s *AuthUseCase) Login(email, password string) (*domainUser.User, *AuthToke
 	}
 	if user.ID == 0 {
 		s.Logger.Warn("Login failed: user not found", zap.String("email", email))
-		return nil, nil, domainErrors.NewAppError(errors.New("email or password does not match"), domainErrors.NotAuthorized)
+		return nil, nil, domainErrors.NewAppError(errors.New("email or password does not match"), domainErrors.NotAuthenticated)
 	}
 
 	isAuthenticated := checkPasswordHash(password, user.HashPassword)
 	if !isAuthenticated {
 		s.Logger.Warn("Login failed: invalid password", zap.String("email", email))
-		return nil, nil, domainErrors.NewAppError(errors.New("email or password does not match"), domainErrors.NotAuthorized)
+		return nil, nil, domainErrors.NewAppError(errors.New("email or password does not match"), domainErrors.NotAuthenticated)
 	}
 
 	accessTokenClaims, err := s.JWTService.GenerateJWTToken(user.ID, "access")
