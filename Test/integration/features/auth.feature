@@ -26,7 +26,7 @@ Feature: User Login and Token Refresh
       }
       """
     Then the response code should be 401
-    And the JSON response should contain error "error": "Invalid credentials"
+    And the JSON response should contain error "error": "email or password does not match"
 
   Scenario: POST /access-token/refresh with valid refresh token returns new access token
     When I send a POST request to "/v1/auth/access-token" with body:
@@ -48,7 +48,7 @@ Feature: User Login and Token Refresh
       }
       """
     Then the response code should be 401
-    And the JSON response should contain error "error": "Invalid token"
+    And the JSON response should contain error "error": "token contains an invalid number of segments"
 
   Scenario: Access protected endpoint without token
     Given I clear the authentication token
