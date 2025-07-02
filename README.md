@@ -160,7 +160,7 @@ go test ./...
 ./coverage.sh
 
 # Run integration tests
-./Test/integration/run-integration-test.bash
+./scripts/run-integration-test.bash
 
 # Lint code
 golangci-lint run ./...

@@ -65,7 +65,7 @@ docker-compose up --build -d
 
 # Run tests
 ./coverage.sh
-./Test/integration/run-integration-test.bash
+./scripts/run-integration-test.bash
 ```
 
 ### 2. **API Testing**

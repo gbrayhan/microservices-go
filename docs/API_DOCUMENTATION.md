@@ -682,7 +682,7 @@ https://www.postman.com/kts-mexico/workspace/boilerplategomicroservice
 
 ```bash
 # Run integration tests
-./Test/integration/run-integration-test.bash
+./scripts/run-integration-test.bash
 
 # Run unit tests
 go test ./...
