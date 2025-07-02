@@ -127,7 +127,8 @@ func (c *Controller) GetMedicinesByID(ctx *gin.Context) {
 		return
 	}
 	c.Logger.Info("Successfully retrieved medicine by ID", zap.Int("id", medicineID))
-	ctx.JSON(http.StatusOK, dMed)
+	resp := domainToResponseMapper(dMed)
+	ctx.JSON(http.StatusOK, resp)
 }
 
 func (c *Controller) UpdateMedicine(ctx *gin.Context) {
@@ -159,7 +160,8 @@ func (c *Controller) UpdateMedicine(ctx *gin.Context) {
 		return
 	}
 	c.Logger.Info("Medicine updated successfully", zap.Int("id", medicineID))
-	ctx.JSON(http.StatusOK, updated)
+	resp := domainToResponseMapper(updated)
+	ctx.JSON(http.StatusOK, resp)
 }
 
 func (c *Controller) DeleteMedicine(ctx *gin.Context) {
