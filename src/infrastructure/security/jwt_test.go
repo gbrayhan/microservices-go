@@ -538,17 +538,18 @@ func TestGetClaimsAndVerifyToken_WithSpecialCharactersInSecrets(t *testing.T) {
 	assert.Equal(t, float64(userID), claims["id"])
 }
 
-// BadClaims es un tipo inválido para forzar error en SignedString
+// BadClaims is an invalid claims type used to force an error in SignedString
 type BadClaims struct{}
 
 func (b BadClaims) Valid() error { return nil }
 
-// TestGetClaimsAndVerifyToken_SignedStringError cubre el branch de error de SignedString, pero no es forzable sin cambiar la API de GenerateJWTToken.
-// Por defecto, jwt-go permite serializar cualquier struct vacío y el secret raro no genera error.
-// Si se desea cubrir este branch, se debe usar un mock o cambiar la firma de la función para inyectar el error.
+// TestGetClaimsAndVerifyToken_SignedStringError covers the SignedString error branch,
+// but it cannot be triggered without changing the GenerateJWTToken API.
+// By default, jwt-go allows serializing any empty struct and a weird secret does not produce an error.
+// To cover this branch you should use a mock or change the function signature to inject the error.
 //func TestGenerateJWTToken_SignedStringError(t *testing.T) {
 //	config := JWTConfig{
-//		AccessSecret:  string([]byte{0xff, 0xfe, 0xfd}), // secret raro
+//		AccessSecret:  string([]byte{0xff, 0xfe, 0xfd}), // weird secret
 //		RefreshSecret: string([]byte{0xff, 0xfe, 0xfd}),
 //		AccessTime:    30,
 //		RefreshTime:   24,
@@ -559,7 +560,7 @@ func (b BadClaims) Valid() error { return nil }
 //}
 
 func TestGetClaimsAndVerifyToken_UnexpectedSigningMethod(t *testing.T) {
-	// Crea un token con un método de firma diferente
+	// Create a token with a different signing method
 	claims := jwt.MapClaims{
 		"id":   123,
 		"type": Access,
@@ -583,7 +584,7 @@ func TestGetClaimsAndVerifyToken_UnexpectedSigningMethod(t *testing.T) {
 }
 
 func TestGetClaimsAndVerifyToken_InvalidClaimsType(t *testing.T) {
-	// Crea un token válido pero con claims que no son MapClaims
+	// Create a valid token but with claims that are not MapClaims
 	token := jwt.New(jwt.SigningMethodHS256)
 	tokenString, err := token.SignedString([]byte("test_access_secret"))
 	require.NoError(t, err)
@@ -596,7 +597,7 @@ func TestGetClaimsAndVerifyToken_InvalidClaimsType(t *testing.T) {
 	}
 	service := NewJWTServiceWithConfig(config)
 
-	// Forzamos el error de tipo de claims
+	// Force the claims type error
 	result, err := service.GetClaimsAndVerifyToken(tokenString, Access)
 	assert.Error(t, err)
 	assert.Nil(t, result)

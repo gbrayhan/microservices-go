@@ -188,7 +188,7 @@ func TestRepository_GetByEmail(t *testing.T) {
 	assert.Equal(t, 0, user.ID) // Should be zero value
 }
 
-// Los siguientes tests requieren refactor para usar sqlmock o deben moverse a integración:
+// The following tests need refactoring to use sqlmock or should be moved to integration:
 // TestRepository_GetOneByMap
 // TestRepository_Update
 // TestRepository_Create_DuplicateEmail
@@ -196,4 +196,4 @@ func TestRepository_GetByEmail(t *testing.T) {
 // TestRepository_GetOneByMap_WithFilters
 // TestRepository_Update_WithMultipleFields
 //
-// Si quieres que refactorice estos también, dime y lo hago uno por uno.
+// If you want me to refactor these as well, let me know and I'll do them one by one.

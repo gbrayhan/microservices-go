@@ -137,7 +137,7 @@ func TestUserUseCase(t *testing.T) {
 		}
 	})
 
-	t.Run("Test Create (Error por email vacío)", func(t *testing.T) {
+	t.Run("Test Create (Error empty email)", func(t *testing.T) {
 		_, err := useCase.Create(&userDomain.User{Email: "", Password: "abc"})
 		if err == nil {
 			t.Error("expected error on create user with empty email")
