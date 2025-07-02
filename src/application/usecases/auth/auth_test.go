@@ -128,7 +128,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 			inputEmail:    "test@example.com",
 			inputPassword: "123456",
 			wantErr:       true,
-			wantErrType:   domainErrors.NotAuthorized,
+			wantErrType:   domainErrors.NotAuthenticated,
 		},
 		{
 			name: "Incorrect password",
@@ -142,7 +142,7 @@ func TestAuthUseCase_Login(t *testing.T) {
 			inputEmail:        "test@example.com",
 			inputPassword:     "wrong",
 			wantErr:           true,
-			wantErrType:       domainErrors.NotAuthorized,
+			wantErrType:       domainErrors.NotAuthenticated,
 			wantEmptySecurity: true,
 		},
 		{
