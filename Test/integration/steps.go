@@ -189,6 +189,23 @@ func theResponseCodeShouldBe(code int) error {
 	return nil
 }
 
+func getNestedValue(m map[string]interface{}, path string) (interface{}, bool) {
+	parts := strings.Split(path, ".")
+	var current interface{} = m
+	for _, p := range parts {
+		if mp, ok := current.(map[string]interface{}); ok {
+			if val, ok := mp[p]; ok {
+				current = val
+			} else {
+				return nil, false
+			}
+		} else {
+			return nil, false
+		}
+	}
+	return current, true
+}
+
 func theJSONResponseShouldContainKey(key string) error {
 	if body == nil {
 		return fmt.Errorf("response body is nil")
@@ -199,7 +216,7 @@ func theJSONResponseShouldContainKey(key string) error {
 		return fmt.Errorf("failed to parse JSON response: %v", err)
 	}
 
-	if _, exists := response[key]; !exists {
+	if _, exists := getNestedValue(response, key); !exists {
 		return fmt.Errorf("expected key '%s' not found in response", key)
 	}
 
@@ -219,7 +236,7 @@ func theJSONResponseShouldContain(field, value string) error {
 		return fmt.Errorf("failed to parse JSON response: %v", err)
 	}
 
-	fieldValue, exists := response[field]
+	fieldValue, exists := getNestedValue(response, field)
 	if !exists {
 		return fmt.Errorf("field '%s' not found in response", field)
 	}
@@ -331,7 +348,7 @@ func theJSONResponseShouldContainNumeric(field string, expectedValue int) error 
 		return fmt.Errorf("failed to parse JSON response: %v", err)
 	}
 
-	fieldValue, exists := response[field]
+	fieldValue, exists := getNestedValue(response, field)
 	if !exists {
 		return fmt.Errorf("field '%s' not found in response", field)
 	}
@@ -369,7 +386,7 @@ func iSaveTheJSONResponseKeyAs(key, varName string) error {
 		return fmt.Errorf("failed to parse JSON response: %v", err)
 	}
 
-	fieldValue, exists := response[key]
+	fieldValue, exists := getNestedValue(response, key)
 	if !exists {
 		return fmt.Errorf("key '%s' not found in response", key)
 	}
@@ -397,15 +414,9 @@ func iSaveTheJSONResponseKeyAs(key, varName string) error {
 		// Determine the resource type based on the context
 		resourceType := "unknown"
 		// Match more specific paths first to ensure correct resource type
-		if strings.Contains(lastRequestPath, "/roles") {
-			resourceType = "role"
-		} else if strings.Contains(lastRequestPath, "/devices") {
-			resourceType = "device"
-		} else if strings.Contains(lastRequestPath, "/icd-cie") {
-			resourceType = "icd-cie"
-		} else if strings.Contains(lastRequestPath, "/medicines") {
+		if strings.Contains(lastRequestPath, "/medicine") {
 			resourceType = "medicine"
-		} else if strings.Contains(lastRequestPath, "/users") {
+		} else if strings.Contains(lastRequestPath, "/user") {
 			resourceType = "user"
 		}
 
@@ -586,7 +597,7 @@ func theJSONResponseFieldShouldContainString(fieldName, expectedSubstring string
 		return fmt.Errorf("failed to parse JSON response: %v", err)
 	}
 
-	fieldValue, exists := response[fieldName]
+	fieldValue, exists := getNestedValue(response, fieldName)
 	if !exists {
 		return fmt.Errorf("field '%s' not found in response", fieldName)
 	}
@@ -703,7 +714,7 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 		}
 
 		jsonData, _ := json.Marshal(loginData)
-		req, _ := http.NewRequest("POST", base+"/login", bytes.NewBuffer(jsonData))
+		req, _ := http.NewRequest("POST", base+"/v1/auth/login", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := http.DefaultClient.Do(req)
@@ -719,10 +730,12 @@ func InitializeTestSuite(ctx *godog.TestSuiteContext) {
 			bodyBytes, _ := io.ReadAll(resp.Body)
 			var loginResponse map[string]interface{}
 			if json.Unmarshal(bodyBytes, &loginResponse) == nil {
-				if accessToken, ok := loginResponse["accessToken"].(string); ok {
-					savedVars["accessToken"] = accessToken
-					logger.Printf("Authentication successful with %s, access token saved", startUserEmail)
-					return
+				if sec, ok := loginResponse["security"].(map[string]interface{}); ok {
+					if accessToken, ok := sec["jwtAccessToken"].(string); ok {
+						savedVars["accessToken"] = accessToken
+						logger.Printf("Authentication successful with %s, access token saved", startUserEmail)
+						return
+					}
 				}
 			}
 		} else {
@@ -767,7 +780,7 @@ func createTestUserDirectly() {
 	}
 
 	jsonData, _ := json.Marshal(loginData)
-	req, _ := http.NewRequest("POST", base+"/login", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", base+"/v1/auth/login", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -785,13 +798,14 @@ func createTestUserDirectly() {
 	if resp.StatusCode == 200 {
 		var loginResponse map[string]interface{}
 		if json.Unmarshal(bodyBytes, &loginResponse) == nil {
-			if accessToken, ok := loginResponse["accessToken"].(string); ok {
-				savedVars["accessToken"] = accessToken
-				logger.Printf("✅ Authentication successful with seeded user, access token saved: %s", accessToken)
-				return
-			} else {
-				logger.Printf("❌ No accessToken found in successful response: %v", loginResponse)
+			if sec, ok := loginResponse["security"].(map[string]interface{}); ok {
+				if accessToken, ok := sec["jwtAccessToken"].(string); ok {
+					savedVars["accessToken"] = accessToken
+					logger.Printf("✅ Authentication successful with seeded user, access token saved: %s", accessToken)
+					return
+				}
 			}
+			logger.Printf("❌ No accessToken found in successful response: %v", loginResponse)
 		} else {
 			logger.Printf("❌ Failed to parse authentication response: %v", err)
 		}
@@ -929,7 +943,7 @@ func theJSONResponseShouldContainFloat(field string, expectedValue float64) erro
 		return fmt.Errorf("failed to parse JSON response: %v", err)
 	}
 
-	fieldValue, exists := response[field]
+	fieldValue, exists := getNestedValue(response, field)
 	if !exists {
 		return fmt.Errorf("field '%s' not found in response", field)
 	}
@@ -981,12 +995,11 @@ func createUniqueMedicine(prefix string) (int, error) {
 		"name":        fmt.Sprintf("%s Medicine", prefix),
 		"description": fmt.Sprintf("Description for %s medicine", prefix),
 		"eanCode":     generateUniqueValue("EAN"),
-		"lote":        generateUniqueValue("LOTE"),
-		"active":      true,
+		"laboratory":  "TestLab",
 	}
 
 	jsonData, _ := json.Marshal(medicineData)
-	req, _ := http.NewRequest("POST", base+"/api/medicines", bytes.NewBuffer(jsonData))
+	req, _ := http.NewRequest("POST", base+"/v1/medicine", bytes.NewBuffer(jsonData))
 	req.Header.Set("Content-Type", "application/json")
 	addAuthHeader(req)
 
@@ -996,7 +1009,7 @@ func createUniqueMedicine(prefix string) (int, error) {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode == 201 {
+	if resp.StatusCode == 200 {
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		var medicine map[string]interface{}
 		if json.Unmarshal(bodyBytes, &medicine) == nil {
@@ -1190,7 +1203,7 @@ func createTestUser() {
 		}
 
 		jsonData, _ = json.Marshal(loginData)
-		req, _ = http.NewRequest("POST", base+"/login", bytes.NewBuffer(jsonData))
+		req, _ = http.NewRequest("POST", base+"/v1/auth/login", bytes.NewBuffer(jsonData))
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err = http.DefaultClient.Do(req)
@@ -1204,9 +1217,11 @@ func createTestUser() {
 			bodyBytes, _ := io.ReadAll(resp.Body)
 			var loginResponse map[string]interface{}
 			if json.Unmarshal(bodyBytes, &loginResponse) == nil {
-				if accessToken, ok := loginResponse["accessToken"].(string); ok {
-					savedVars["accessToken"] = accessToken
-					logger.Printf("Authentication successful with new test user, access token saved")
+				if sec, ok := loginResponse["security"].(map[string]interface{}); ok {
+					if accessToken, ok := sec["jwtAccessToken"].(string); ok {
+						savedVars["accessToken"] = accessToken
+						logger.Printf("Authentication successful with new test user, access token saved")
+					}
 				}
 			}
 		}
@@ -1219,15 +1234,9 @@ func deleteAutonomousResource(resourceType, resourceID string) error {
 	var endpoint string
 	switch resourceType {
 	case "user":
-		endpoint = fmt.Sprintf("/api/users/%s", resourceID)
+		endpoint = fmt.Sprintf("/v1/user/%s", resourceID)
 	case "medicine":
-		endpoint = fmt.Sprintf("/api/medicines/%s", resourceID)
-	case "icd-cie":
-		endpoint = fmt.Sprintf("/api/icd-cie/%s", resourceID)
-	case "device":
-		endpoint = fmt.Sprintf("/api/users/devices/%s", resourceID)
-	case "role":
-		endpoint = fmt.Sprintf("/api/users/roles/%s", resourceID)
+		endpoint = fmt.Sprintf("/v1/medicine/%s", resourceID)
 	default:
 		return fmt.Errorf("unknown resource type: %s", resourceType)
 	}
