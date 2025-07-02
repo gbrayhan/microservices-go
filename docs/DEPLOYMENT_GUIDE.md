@@ -30,8 +30,8 @@ DB_PASSWORD=secure_password
 DB_NAME=microservices_go
 
 # JWT Configuration
-JWT_ACCESS_SECRET=your_very_secure_access_secret_key
-JWT_REFRESH_SECRET=your_very_secure_refresh_secret_key
+JWT_ACCESS_SECRET_KEY=your_very_secure_access_secret_key
+JWT_REFRESH_SECRET_KEY=your_very_secure_refresh_secret_key
 JWT_ACCESS_TIME_MINUTE=60
 JWT_REFRESH_TIME_HOUR=24
 ```
@@ -104,8 +104,8 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
-      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
-      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_ACCESS_SECRET_KEY=${JWT_ACCESS_SECRET_KEY}
+      - JWT_REFRESH_SECRET_KEY=${JWT_REFRESH_SECRET_KEY}
     depends_on:
       - postgres
     restart: unless-stopped
@@ -190,8 +190,8 @@ http {
 export DB_USER=postgres
 export DB_PASSWORD=secure_password
 export DB_NAME=microservices_go
-export JWT_ACCESS_SECRET=your_very_secure_access_secret_key
-export JWT_REFRESH_SECRET=your_very_secure_refresh_secret_key
+export JWT_ACCESS_SECRET_KEY=your_very_secure_access_secret_key
+export JWT_REFRESH_SECRET_KEY=your_very_secure_refresh_secret_key
 
 # Deploy with production compose
 docker-compose -f docker-compose.prod.yml up --build -d
@@ -241,8 +241,8 @@ type: Opaque
 data:
   DB_USER: cG9zdGdyZXM=  # postgres
   DB_PASSWORD: c2VjdXJlX3Bhc3N3b3Jk  # secure_password
-  JWT_ACCESS_SECRET: eW91cl92ZXJ5X3NlY3VyZV9hY2Nlc3Nfc2VjcmV0X2tleQ==
-  JWT_REFRESH_SECRET: eW91cl92ZXJ5X3NlY3VyZV9yZWZyZXNoX3NlY3JldF9rZXk=
+  JWT_ACCESS_SECRET_KEY: eW91cl92ZXJ5X3NlY3VyZV9hY2Nlc3Nfc2VjcmV0X2tleQ==
+  JWT_REFRESH_SECRET_KEY: eW91cl92ZXJ5X3NlY3VyZV9yZWZyZXNoX3NlY3JldF9rZXk=
 ```
 
 ### PostgreSQL Deployment
@@ -379,16 +379,16 @@ spec:
             secretKeyRef:
               name: app-secrets
               key: DB_PASSWORD
-        - name: JWT_ACCESS_SECRET
+        - name: JWT_ACCESS_SECRET_KEY
           valueFrom:
             secretKeyRef:
               name: app-secrets
-              key: JWT_ACCESS_SECRET
-        - name: JWT_REFRESH_SECRET
+              key: JWT_ACCESS_SECRET_KEY
+        - name: JWT_REFRESH_SECRET_KEY
           valueFrom:
             secretKeyRef:
               name: app-secrets
-              key: JWT_REFRESH_SECRET
+              key: JWT_REFRESH_SECRET_KEY
         livenessProbe:
           httpGet:
             path: /v1/health

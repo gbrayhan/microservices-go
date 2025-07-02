@@ -18,9 +18,9 @@ func AuthJWTMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		accessSecret := os.Getenv("JWT_ACCESS_SECRET")
+		accessSecret := os.Getenv("JWT_ACCESS_SECRET_KEY")
 		if accessSecret == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT_ACCESS_SECRET not configured"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "JWT_ACCESS_SECRET_KEY not configured"})
 			c.Abort()
 			return
 		}

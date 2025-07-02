@@ -308,7 +308,7 @@ docker build -t microservices-go .
 docker run -p 8080:8080 \
   -e DB_HOST=postgres \
   -e DB_PORT=5432 \
-  -e JWT_ACCESS_SECRET=your_secret \
+  -e JWT_ACCESS_SECRET_KEY=your_secret \
   microservices-go
 ```
 
@@ -327,8 +327,8 @@ DB_PASSWORD=password
 DB_NAME=microservices_go
 
 # JWT Configuration
-JWT_ACCESS_SECRET=your_access_secret
-JWT_REFRESH_SECRET=your_refresh_secret
+JWT_ACCESS_SECRET_KEY=your_access_secret
+JWT_REFRESH_SECRET_KEY=your_refresh_secret
 JWT_ACCESS_TIME_MINUTE=60
 JWT_REFRESH_TIME_HOUR=24
 ```

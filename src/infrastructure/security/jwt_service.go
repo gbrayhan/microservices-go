@@ -65,8 +65,8 @@ func NewJWTServiceWithConfig(config JWTConfig) IJWTService {
 // loadJWTConfig loads JWT configuration from environment variables
 func loadJWTConfig() JWTConfig {
 	return JWTConfig{
-		AccessSecret:  getEnvOrDefault("JWT_ACCESS_SECRET", "default_access_secret"),
-		RefreshSecret: getEnvOrDefault("JWT_REFRESH_SECRET", "default_refresh_secret"),
+		AccessSecret:  getEnvOrDefault("JWT_ACCESS_SECRET_KEY", "default_access_secret"),
+		RefreshSecret: getEnvOrDefault("JWT_REFRESH_SECRET_KEY", "default_refresh_secret"),
 		AccessTime:    getEnvAsInt64OrDefault("JWT_ACCESS_TIME_MINUTE", 60),
 		RefreshTime:   getEnvAsInt64OrDefault("JWT_REFRESH_TIME_HOUR", 24),
 	}
