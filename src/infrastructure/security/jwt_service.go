@@ -133,12 +133,12 @@ func (s *JWTService) GetClaimsAndVerifyToken(tokenString string, tokenType strin
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, domainErrors.NewAppError(err, domainErrors.NotAuthenticated)
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		return nil, errors.New("invalid claims type or token not valid")
+		return nil, domainErrors.NewAppError(errors.New("invalid claims type or token not valid"), domainErrors.NotAuthenticated)
 	}
 
 	if claims["type"] != tokenType {
@@ -147,11 +147,11 @@ func (s *JWTService) GetClaimsAndVerifyToken(tokenString string, tokenType strin
 
 	expVal, ok := claims["exp"]
 	if !ok || expVal == nil {
-		return nil, errors.New("token missing expiration (exp) claim")
+		return nil, domainErrors.NewAppError(errors.New("token missing expiration (exp) claim"), domainErrors.NotAuthenticated)
 	}
 	timeExpire, ok := expVal.(float64)
 	if !ok {
-		return nil, errors.New("token expiration (exp) claim is not a float64")
+		return nil, domainErrors.NewAppError(errors.New("token expiration (exp) claim is not a float64"), domainErrors.NotAuthenticated)
 	}
 	if time.Now().Unix() > int64(timeExpire) {
 		return nil, domainErrors.NewAppError(errors.New("token expired"), domainErrors.NotAuthenticated)
@@ -159,14 +159,14 @@ func (s *JWTService) GetClaimsAndVerifyToken(tokenString string, tokenType strin
 
 	idVal, ok := claims["id"]
 	if !ok || idVal == nil {
-		return nil, errors.New("token missing id claim")
+		return nil, domainErrors.NewAppError(errors.New("token missing id claim"), domainErrors.NotAuthenticated)
 	}
 	// Accept float64 or int64 for id
 	switch idVal.(type) {
 	case float64, int64, int:
 		// ok
 	default:
-		return nil, errors.New("token id claim is not a number")
+		return nil, domainErrors.NewAppError(errors.New("token id claim is not a number"), domainErrors.NotAuthenticated)
 	}
 
 	return claims, nil
